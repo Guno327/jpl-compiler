@@ -1,4 +1,4 @@
-SRC := ./src
+SRC := ./
 REF := ./ref
 BIN := ./bin
 
