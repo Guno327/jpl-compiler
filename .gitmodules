@@ -1,0 +1,3 @@
+[submodule "grader"]
+	path = grader
+	url = git@github.com:utah-cs4470-sp25/grader.git
