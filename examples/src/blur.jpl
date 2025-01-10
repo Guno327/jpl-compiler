@@ -1,0 +1,33 @@
+fn pixel_check(img[H, W]: rgba[,], i: int, j: int, k: int, l:int): rgba {
+        let h = i+k-1
+        let w = j+l-1
+        
+        return \
+        if \
+                (h >= 0 && h < H) && \
+                (w >= 0 && w < W) then img[(i+k-1), (j+l-1)] \
+        else rgba {0.0, 0.0, 0.0, 1.0}
+}
+
+fn blur_pixel(img[H, W]: rgba[,], i: int, j: int): rgba {
+        let pixels_to_add = array[k: 3, l: 3] pixel_check(img, i, j, k, l)
+        let r = sum[k: 3, l: 3] pixels_to_add[k, l].r
+        let g = sum[k: 3, l: 3] pixels_to_add[k, l].g
+        let b = sum[k: 3, l: 3] pixels_to_add[k, l].b
+        let size = sum[k: 3, l: 3] \
+        if \
+                pixels_to_add[k, l].r == 0.0 && \
+                pixels_to_add[k, l].g == 0.0 && \
+                pixels_to_add[k, l].b == 0.0 \
+                then 0.0 \
+        else 1.0
+        return rgba { r / size, g / size, b / size, 1.0}
+}
+
+fn blur(img[H, W]: rgba[,]) : rgba[,] {
+        return array[i: W, j: H] blur_pixel(img, i, j)
+}
+
+read image "sample.png" to input
+let result = blur(input)
+write image result to "sample-blurred.png"

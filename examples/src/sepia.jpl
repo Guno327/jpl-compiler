@@ -1,0 +1,22 @@
+fn sepia_pixel(p: rgba): rgba {
+        let r_n =.393 * p.r +.769 * p.g +.189 * p.b
+        let g_n =.349 * p.r +.686 * p.g +.168 * p.b
+        let b_n =.272 * p.r +.534 * p.g +.131 * p.b
+        let r = if r_n > 1. then 1. else r_n
+        let g = if g_n > 1. then 1. else g_n
+        let b = if b_n > 1. then 1. else b_n
+        return rgba {r, g, b, 1.}
+}
+
+fn sepia(img[H, W]: rgba[,]) : rgba[,] {
+        return array[i: H, j: W] sepia_pixel(rgba{ \
+               img[i,j].r, \
+               img[i,j].g, \
+               img[i,j].b, \
+               1. \
+        })
+}
+
+read image "sample.png" to input
+let result = sepia(input)
+write image result to "sample-sepia.png"
