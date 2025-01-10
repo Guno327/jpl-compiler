@@ -1,5 +1,5 @@
 SRC := ./
-REF := ./ref
+REF := ../grader/hw1/
 BIN := ./bin
 
 SRCS := $(wildcard $(SRC)/*.jpl)
