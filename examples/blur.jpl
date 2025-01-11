@@ -30,4 +30,4 @@ fn blur(img[H, W]: rgba[,]) : rgba[,] {
 
 read image "sample.png" to input
 let result = blur(input)
-write image result to "sample-blurred.png"
+write image result to "sample-blurry.png"

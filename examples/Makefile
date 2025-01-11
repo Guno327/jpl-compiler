@@ -28,7 +28,7 @@ test/red: bin/red run/red cmp/red.png
 test/circle: bin/circle run/circle cmp/circle.png
 test/invert: bin/invert run/invert cmp/sample-inverted.png
 test/sepia: bin/sepia run/sepia cmp/sample-sepia.png
-test/blur: bin/blur run/blur cmp/sample-blurred.png
+test/blur: bin/blur run/blur cmp/sample-blurry.png
 
 cmp/%: %
 	@cmp -s $^ $(REF)/$^; \
@@ -41,4 +41,4 @@ cmp/%: %
 
 clean:
 	rm -rf $(BIN)
-	rm -f red.png circle.png sample-inverted.png sample-sepia.png sample-blurred.png
+	rm -f red.png circle.png sample-inverted.png sample-sepia.png sample-blurry.png
