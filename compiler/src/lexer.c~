@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "lexer.h"
+
+int lex_str(char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_wrd(const char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_num(const char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_nl(const char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_ws(const char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_op(const char* src, int i, Token* t){
+  return 0;
+}
+
+int lex_pnct(const char* src, int i, Token* t){
+  int chars = 0;
+
+  switch (src[i]){
+  // Check punctuation
+    case ':': 
+      t->type = COLON; 
+      t->text = ":"; 
+      chars = 1;
+      break; 
+    case ',': 
+      t->type = COMMA; 
+      t->text = ",";
+      chars = 1;
+      break;
+    case '.': 
+      t->type = DOT; 
+      t->text = "."; 
+      chars = 1;
+      break;
+    case '{': 
+      t->type = LCURLY; 
+      t->text = "{"; 
+      chars = 1;
+      break;
+    case '}': 
+      t->type = RCURLY; 
+      t->text = "}"; 
+      chars = 1;
+      break;
+    case '(': 
+      t->type = LPAREN; 
+      t->text = "("; 
+      chars = 1;
+      break;
+    case ')': 
+      t->type = RPAREN; 
+      t->text = ")"; 
+      chars = 1;
+      break;
+    case '[': 
+      t->type = LSQUARE;
+      t->text = "[";
+      chars = 1;
+      break;
+    case ']': 
+      t->type = RSQUARE;
+      t->text = "]"; 
+      chars = 1;
+      break;
+  // Handle special single char cases
+    case '\n':
+      chars = lex_nl(src, i, t);
+      break;
+    case '"':
+      chars = lex_str(src, i, t);
+      break;
+    case ' ':
+      chars = lex_ws(src, i, t);
+      break;
+    case '=':
+    case '+':
+    case '<':
+    case '>':
+    case '-':
+    case '&':
+    case '|':
+    case '!':
+      chars = lex_op(src, i, t);
+      break;
+    default:
+      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+      exit(EXIT_FAILURE);
+  }
+
+  return chars;
+}
+
+Vector* lex(const char* src) {
+
+  Vector* tokens = NULL;
+  tokens = malloc(sizeof(Vector));
+  
+  for (int i = 0; i < strlen(src); i++){
+    Token* t = malloc(sizeof(Token));
+    t->start = i;
+
+    // Check letter
+    if (isalpha(src[i])){
+      i += lex_wrd(src, i, t);
+      vector_append(tokens, t);
+      continue;
+    }
+
+    // Check number
+    else if (isdigit(src[i])){
+      i += lex_num(src, i, t);
+      vector_append(tokens, t);
+      continue;
+    }
+
+    if (t->type != 0){
+      vector_append(tokens, t);
+      continue;
+    }
+
+  };
+  Token* last = malloc(sizeof(Token));
+  last->type = END_OF_FILE;
+  last->start = strlen(src) + 1;
+  vector_append(tokens, last);
+
+  return tokens;
+}

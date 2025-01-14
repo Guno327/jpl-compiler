@@ -2,7 +2,7 @@ SRC := ./src
 BIN := ./
 OBJ := ./obj
 
-ARGS= red.jpl
+ARGS= test.jpl
 EXE := $(BIN)jplc
 CFLAGS := -Wall -g -O0
 $(CC)= clang

@@ -1,0 +1,10 @@
+#ifndef LEXER_H
+#define LEXER_H
+
+#include "token.h"
+#include "vector.h"
+
+int lex_str(char* src, int i, Token* t);
+Vector* lex(char* src);
+
+#endif
