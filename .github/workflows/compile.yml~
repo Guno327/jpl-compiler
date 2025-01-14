@@ -1,20 +1,15 @@
 name: Auto-grades your solution
 
-on: 
-  push:
-    branches:
-      - main
+on: push
 
 jobs:
   compiles:
-    if: "contains(github.event.head_commit.message, 'submit')"
     name: "Runs `make compile`"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - run: make compile
   parts:
-    if: "contains(github.event.head_commit.message, 'submit')"
     name: "Grades assignment"
     runs-on: ubuntu-24.04
     needs: [compiles]
@@ -23,7 +18,6 @@ jobs:
       matrix:
         part: [ 1, 2, 3, 4, 5, 6 ]
     steps:
-      if: "contains(github.event.head_commit.message, 'submit')"
       - uses: actions/checkout@master
       - run: make compile
       - name: "Downloads grader scripts"
