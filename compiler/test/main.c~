@@ -1,7 +1,0 @@
-#include <check.h>
-#include "test_lexer.h"
-
-int main(){
-  test_lexer();
-  return 0;
-}

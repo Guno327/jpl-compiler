@@ -18,42 +18,52 @@
  * @return The ending index of the string (t implicitly updated in function)
  */
 int lex_str(const char* src, int i, Token* t){
-  t->start = i;
   if(src[i] != '"'){
-      fprintf(stderr, "Unexpected char '%c at '%d", src[i], i);
+      fprintf(stderr, "Unexpected char %c at %d\n", src[i], i);
       exit(EXIT_FAILURE);
   }
+  t->start = i;
 
+  int start = strlen(src);
   for(i += 1; i < strlen(src); i++){
     if (src[i] == '\n'){
-      fprintf(stderr, "Unexpected newline at '%d", i);
-      exit(EXIT_FAILURE);
-    }
-    else if (i+1 == strlen(src)){
-      fprintf(stderr, "Unexpected EOF at '%d", i);
+      fprintf(stderr, "Unexpected newline at %d\n", i);
       exit(EXIT_FAILURE);
     }
     else if (src[i] == '"'){
       t->type = STRING;
       int len = i - t->start;
+      t->text = malloc(i - t->start + 2);
+      strncpy(t->text, src + t->start, i - t->start + 1);
+      return i;
     }
-  }
-  t->type = STRING;
-  int len = i - t->start;
-  t->text = malloc(len + 1);
-  strncpy(t->text, src + t->start, len);
-
-  return i;
+  } 
+  fprintf(stderr, "Unexpectely encountered EOF while parsing\n");
+  exit(EXIT_FAILURE);
 }
 
+/*
+  * @breif Lexes a variable of keyword from src
+  * This funtion traverses through src starting at index i.
+  * It expects src[i] to be a valid alphabet character.
+  * Continues parsing until space, EOF, or newline occurs
+*/ 
 int lex_wrd(const char* src, int i, Token* t){
+  if (!isalpha(src[i])){
+    fprintf(stderr, "Unexpected char '%c' at %d", src[i], i);
+    exit(EXIT_FAILURE);
+  }
+  t->start = i;
+  
   for(i += 1; i < strlen(src); i++){
     if (isalpha(src[i]) || isdigit(src[i]))
       continue;
-    else if (src[i] == ' ' || src[i] == '/' || src[i] == '\n')
-        break;
+    else if (src[i] == ' ' || src[i] == '\\'  || src[i] == '\n') {
+      i -= 1;  
+      break;
+    }
     else{
-      fprintf(stderr, "Unexpected char '%c' at '%d", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at '%d\n", src[i], i);
       exit(EXIT_FAILURE);
     }
   }
