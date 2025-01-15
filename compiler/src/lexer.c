@@ -4,15 +4,38 @@
 #include <ctype.h>
 #include "lexer.h"
 
+/** 
+ * @brief Lexes a string token from src.
+ * 
+ * This function traverses through src starting at index i.
+ * It expect index i to be a '=' as that signifies the beginning of
+ * a string token. It then continues until it find the corresponding
+ * '"' to end the string, or encounters a new-line or EOF (error)
+ * 
+ * @param src The string containing the source code to be lexed
+ * @param i The index to begin lexing a string at
+ * @param t A pointer to a token where to result will be stored
+ * @return The ending index of the string (t implicitly updated in function)
+ */
 int lex_str(const char* src, int i, Token* t){
-  for(; i < strlen(src); i++){
-    if (isalpha(src[i]))
-      continue;
-    else if (src[i] == '"')
-        break;
-    else{
-      fprintf(stderr, "Unexpected char '%c' at '%d", src[i], i);
+  t->start = i;
+  if(src[i] != '"'){
+      fprintf(stderr, "Unexpected char '%c at '%d", src[i], i);
       exit(EXIT_FAILURE);
+  }
+
+  for(i += 1; i < strlen(src); i++){
+    if (src[i] == '\n'){
+      fprintf(stderr, "Unexpected newline at '%d", i);
+      exit(EXIT_FAILURE);
+    }
+    else if (i+1 == strlen(src)){
+      fprintf(stderr, "Unexpected EOF at '%d", i);
+      exit(EXIT_FAILURE);
+    }
+    else if (src[i] == '"'){
+      t->type = STRING;
+      int len = i - t->start;
     }
   }
   t->type = STRING;

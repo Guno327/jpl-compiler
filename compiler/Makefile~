@@ -1,32 +1,48 @@
 SRC := ./src
+TEST := ./test
 BIN := ./
 OBJ := ./obj
 
-ARGS= test.jpl
+ARGS= red.jpl
 EXE := $(BIN)jplc
+TESTEXE := $(BIN)test_jplc
 CFLAGS := -Wall -g -O0
 $(CC)= clang
-
 
 SRCS := $(wildcard $(SRC)/*.c)
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 LIBS :=
 
+TESTSRCS := $(wildcard $(TEST)/*.c)
+TESTOBJS := $(patsubst $(TEST)/%.c, $(OBJ)/%.o, $(TESTSRCS))
+LIBS := -lcheck
+
 .PHONY: all clean
 
+# Compiler rules
 all: $(EXE)
 
 $(EXE): $(OBJS) | $(BIN)
-	$(CC) $(CFLAGS) $(LIBS)  $^ -o $@
+	$(CC) $(CFLAGS) $(LIBS)  $(OBJS)  $^ -o $@
 
 $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 
-$(OBJ) $(SRC) $(BIN): 
+$(OBJ) $(SRC): 
 	mkdir $@
 
 run: $(EXE)
 	$(EXE) $(ARGS)
 
+# Testing rules
+test: $(TESTEXE)
+
+$(TESTEXE): $(TESTOBJS) $(OBJS) | $(BIN)
+	$(CC) $(CFLAGS) $(TESTLIBS)  $(TESTOBJS)  $(OBJS) $^ -o $@
+
+$(OBJ)/%.o: $(TEST)/%.c | $(OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# General rules
 clean:
-	rm -r $(OBJ) $(BIN)
+	rm -rf $(OBJ) $(EXE) $(TESTEXE)
