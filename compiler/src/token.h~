@@ -49,6 +49,6 @@ typedef struct {
   char* text;
 } Token;
 
-void print_token(Token* t);
+char* print_token(Token* t);
 
 #endif

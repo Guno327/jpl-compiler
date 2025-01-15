@@ -5,10 +5,10 @@
 #include "lexer.h"
 
 int main(int argc, char** argv){
-  char* input = "\"this is multiple words!";
+  char* input = "this!isnot:wq";
   Token* t = malloc(sizeof(Token));
   int ret = 0;
-  ret = lex_str(input, 0, t);
+  ret = lex_wrd(input, 0, t);
   printf("%s\n", print_token(t));
   exit(EXIT_SUCCESS);
 

@@ -50,5 +50,6 @@ typedef struct {
 } Token;
 
 char* print_token(Token* t);
+int keyword(char* text);
 
 #endif

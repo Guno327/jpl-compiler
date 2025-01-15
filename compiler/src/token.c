@@ -1,6 +1,67 @@
 #include "token.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int keyword(char* text){
+  int ret = 0;
+  char* wrd_upper = malloc(sizeof(text) + 1);
+  for(int j = 0; j < strlen(text); j++)
+    wrd_upper[j] = toupper(text[j]);
+  
+  if (!strcmp(wrd_upper, "ARRAY"))
+    ret = ARRAY;
+  else if (!strcmp(wrd_upper, "ASSERT"))
+    ret = ASSERT;
+  else if (!strcmp(wrd_upper, "BOOL"))
+    ret = BOOL;
+  else if (!strcmp(wrd_upper, "ELSE"))
+    ret = ELSE;
+  else if (!strcmp(wrd_upper, "FALSE"))
+    ret = FALSE;
+  else if (!strcmp(wrd_upper, "FLOAT"))
+    ret = FLOAT;
+  else if (!strcmp(wrd_upper, "FN"))
+    ret = FN;
+  else if (!strcmp(wrd_upper, "IF"))
+    ret = IF;
+  else if (!strcmp(wrd_upper, "IMAGE"))
+    ret = IMAGE;
+  else if (!strcmp(wrd_upper, "INT"))
+    ret = INT;
+  else if (!strcmp(wrd_upper, "LET"))
+    ret = LET;
+  else if (!strcmp(wrd_upper, "PRINT"))
+    ret = PRINT;
+  else if (!strcmp(wrd_upper, "READ"))
+    ret = READ;
+  else if (!strcmp(wrd_upper, "RETURN"))
+    ret = RETURN;
+  else if (!strcmp(wrd_upper, "SHOW"))
+    ret = SHOW;
+  else if (!strcmp(wrd_upper, "STRUCT"))
+    ret = STRUCT;
+  else if (!strcmp(wrd_upper, "SUM"))
+    ret = SUM;
+  else if (!strcmp(wrd_upper, "THEN"))
+    ret = THEN;
+  else if (!strcmp(wrd_upper, "TIME"))
+    ret = TIME;
+  else if (!strcmp(wrd_upper, "TO"))
+    ret = TO;
+  else if (!strcmp(wrd_upper, "TRUE"))
+    ret = TRUE;
+  else if (!strcmp(wrd_upper, "VOID"))
+    ret = VOID;
+  else if (!strcmp(wrd_upper, "WRITE"))
+    ret = WRITE;
+  else
+    ret = VARIABLE;
+
+  free (wrd_upper);
+  return ret;
+}
 
 char* print_token(Token* t){
   char* token_str = malloc(20 + sizeof(t->text));
@@ -27,7 +88,7 @@ char* print_token(Token* t){
       sprintf(token_str, "ELSE '%s'", t->text);
       break;
     case END_OF_FILE:
-      sprintf(token_str, "END_OF_FILE '%s'", t->text);
+      sprintf(token_str, "END_OF_FILE");
       break;
     case EQUALS:
       sprintf(token_str, "EQUALS '%s'", t->text);
@@ -69,7 +130,7 @@ char* print_token(Token* t){
       sprintf(token_str, "LSQUARE '%s'", t->text);
       break;
     case NEWLINE:
-      sprintf(token_str, "NEWLINE '%s'", t->text);
+      sprintf(token_str, "NEWLINE");
       break;
     case OP:
       sprintf(token_str, "OP '%s'", t->text);

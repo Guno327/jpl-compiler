@@ -19,7 +19,7 @@
  */
 int lex_str(const char* src, int i, Token* t){
   if(src[i] != '"'){
-      fprintf(stderr, "Unexpected char %c at %d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
       exit(EXIT_FAILURE);
   }
   t->start = i;
@@ -27,7 +27,7 @@ int lex_str(const char* src, int i, Token* t){
   int start = strlen(src);
   for(i += 1; i < strlen(src); i++){
     if (src[i] == '\n'){
-      fprintf(stderr, "Unexpected newline at '%d\n", i);
+      fprintf(stderr, "Unexpected newline at %d\n", i);
       exit(EXIT_FAILURE);
     }
     else if (src[i] == '"'){
@@ -44,9 +44,15 @@ int lex_str(const char* src, int i, Token* t){
 
 /*
   * @breif Lexes a variable of keyword from src
+  *
   * This funtion traverses through src starting at index i.
   * It expects src[i] to be a valid alphabet character.
-  * Continues parsing until space, EOF, or newline occurs
+  * Continues parsing until space, EOF, or newline occurs.
+  *
+  * @param src The string containing the source code to be lexed
+  * @param i The index to begin lexing at
+  * @param t A pointer to a token where the result will be stored
+  * @return The ending index of the token text (t implicitly updated)
 */ 
 int lex_wrd(const char* src, int i, Token* t){
   if (!isalpha(src[i])){
@@ -56,74 +62,23 @@ int lex_wrd(const char* src, int i, Token* t){
   t->start = i;
   
   for(i += 1; i < strlen(src); i++){
-    if (isalpha(src[i]) || isdigit(src[i]))
+    if (isalpha(src[i]) || isdigit(src[i]) || src[i] == '_')
       continue;
-    else if (src[i] == ' ' || src[i] == '\\'  || src[i] == '\n') {
-      i -= 1;  
+    else if (src[i] == ' ' || src[i] == '\\'  || src[i] == '\n')
       break;
-    }
     else{
-      fprintf(stderr, "Unexpected char '%c' at '%d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
       exit(EXIT_FAILURE);
     }
   }
-  int len = i - t->start - 1;
-  t->text = malloc(len + 1);
-  strncpy(t->text, src + t->start, len);
-  char* wrd_upper = malloc(len + 1);
-  for(int j = 0; j < strlen(t->text); j++)
-    wrd_upper[j] = toupper(t->text[j]);
-
-  if (!strcmp(wrd_upper, "ARRAY"))
-    t->type = ARRAY;
-  else if (!strcmp(wrd_upper, "ASSERT"))
-    t->type = ASSERT;
-  else if (!strcmp(wrd_upper, "BOOL"))
-    t->type = BOOL;
-  else if (!strcmp(wrd_upper, "ELSE"))
-    t->type = ELSE;
-  else if (!strcmp(wrd_upper, "FALSE"))
-    t->type = FALSE;
-  else if (!strcmp(wrd_upper, "FLOAT"))
-    t->type = FLOAT;
-  else if (!strcmp(wrd_upper, "FN"))
-    t->type = FN;
-  else if (!strcmp(wrd_upper, "IF"))
-    t->type = IF;
-  else if (!strcmp(wrd_upper, "IMAGE"))
-    t->type = IMAGE;
-  else if (!strcmp(wrd_upper, "INT"))
-    t->type = INT;
-  else if (!strcmp(wrd_upper, "LET"))
-    t->type = LET;
-  else if (!strcmp(wrd_upper, "PRINT"))
-    t->type = PRINT;
-  else if (!strcmp(wrd_upper, "READ"))
-    t->type = READ;
-  else if (!strcmp(wrd_upper, "RETURN"))
-    t->type = RETURN;
-  else if (!strcmp(wrd_upper, "SHOW"))
-    t->type = SHOW;
-  else if (!strcmp(wrd_upper, "STRUCT"))
-    t->type = STRUCT;
-  else if (!strcmp(wrd_upper, "SUM"))
-    t->type = SUM;
-  else if (!strcmp(wrd_upper, "THEN"))
-    t->type = THEN;
-  else if (!strcmp(wrd_upper, "TIME"))
-    t->type  = TIME;
-  else if (!strcmp(wrd_upper, "TO"))
-    t->type = TO;
-  else if (!strcmp(wrd_upper, "TRUE"))
-    t->type = TRUE;
-  else if (!strcmp(wrd_upper, "VOID"))
-    t->type = VOID;
-  else if (!strcmp(wrd_upper, "WRITE"))
-    t->type = WRITE;
-  else
-    t->type = VARIABLE;
+  int len = i - t->start;
+  char* wrd = malloc(len + 1);
+  strncpy(wrd, src+t->start, len);
   
-  return len;
+  t->type = keyword(wrd);
+  t->text = wrd;
+  
+  return i;
 }
 
 int lex_num(const char* src, int i, Token* t){
