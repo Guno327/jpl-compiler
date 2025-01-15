@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include "lexer.h"
 
 // Lexes a string
 int lex_str(const char* src, int i, Token* t){
   if(src[i] != '"'){
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d in string\n", src[i], i);
       exit(EXIT_FAILURE);
   }
   t->start = i;
@@ -15,7 +16,7 @@ int lex_str(const char* src, int i, Token* t){
   int start = strlen(src);
   for(i += 1; i < strlen(src); i++){
     if (src[i] == '\n'){
-      fprintf(stderr, "Unexpected newline at %d\n", i);
+      fprintf(stderr, "Unexpected newline at %d in string\n", i);
       exit(EXIT_FAILURE);
     }
     else if (src[i] == '"'){
@@ -26,7 +27,7 @@ int lex_str(const char* src, int i, Token* t){
       return i;
     }
   } 
-  fprintf(stderr, "Unexpectely encountered EOF while parsing\n");
+  fprintf(stderr, "Unexpectely encountered EOF while parsing in string\n");
   exit(EXIT_FAILURE);
 }
 
@@ -41,12 +42,8 @@ int lex_wrd(const char* src, int i, Token* t){
   for(i += 1; i < strlen(src); i++){
     if (isalpha(src[i]) || isdigit(src[i]) || src[i] == '_')
       continue;
-    else if (src[i] == ' ' || src[i] == '\\'  || src[i] == '\n')
+    else
       break;
-    else{
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
-      exit(EXIT_FAILURE);
-    }
   }
   int len = i - t->start;
   char* wrd = malloc(len + 1);
@@ -60,13 +57,45 @@ int lex_wrd(const char* src, int i, Token* t){
 
 // Lexes an INTVAL or FLOATVAL
 int lex_num(const char* src, int i, Token* t){
-  return 0;
+  if (!isdigit(src[i]) && src[i] != '.'){
+      fprintf(stderr, "Unexpected char '%c' at %d in number\n", src[i], i);
+      exit(EXIT_FAILURE);
+  }
+
+  t->start = i;
+  bool dot_found = false;
+  bool num_found = false;
+  for(;i < strlen(src); i++){
+    if (src[i] == '.'){
+      if (dot_found){
+        fprintf(stderr, "Unexpected char '%c' at %d in floatval\n", src[i], i);
+        exit(EXIT_FAILURE);
+      }
+      dot_found = true;
+    }
+    else if (isdigit(src[i]))
+      num_found = true;
+    else
+      break;
+  }
+  if (dot_found && !num_found){
+    fprintf(stderr, "Unexpected char '%c' at %d in floatval\n", src[i], i);
+    exit(EXIT_FAILURE);
+  }
+  else if (dot_found)
+    t->type = FLOATVAL;
+  else
+    t->type = INTVAL;
+  
+  t->text = malloc(i - t->start + 1);
+  strncpy(t->text, src + t->start, i);
+  return i;
 }
 
 // Lexes a new line
 int lex_nl(const char* src, int i, Token* t){
   if (src[i] != '\n'){
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d in newline\n", src[i], i);
       exit(EXIT_FAILURE);
   }
   t->start = i;
@@ -81,8 +110,8 @@ int lex_nl(const char* src, int i, Token* t){
 
 //lexes whitespace
 int lex_ws(const char* src, int i, Token* t){
-  if (src[i] != ' ' || src[i] != '\\'){
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+  if (src[i] != ' ' && src[i] != '\\'){
+      fprintf(stderr, "Unexpected char '%c' at %d in whitespace\n", src[i], i);
       exit(EXIT_FAILURE);
   }
   t->start = i;
@@ -147,7 +176,7 @@ int lex_op(const char* src, int i, Token* t){
         i += 2;
       }
       else {
-        fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+        fprintf(stderr, "Unexpected char '%c' at %d in op\n", src[i], i);
         exit(EXIT_FAILURE);
       }
       break;
@@ -157,21 +186,42 @@ int lex_op(const char* src, int i, Token* t){
         i += 2;
       }
       else {
-        fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+        fprintf(stderr, "Unexpected char '%c' at %d in op\n", src[i], i);
         exit(EXIT_FAILURE);
+      }
+      break;
+    case '/':
+      if (i+1 < strlen(src) && src[i+1] == '/'){
+        for(; i<strlen(src); i++){
+          if (src[i] == '\n')
+            break;
+        }
+        t->type = -1;
+      }
+      else if (i+1 < strlen(src) && src[i+1] == '*'){
+        for(i+=2 ; i < strlen(src); i++){
+          if (src[i] == '*' && i+1 < strlen(src) && src[i+1] == '/')
+            break;
+        }
+        i += 2;
+        t->type = -1;
+      }
+      else {
+        t->type = OP;
+        t->text = "/";
+        i += 1;
       }
       break;
     case '-':
     case '+':
     case '*':
     case '%':
-    case '/':
       t->text = malloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
       break;
     default:
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d in op\n", src[i], i);
       exit(EXIT_FAILURE);
   }
   return i;
@@ -251,7 +301,7 @@ int lex_pnct(const char* src, int i, Token* t){
       i = lex_op(src, i, t);
       break;
     default:
-      fprintf(stderr, "Unexpected char '%c' at %d\n", src[i], i);
+      fprintf(stderr, "Unexpected char '%c' at %d in op\n", src[i], i);
       exit(EXIT_FAILURE);
   }
 
@@ -260,8 +310,8 @@ int lex_pnct(const char* src, int i, Token* t){
 
 Vector* lex(const char* src) {
 
-  Vector* tokens = NULL;
-  tokens = malloc(sizeof(Vector));
+  Vector* tokens = malloc(sizeof(Vector));
+  vector_init(tokens, BUFSIZ);
  
   int i = 0;
   while(i < strlen(src)){
@@ -276,7 +326,7 @@ Vector* lex(const char* src) {
     }
 
     // Check number
-    else if (isdigit(src[i])){
+    else if (isdigit(src[i]) || src[i] == '.'){
       i = lex_num(src, i, t);
       vector_append(tokens, t);
       continue;
