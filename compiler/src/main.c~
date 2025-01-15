@@ -5,11 +5,11 @@
 #include "lexer.h"
 
 int main(int argc, char** argv){
-  char* input = "this_is_a_var";
+  char* input = "+<";
   Token* t = malloc(sizeof(Token));
   int ret = 0;
-  ret = lex_wrd(input, 0, t);
-  printf("%s\n", print_token(t));
+  ret = lex_pnct(input, 1, t);
+  printf("%s : %d\n", print_token(t), ret);
   exit(EXIT_SUCCESS);
 
 // if (argc < 2){
