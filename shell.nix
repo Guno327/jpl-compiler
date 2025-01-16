@@ -13,9 +13,12 @@ pkgs.mkShell {
   packages = with pkgs; [
     gnumake
     clang
+    gdb
+    valgrind
     
     nasm
     zlib
     mlib
+    python3
   ];
 }

@@ -1,9 +1,9 @@
 SRC := ./src
 BIN := ./
 OBJ := ./obj
-TEST= red.jpl
+TEST= ./examples/red.jpl
 EXE := $(BIN)compiler
-CFLAGS := -Wall -Wpedantic -O0 -g
+CFLAGS := -Wall -Wpedantic -O3 -g
 $(CC)= clang
 SRCS := $(wildcard $(SRC)/*.c)
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
