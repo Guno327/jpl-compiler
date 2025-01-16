@@ -1,15 +1,15 @@
 SRC := ./src
 BIN := ./
 OBJ := ./obj
-ARGS= red.jpl
-EXE := $(BIN)jplc
-CFLAGS := -Wall -g -O0
+TEST= red.jpl
+EXE := $(BIN)compiler
+CFLAGS := -Wall -Wpedantic -O0 -g
 $(CC)= clang
 SRCS := $(wildcard $(SRC)/*.c)
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 LIBS :=
 .PHONY: all clean
-all: $(EXE)
+compile: $(EXE)
 $(EXE): $(OBJS) | $(BIN)
 	$(CC) $(CFLAGS) $(LIBS)  $^ -o $@
 $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
@@ -17,6 +17,6 @@ $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
 $(OBJ) $(SRC) $(BIN): 
 	mkdir $@
 run: $(EXE)
-	$(EXE) $(ARGS)
+	$(EXE) $(TEST)
 clean:
 	rm -rf $(OBJ) $(EXE)

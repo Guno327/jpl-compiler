@@ -1,6 +1,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#define ESC -2
+#define WS -1
 #define ARRAY 1
 #define ASSERT 2
 #define BOOL 3
@@ -41,7 +43,6 @@
 #define VARIABLE 38
 #define VOID 39
 #define WRITE 40
-
 
 typedef struct {
   int type;

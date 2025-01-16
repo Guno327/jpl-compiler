@@ -6,7 +6,9 @@
 
 int keyword(char* text){
   int ret = 0;
-  char* wrd_upper = malloc(sizeof(text) + 1);
+  int len = sizeof(text) + 1;
+  char* wrd_upper = malloc(len);
+  memset(wrd_upper, 0, len);
   for(int j = 0; j < strlen(text); j++)
     wrd_upper[j] = toupper(text[j]);
   
@@ -64,7 +66,9 @@ int keyword(char* text){
 }
 
 char* print_token(Token* t){
-  char* token_str = malloc(20 + sizeof(t->text));
+  size_t len = BUFSIZ + (sizeof(t->text));
+  char* token_str = malloc(len);
+  memset(token_str, 0 , len);
   switch (t->type){
     case ARRAY:
       sprintf(token_str, "ARRAY '%s'", t->text);
