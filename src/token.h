@@ -47,10 +47,10 @@
 typedef struct {
   int type;
   int start;
-  char* text;
+  char *text;
 } Token;
 
-char* print_token(Token* t);
-int keyword(char* text);
+char *print_token(Token *t);
+int keyword(char *text);
 
 #endif
