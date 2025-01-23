@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
   // Print out
   for (int i = 0; i < tokens->size; i++) {
-    Token *t = tokens->data[i];
+    Token *t = vector_get_token(tokens, i);
     char *t_str = print_token(t);
     printf("%s\n", t_str);
     free(t_str);
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 
   // Clean up
   for (int i = 0; i < tokens->size; i++) {
-    Token *t = tokens->data[i];
+    Token *t = vector_get_token(tokens, i);
     if (t->type != NEWLINE && t->type != END_OF_FILE)
       free(t->text);
     free(t);

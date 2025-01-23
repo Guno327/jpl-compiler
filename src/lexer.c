@@ -362,7 +362,7 @@ int lex_pnct(const char *src, int i, Token *t) {
   return i;
 }
 
-Vector *lex(const char *src) {
+Vector* lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n'){
@@ -374,7 +374,7 @@ Vector *lex(const char *src) {
 
   Vector *tokens = malloc(sizeof(Vector));
   memset(tokens, 0, sizeof(Vector));
-  vector_init(tokens, BUFSIZ, sizeof(Token));
+  vector_init(tokens, BUFSIZ, TOKEN);
 
   int i = 0;
   while (i < strlen(src)) {

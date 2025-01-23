@@ -5,11 +5,11 @@
 #include "vector.h"
 
 Vector* parse(Vector* tokens);
-Cmd* parse_cmd(Token** tokens, int start);
-Expr* parse_expr(Token**, int start);
-VarLValue parse_lvalue(Token** tokens, int start);
+Cmd* parse_cmd(Vector* tokens, int* start);
+Expr* parse_expr(Vector*, int* start);
+VarLValue parse_lvalue(Vector* tokens, int* start);
 
-int peek_token(Token* t);
-void expect_token(Token* t, int tok_type);
+int peek_token(Vector* tokens, int idx);
+void expect_token(Vector* tokens, int idx, int tok_type);
 
 #endif
