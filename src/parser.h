@@ -2,8 +2,9 @@
 #define PARSER_H
 #include "ast.h"
 #include "token.h"
+#include "vector.h"
 
-Cmd** parse(Token** tokens);
+Vector* parse(Vector* tokens);
 Cmd* parse_cmd(Token** tokens, int start);
 Expr* parse_expr(Token**, int start);
 VarLValue parse_lvalue(Token** tokens, int start);

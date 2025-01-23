@@ -374,7 +374,7 @@ Vector *lex(const char *src) {
 
   Vector *tokens = malloc(sizeof(Vector));
   memset(tokens, 0, sizeof(Vector));
-  vector_init(tokens, BUFSIZ);
+  vector_init(tokens, BUFSIZ, sizeof(Token));
 
   int i = 0;
   while (i < strlen(src)) {
@@ -398,7 +398,7 @@ Vector *lex(const char *src) {
       i = lex_pnct(src, i, t);
       if (t->type == NEWLINE) {
         if (tokens->size > 0 &&
-            tokens->data[tokens->size - 1]->type == NEWLINE) {
+            ((Token*)(tokens->data[tokens->size - 1]))->type == NEWLINE) {
           free(t);
           continue;
         }

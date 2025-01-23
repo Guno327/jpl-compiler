@@ -5,13 +5,14 @@
 #include <stddef.h>
 
 typedef struct {
-  Token **data;
+  void **data;
+  size_t type_size;
   size_t size;
   size_t capacity;
 } Vector;
 
-void vector_init(Vector *v, size_t capacity);
-void vector_append(Vector *v, Token *item);
-void vector_free(Vector *v);
+void vector_init(Vector* v, size_t capacity, size_t type_size);
+void vector_append(Vector* v, void* item);
+void vector_free(Vector* v);
 
 #endif
