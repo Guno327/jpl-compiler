@@ -6,14 +6,10 @@ void vector_init(Vector *v, size_t capacity, size_t type_size) {
   v->data = malloc(capacity * type_size);
   v->size = 0;
   v->capacity = capacity;
+  v->type_size = type_size;
 }
 
 void vector_append(Vector *v, void *item) {
-  if (sizeof(item) != v->type_size){
-    fprintf(stderr, "Invalid vector write!\n");
-    return;
-  }
-
   if (v->size == v->capacity) {
     v->capacity *= 2;
     v->data = realloc(v->data, v->capacity * v->type_size);
