@@ -1,12 +1,13 @@
 #include "token.h"
+#include "error.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int keyword(char *text) {
-  int ret = 0;
-  int len = sizeof(text) + 1;
+TokenType keyword(char *text) {
+  TokenType ret = 0;
+  int len = strlen(text) + 1;
   char *wrd_upper = malloc(len);
   memset(wrd_upper, 0, len);
   for (int j = 0; j < strlen(text); j++)
@@ -190,6 +191,10 @@ char *print_token(Token *t) {
   case WRITE:
     sprintf(token_str, "WRITE '%s'", t->text);
     break;
+  default:;
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpcted token of type %d", t->type);
+    lex_error(msg);
   }
   return token_str;
 }

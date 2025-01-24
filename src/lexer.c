@@ -9,14 +9,18 @@
 // Lexes a string
 int lex_str(const char *src, int i, Token *t) {
   if (src[i] != '"') {
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
   }
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
-    if (src[i] == '\n')
-      lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
-    else if (src[i] == '"') {
+    if (src[i] == '\n') {
+      char *msg = malloc(BUFSIZ);
+      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+      lex_error(msg);
+    } else if (src[i] == '"') {
       i += 1;
       t->type = STRING;
       int len = i - t->start;
@@ -26,14 +30,19 @@ int lex_str(const char *src, int i, Token *t) {
       return i;
     }
   }
-  lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  char *msg = malloc(BUFSIZ);
+  sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+  lex_error(msg);
   return i;
 }
 
 // lexes a keyword or variable
 int lex_wrd(const char *src, int i, Token *t) {
-  if (!isalpha(src[i]))
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  if (!isalpha(src[i])) {
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
+  }
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
@@ -55,8 +64,11 @@ int lex_wrd(const char *src, int i, Token *t) {
 
 // Lexes an INTVAL or FLOATVAL
 int lex_num(const char *src, int i, Token *t) {
-  if (!isdigit(src[i]) && src[i] != '.')
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  if (!isdigit(src[i]) && src[i] != '.') {
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
+  }
 
   t->start = i;
   bool dot_found = false;
@@ -88,8 +100,11 @@ int lex_num(const char *src, int i, Token *t) {
 
 // Lexes a new line
 int lex_nl(const char *src, int i, Token *t) {
-  if (src[i] != '\n')
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  if (src[i] != '\n') {
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
+  }
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
@@ -102,8 +117,11 @@ int lex_nl(const char *src, int i, Token *t) {
 
 // lexes whitespace
 int lex_ws(const char *src, int i, Token *t) {
-  if (src[i] != ' ')
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  if (src[i] != ' ') {
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
+  }
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
@@ -179,8 +197,11 @@ int lex_op(const char *src, int i, Token *t) {
       memset(t->text, 0, 3);
       strncpy(t->text, src + i, 2);
       i += 2;
-    } else
-      lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+    } else {
+      char *msg = malloc(BUFSIZ);
+      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+      lex_error(msg);
+    }
     break;
   case '|':
     if (i + 1 < strlen(src) && src[i + 1] == '|') {
@@ -188,8 +209,11 @@ int lex_op(const char *src, int i, Token *t) {
       memset(t->text, 0, 3);
       strncpy(t->text, src + i, 2);
       i += 2;
-    } else
-      lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+    } else {
+      char *msg = malloc(BUFSIZ);
+      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+      lex_error(msg);
+    }
     break;
   case '/':
     if (i + 1 < strlen(src) && src[i + 1] == '/') {
@@ -222,8 +246,10 @@ int lex_op(const char *src, int i, Token *t) {
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
-  default:
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  default:;
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
   }
   return i;
 }
@@ -326,23 +352,28 @@ int lex_pnct(const char *src, int i, Token *t) {
   case '/':
     i = lex_op(src, i, t);
     break;
-  default:
-    lex_error("Unexpected char '%c' at '%d'\n", src[i], i);
+  default:;
+    char *msg = malloc(BUFSIZ);
+    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
+    lex_error(msg);
   }
 
   return i;
 }
 
-Vector *lex(const char *src) {
+TokenVector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
-    if (!isprint(src[k]) && src[k] != '\n')
-      lex_error("Invalid char%c at%d", ' ', k);
+    if (!isprint(src[k]) && src[k] != '\n') {
+      char *msg = malloc(BUFSIZ);
+      sprintf(msg, "Invalid char%c at%d", ' ', k);
+      lex_error(msg);
+    }
   }
 
-  Vector *tokens = malloc(sizeof(Vector));
-  memset(tokens, 0, sizeof(Vector));
-  vector_init(tokens, BUFSIZ);
+  TokenVector *tokens = malloc(sizeof(TokenVector));
+  memset(tokens, 0, sizeof(TokenVector));
+  vector_init_token(tokens, BUFSIZ);
 
   int i = 0;
   while (i < strlen(src)) {
@@ -352,13 +383,13 @@ Vector *lex(const char *src) {
     // Check letter
     if (isalpha(src[i])) {
       i = lex_wrd(src, i, t);
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
 
     // Check number
     else if (isdigit(src[i]) || src[i] == '.') {
       i = lex_num(src, i, t);
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
 
     // All other valid chars
@@ -366,7 +397,7 @@ Vector *lex(const char *src) {
       i = lex_pnct(src, i, t);
       if (t->type == NEWLINE) {
         if (tokens->size > 0 &&
-            tokens->data[tokens->size - 1]->type == NEWLINE) {
+            ((Token *)(tokens->data[tokens->size - 1]))->type == NEWLINE) {
           free(t);
           continue;
         }
@@ -375,13 +406,13 @@ Vector *lex(const char *src) {
         free(t);
         continue;
       }
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
   };
   Token *last = malloc(sizeof(Token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
-  vector_append(tokens, last);
+  vector_append_token(tokens, last);
 
   return tokens;
 }

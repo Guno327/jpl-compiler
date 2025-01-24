@@ -1,18 +1,36 @@
 #include "lexer.h"
+#include "parser.h"
 #include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+typedef enum { LEX, PARSE, TYPECHECK, ALL } RunMode;
+
 int main(int argc, char **argv) {
+  RunMode mode = LEX;
+
+  // Handle args
   if (argc < 2) {
     fprintf(stderr, "No file given\n");
     exit(EXIT_FAILURE);
   };
 
+  char *filename = NULL;
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-l"))
+      mode = LEX;
+    else if (!strcmp(argv[i], "-p"))
+      mode = PARSE;
+    else if (!strcmp(argv[i], "-t"))
+      mode = TYPECHECK;
+    else
+      filename = argv[i];
+  }
+
   // Open File
   FILE *src_file = NULL;
-  src_file = fopen(argv[1], "r");
+  src_file = fopen(filename, "r");
   if (src_file == NULL) {
     fprintf(stderr, "Could not open file: %s\n", argv[2]);
     exit(EXIT_FAILURE);
@@ -53,27 +71,35 @@ int main(int argc, char **argv) {
   fclose(src_file);
 
   // Lex
-  Vector *tokens = lex(src);
+  TokenVector *tokens = lex(src);
   free(src);
 
-  // Print out
-  for (int i = 0; i < tokens->size; i++) {
-    Token *t = tokens->data[i];
-    char *t_str = print_token(t);
-    printf("%s\n", t_str);
-    free(t_str);
+  if (mode == LEX) {
+    for (int i = 0; i < tokens->size; i++) {
+      Token *t = vector_get_token(tokens, i);
+      char *t_str = print_token(t);
+      printf("%s\n", t_str);
+      free(t_str);
+    }
+
+    printf("Compilation succeeded: lexical analysis complete\n");
+    exit(EXIT_SUCCESS);
   }
 
-  // Clean up
-  for (int i = 0; i < tokens->size; i++) {
-    Token *t = tokens->data[i];
-    if (t->type != NEWLINE && t->type != END_OF_FILE)
-      free(t->text);
-    free(t);
-  }
-  free(tokens->data);
+  // Parse
+  CmdVector *program = parse(tokens);
   free(tokens);
 
-  printf("Compilation succeeded: lexical analysis complete\n");
+  // Print
+  if (mode == PARSE) {
+    for (int i = 0; i < program->size; i++) {
+      printf("%s\n", print_cmd(vector_get_cmd(program, i)));
+    }
+    free(program);
+    printf("Compilation succeeded: parsing complete\n");
+
+    exit(EXIT_SUCCESS);
+  }
+
   exit(EXIT_SUCCESS);
 }
