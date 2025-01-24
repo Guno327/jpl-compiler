@@ -1,14 +1,14 @@
 #include "lexer.h"
-#include "vector.h"
 #include "parser.h"
+#include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum {LEX, PARSE, TYPECHECK, ALL} RunMode;
+typedef enum { LEX, PARSE, TYPECHECK, ALL } RunMode;
 
 int main(int argc, char **argv) {
-  RunMode mode = PARSE;
+  RunMode mode = LEX;
 
   // Handle args
   if (argc < 2) {
@@ -16,16 +16,16 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   };
 
-  char* filename = NULL;
-  for(int i = 0; i < argc; i++){
-    if(!strcmp(argv[i], "-l"))
+  char *filename = NULL;
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-l"))
       mode = LEX;
     else if (!strcmp(argv[i], "-p"))
-        mode = PARSE;
+      mode = PARSE;
     else if (!strcmp(argv[i], "-t"))
-        mode = TYPECHECK;
+      mode = TYPECHECK;
     else
-        filename = argv[i];
+      filename = argv[i];
   }
 
   // Open File
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
   TokenVector *tokens = lex(src);
   free(src);
 
-  if (mode == LEX){
+  if (mode == LEX) {
     for (int i = 0; i < tokens->size; i++) {
       Token *t = vector_get_token(tokens, i);
       char *t_str = print_token(t);
@@ -87,13 +87,19 @@ int main(int argc, char **argv) {
   }
 
   // Parse
-  CmdVector* program = parse(tokens);
+  CmdVector *program = parse(tokens);
+  free(tokens);
 
   // Print
-  for(int i = 0; i < program->size; i++){
-    printf("%s\n", print_cmd(vector_get_cmd(program, i)));
+  if (mode == PARSE) {
+    for (int i = 0; i < program->size; i++) {
+      printf("%s\n", print_cmd(vector_get_cmd(program, i)));
+    }
+    free(program);
+    printf("Compilation succeeded: parsing complete\n");
+
+    exit(EXIT_SUCCESS);
   }
-  printf("Compilation succeeded: parsing complete\n");
 
   exit(EXIT_SUCCESS);
 }

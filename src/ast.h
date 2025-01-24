@@ -3,99 +3,114 @@
 #include <stdbool.h>
 
 // Overall types
-typedef enum {READCMD, WRITECMD, LETCMD, ASSERTCMD, PRINTCMD, SHOWCMD, TIMECMD} CmdType;
+typedef enum {
+  READCMD,
+  WRITECMD,
+  LETCMD,
+  ASSERTCMD,
+  PRINTCMD,
+  SHOWCMD,
+  TIMECMD
+} CmdType;
 typedef struct {
   int start;
   CmdType type;
-  void* node;
+  void *node;
 } Cmd;
 
-typedef enum {INTEXPR, FLOATEXPR, TRUEEXPR, FALSEEXPR, VAREXPR, ARRAYLITERALEXPR} ExprType;
+typedef enum {
+  INTEXPR,
+  FLOATEXPR,
+  TRUEEXPR,
+  FALSEEXPR,
+  VAREXPR,
+  ARRAYLITERALEXPR
+} ExprType;
 typedef struct {
   int start;
   ExprType type;
-  void* node;
+  void *node;
 } Expr;
 
 // Special Cases (VAR)
-typedef struct{
+typedef struct {
   int start;
-  char* var;
+  char *var;
 } VarExpr;
 
 typedef struct {
   int start;
-  char* var; 
+  char *var;
 } VarLValue;
 
 // CMD types
 typedef struct {
   int start;
-  char* str;
-  VarLValue* lvalue;
+  char *str;
+  VarLValue *lvalue;
 } ReadCmd;
 
 typedef struct {
   int start;
-  Expr* expr;
-  char* str;
+  Expr *expr;
+  char *str;
 } WriteCmd;
 
 typedef struct {
   int start;
-  VarLValue* lvalue;
-  Expr* expr;
+  VarLValue *lvalue;
+  Expr *expr;
 } LetCmd;
 
 typedef struct {
   int start;
-  Expr* expr;
-  char* str;
+  Expr *expr;
+  char *str;
 } AssertCmd;
 
 typedef struct {
   int start;
-  char* str;
+  char *str;
 } PrintCmd;
 
 typedef struct {
   int start;
-  Expr* expr;
+  Expr *expr;
 } ShowCmd;
 
 typedef struct {
   int start;
-  Cmd* cmd;
+  Cmd *cmd;
 } TimeCmd;
 
 // EXPR types
-typedef struct{
+typedef struct {
   int start;
   long val;
 } IntExpr;
 
-typedef struct{
+typedef struct {
   int start;
   double val;
 } FloatExpr;
 
-typedef struct{
+typedef struct {
   int start;
 } TrueExpr;
 
-typedef struct{
+typedef struct {
   int start;
 } FalseExpr;
 
-typedef struct{
+typedef struct {
   int start;
   int list_size;
-  Expr** list;
+  Expr **list;
 } ArrayLiteralExpr;
 
-//Methods
-char* print_cmd(Cmd* cmd);
-char* print_expr(Expr* cmd);
-char* print_lvalue(VarLValue* lvalue);
+// Methods
+char *print_cmd(Cmd *cmd);
+char *print_expr(Expr *cmd);
+char *print_lvalue(VarLValue *lvalue);
 
 #endif

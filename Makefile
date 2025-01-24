@@ -3,7 +3,8 @@ BIN := ./
 OBJ := ./obj
 TEST= ./examples/red.jpl
 EXE := $(BIN)compiler
-CFLAGS := -Wall -O1 -g
+FLAGS = -p
+CFLAGS := -Wall -O3 -g
 $(CC)= clang
 SRCS := $(wildcard $(SRC)/*.c)
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
@@ -17,6 +18,6 @@ $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
 $(OBJ) $(SRC) $(BIN): 
 	mkdir $@
 run: $(EXE)
-	$(EXE) $(TEST)
+	$(EXE) $(FLAGS) $(TEST)
 clean:
 	rm -rf $(OBJ) $(EXE)
