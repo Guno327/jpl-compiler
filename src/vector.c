@@ -10,6 +10,9 @@ void vector_init(Vector *v, size_t capacity, VectorType type) {
     case CMD:
       v->data = malloc(capacity * sizeof(Cmd));
       break;
+    case EXPR:
+      v->data = malloc(capacity * sizeof(Expr));
+      break;
     default:
       return;
   }
@@ -28,6 +31,9 @@ void vector_append(Vector *v, void *item) {
         break;
       case CMD:
         v->data = realloc(v->data, v->capacity * sizeof(Cmd));
+        break;
+      case EXPR:
+        v->data = realloc(v->data, v->capacity * sizeof(Expr));
         break;
       default:
         return;
@@ -57,5 +63,14 @@ Cmd* vector_get_cmd(Vector* v, int idx){
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   Cmd* c = (Cmd*)v->data[idx];
+  return c;
+}
+
+Expr* vector_get_expr(Vector* v, int idx){
+  if (v->type != EXPR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  Expr* c = (Expr*)v->data[idx];
   return c;
 }

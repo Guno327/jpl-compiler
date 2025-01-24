@@ -25,7 +25,7 @@ typedef struct{
 
 typedef struct {
   int start;
-  VarExpr* var; 
+  char* var; 
 } VarLValue;
 
 // CMD types
@@ -81,23 +81,25 @@ typedef struct{
 
 typedef struct{
   int start;
-  bool val;
 } TrueExpr;
 
 typedef struct{
   int start;
-  bool val;
 } FalseExpr;
 
 typedef struct{
   int start;
+  int list_size;
   Expr** list;
 } ArrayLiteralExpr;
 
 //Methods
-char* print_sexpression(Cmd** program);
 char* print_cmd(Cmd* cmd);
 char* print_expr(Expr* cmd);
-char* print_lvalue(VarLValue lvalue);
+char* print_lvalue(VarLValue* lvalue);
+
+void free_cmd(Cmd* cmd);
+void free_lvalue(VarLValue* lval);
+void free_expr(Expr* expr);
 
 #endif

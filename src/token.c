@@ -193,3 +193,9 @@ char *print_token(Token *t) {
   }
   return token_str;
 }
+
+void free_token(Token* t){
+  if (t->type != NEWLINE && t->type != END_OF_FILE)
+    free(t->text);
+  free(t);
+}

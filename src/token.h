@@ -52,5 +52,6 @@ typedef struct {
 
 char *print_token(Token *t);
 int keyword(char *text);
+void free_token(Token *t);
 
 #endif
