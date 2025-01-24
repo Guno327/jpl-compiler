@@ -8,19 +8,19 @@ char* print_cmd(Cmd* cmd){
   char* result = malloc(BUFSIZ);
   switch (cmd->type){
     case READCMD:;
-      ReadCmd* rc = (ReadCmd*)cmd;
+      ReadCmd* rc = (ReadCmd*)cmd->node;
       char* rc_lval = print_lvalue(rc->lvalue);
-      sprintf(result, "(ReadCmd \"%s\" %s)", rc->str, rc_lval);
+      sprintf(result, "(ReadCmd %s %s)", rc->str, rc_lval);
       free(rc_lval);
     break;
     case WRITECMD:;
-      WriteCmd* wc = (WriteCmd*)cmd;
+      WriteCmd* wc = (WriteCmd*)cmd->node;
       char* wc_expr = print_expr(wc->expr);
-      sprintf(result, "(WriteCmd %s \"%s\")", wc_expr, wc->str);
+      sprintf(result, "(WriteCmd %s %s)", wc_expr, wc->str);
       free(wc_expr);
     break;
     case LETCMD:;
-      LetCmd* lc = (LetCmd*)cmd;
+      LetCmd* lc = (LetCmd*)cmd->node;
       char* lc_lval = print_lvalue(lc->lvalue);
       char* lc_expr = print_expr(lc->expr);
       sprintf(result, "(LetCmd %s %s)", lc_lval, lc_expr);
@@ -28,25 +28,26 @@ char* print_cmd(Cmd* cmd){
       free(lc_expr);
     break;
     case ASSERTCMD:;
-      AssertCmd* ac = (AssertCmd*)cmd;
+      AssertCmd* ac = (AssertCmd*)cmd->node;
       char* ac_expr = print_expr(ac->expr);
-      sprintf(result, "(AssertCmd %s \"%s\")", ac_expr, ac->str);
+      sprintf(result, "(AssertCmd %s %s)", ac_expr, ac->str);
     break;
     case PRINTCMD:;
-      PrintCmd* pc = (PrintCmd*)cmd;
-      sprintf(result, "(PrintCmd \"%s\")", pc->str);
+      PrintCmd* pc = (PrintCmd*)cmd->node;
+      sprintf(result, "(PrintCmd %s)", pc->str);
       break;
     case SHOWCMD:;
-      ShowCmd* sc = (ShowCmd*)cmd;
+      ShowCmd* sc = (ShowCmd*)cmd->node;
       char* sc_expr = print_expr(sc->expr);
       sprintf(result, "(ShowCmd %s)", sc_expr);
       free(sc_expr);
       break;
     case TIMECMD:;
-      TimeCmd* tc = (TimeCmd*)cmd;
+      TimeCmd* tc = (TimeCmd*)cmd->node;
       char* tc_cmd = print_cmd(tc->cmd);
       sprintf(result, "(TimeCmd %s)", tc_cmd);
       free(tc_cmd);
+      break;
     default:
       sprintf(result, "Unexpected CMD in s-print: %d", cmd->type);
       parse_error(result);
@@ -58,25 +59,25 @@ char* print_expr(Expr* expr){
   char* result = malloc(BUFSIZ);
   switch (expr->type){
     case INTEXPR:;
-      IntExpr* ie = (IntExpr*)expr;
-      sprintf(result, "(IntExpr %d)", ie->val);
+      IntExpr* ie = (IntExpr*)expr->node;
+      sprintf(result, "(IntExpr %lu)", ie->val);
       break;
     case FLOATEXPR:;
-      FloatExpr* fe = (FloatExpr*)expr;
+      FloatExpr* fe = (FloatExpr*)expr->node;
       sprintf(result, "(FloatExpr %lu)", (long)fe->val);
       break;
     case TRUEEXPR:
-      sprintf(result, "(TrueExpr true)");
+      sprintf(result, "(TrueExpr)");
       break;
     case FALSEEXPR:
-      sprintf(result, "(FalseExpr false)");
+      sprintf(result, "(FalseExpr)");
       break;
     case VAREXPR:;
-      VarExpr* ve = (VarExpr*)expr;
+      VarExpr* ve = (VarExpr*)expr->node;
       sprintf(result, "(VarExpr %s)", ve->var);
       break;
     case ARRAYLITERALEXPR:;
-      ArrayLiteralExpr* ale = (ArrayLiteralExpr*)expr;
+      ArrayLiteralExpr* ale = (ArrayLiteralExpr*)expr->node;
       Expr** exprs = ale->list;
       sprintf(result, "(ArrayLiteralExpr");
       for(int i = 0; i < ale->list_size; i++){
@@ -98,80 +99,4 @@ char* print_lvalue(VarLValue* lval){
   char* result = malloc(BUFSIZ);
   sprintf(result, "(VarLValue %s)", lval->var);
   return result;
-}
-
-void free_cmd(Cmd* cmd){
-  switch (cmd->type){
-    case READCMD:;
-      ReadCmd* rc = (ReadCmd*)cmd;
-      free(rc->str);
-      free_lvalue(rc->lvalue);
-      free(rc);
-    break;
-    case WRITECMD:;
-      WriteCmd* wc = (WriteCmd*)cmd;
-      free(wc->str);
-      free_expr(wc->expr);
-      free(wc);
-    break;
-    case LETCMD:;
-      LetCmd* lc = (LetCmd*)cmd;
-      free_expr(lc->expr);
-      free_lvalue(lc->lvalue);
-      free(lc);
-    break;
-    case ASSERTCMD:;
-      AssertCmd* ac = (AssertCmd*)cmd;
-      free(ac->str);
-      free_expr(ac->expr);
-      free(ac);
-    break;
-    case PRINTCMD:;
-      PrintCmd* pc = (PrintCmd*)cmd;
-      free(pc->str);
-      free(pc);
-      break;
-    case SHOWCMD:;
-      ShowCmd* sc = (ShowCmd*)cmd;
-      free_expr(sc->expr);
-      free(sc);
-      break;
-    case TIMECMD:;
-      TimeCmd* tc = (TimeCmd*)cmd;
-      free_cmd(tc->cmd);
-      free(tc);
-    default:
-      free(cmd);
-  }
-}
-
-void free_expr(Expr* expr){
-  switch (expr->type){
-    case INTEXPR:
-    case FLOATEXPR:
-    case TRUEEXPR:
-    case FALSEEXPR:
-      free(expr);
-      break;
-    case VAREXPR:;
-      VarExpr* ve = (VarExpr*)expr;
-      free(ve->var);
-      free(ve);
-      break;
-    case ARRAYLITERALEXPR:;
-      ArrayLiteralExpr* ale = (ArrayLiteralExpr*)expr;
-      Expr** exprs = ale->list;
-      for(int i = 0; i < ale->list_size; i++)
-        free_expr(exprs[i]);
-      free(exprs);
-      free(ale);
-      break;
-    default:
-      free(expr);
-  }
-}
-
-void free_lvalue(VarLValue* lval){
-  free(lval->var);
-  free(lval);
 }

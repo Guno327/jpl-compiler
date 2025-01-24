@@ -5,21 +5,34 @@
 #include "ast.h"
 #include <stddef.h>
 
-typedef enum {TOKEN, CMD, EXPR} VectorType;
 typedef struct {
-  VectorType type;
   Token** data;
   size_t size;
   size_t capacity;
-} Vector;
+} TokenVector;
 
-void vector_init(Vector* v, size_t capacity, VectorType type);
-void vector_append(Vector* v, void* item);
+typedef struct {
+  Cmd** data;
+  size_t size;
+  size_t capacity;
+} CmdVector;
 
-void vector_free(Vector* v);
+typedef struct {
+  Expr** data;
+  size_t size;
+  size_t capacity;
+} ExprVector;
 
-Token* vector_get_token(Vector* v, int idx);
-Cmd* vector_get_cmd(Vector* v, int idx);
-Expr* vector_get_expr(Vector* v, int idx);
+void vector_init_token(TokenVector* v, size_t capacity);
+void vector_init_cmd(CmdVector* v, size_t capacity);
+void vector_init_expr(ExprVector* v, size_t capacity);
+
+void vector_append_token(TokenVector* v, Token* item);
+void vector_append_cmd(CmdVector* v, Cmd* item);
+void vector_append_expr(ExprVector* v, Expr* item);
+
+Token* vector_get_token(TokenVector* v, int idx);
+Cmd* vector_get_cmd(CmdVector* v, int idx);
+Expr* vector_get_expr(ExprVector* v, int idx);
 
 #endif

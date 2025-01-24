@@ -1,27 +1,33 @@
 #include "parser.h"
 #include "ast.h"
 #include "error.h"
+#include "token.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-Vector* parse(Vector* tokens){
-  Vector* program = malloc(sizeof(Vector));
-  vector_init(program, 128, sizeof(Cmd));
+CmdVector* parse(TokenVector* tokens){
+  CmdVector* program = malloc(sizeof(CmdVector));
+  vector_init_cmd(program, BUFSIZ);
 
   int i = 0;
-  while(peek_token(tokens, i) == NEWLINE);
   for(; i < tokens->size; i++){
+    if (peek_token(tokens, i) == NEWLINE)
+      continue;
+    if (peek_token(tokens, i) == END_OF_FILE)
+      break;
+
     Cmd* c = malloc(sizeof(Cmd));
     memset(c, 0, sizeof(Cmd));
     i  = parse_cmd(tokens, i, c);
-    vector_append(program, c);
+    vector_append_cmd(program, c);
     expect_token(tokens, i, NEWLINE);
   }
   return program;
 }
 
-int parse_cmd(Vector* tokens, int i, Cmd* c){
+int parse_cmd(TokenVector* tokens, int i, Cmd* c){
   c->start = i;
   int type = peek_token(tokens, i);
 
@@ -66,6 +72,7 @@ int parse_cmd(Vector* tokens, int i, Cmd* c){
       
       expect_token(tokens, i, TO);
       i += 1;
+      expect_token(tokens, i, STRING);
       char* wc_str = vector_get_token(tokens, i)->text;
       wc->str = malloc(strlen(wc_str) + 1);
       memset(wc->str, 0, strlen(wc_str) + 1);
@@ -104,7 +111,7 @@ int parse_cmd(Vector* tokens, int i, Cmd* c){
       i = parse_expr(tokens, i, ac->expr);
 
       expect_token(tokens, i, COMMA);
-      expect_token(tokens, i, STRING);
+      expect_token(tokens, i+1, STRING);
       i += 1;
       char* ac_str = vector_get_token(tokens, i)->text;
       ac->str = malloc(strlen(ac_str) + 1);
@@ -127,7 +134,7 @@ int parse_cmd(Vector* tokens, int i, Cmd* c){
       memcpy(pc->str, pc_str, strlen(pc_str));
       i += 1;
       c->node = pc;
-      c->type = ASSERTCMD;
+      c->type = PRINTCMD;
       break;
     case SHOW:;
       ShowCmd* sc = malloc(sizeof(ShowCmd));
@@ -155,14 +162,14 @@ int parse_cmd(Vector* tokens, int i, Cmd* c){
       break;
     default:;
       char* msg = malloc(BUFSIZ);
-      sprintf(msg, "Unexpected token '%s' of type %d at %d", vector_get_token(tokens, i)->text ,type, i);
+    sprintf(msg, "Unexpected token '%s' at %d", vector_get_token(tokens, i)->text, i);
       parse_error(msg);
   }
 
   return i;
 }
 
-int parse_expr(Vector* tokens, int i, Expr* e){
+int parse_expr(TokenVector* tokens, int i, Expr* e){
   e->start = i;
   int type = peek_token(tokens, i);
   
@@ -173,7 +180,13 @@ int parse_expr(Vector* tokens, int i, Expr* e){
       ie->start = i;
 
       char* ie_str = vector_get_token(tokens, i)->text;
-      ie->val = atol(ie_str);
+      ie->val = strtol(ie_str, NULL, 10);
+      if(errno == ERANGE){
+        char* msg = malloc(BUFSIZ);
+        sprintf(msg, "Int '%s' out of range", ie_str);
+        parse_error(msg);
+      }
+
       i += 1;
       e->node = ie;
       e->type = INTEXPR;
@@ -184,7 +197,13 @@ int parse_expr(Vector* tokens, int i, Expr* e){
       fe->start = i;
 
       char* fe_str = vector_get_token(tokens, i)->text;
-      fe->val = atof(fe_str);
+      fe->val = strtod(fe_str, NULL);
+      if(errno == ERANGE){
+        char* msg = malloc(BUFSIZ);
+        sprintf(msg, "Int '%s' out of range", fe_str);
+        parse_error(msg);
+      }
+
       i += 1;
       e->node = fe;
       e->type = FLOATEXPR;
@@ -226,14 +245,14 @@ int parse_expr(Vector* tokens, int i, Expr* e){
       break;
     default:;
       char* msg = malloc(BUFSIZ);
-      sprintf(msg, "Unexpected token '%s' of type %d at %d", vector_get_token(tokens, i)->text ,type, i);
+      sprintf(msg, "Unexpected token '%s' at %d", vector_get_token(tokens, i)->text, i);
       parse_error(msg);
   }
 
   return i;
 }
 
-int parse_lvalue(Vector* tokens, int i, VarLValue* v){
+int parse_lvalue(TokenVector* tokens, int i, VarLValue* v){
   v->start = i;
   expect_token(tokens, i, VARIABLE);
   char* v_var = vector_get_token(tokens, i)->text;
@@ -243,10 +262,10 @@ int parse_lvalue(Vector* tokens, int i, VarLValue* v){
   return i + 1;
 }
 
-int parse_array(Vector* tokens, int i, ArrayLiteralExpr* a){
-  Vector* nodes = malloc(sizeof(Vector));
-  memset(nodes, 0, sizeof(Vector));
-  vector_init(nodes, 16, EXPR);
+int parse_array(TokenVector* tokens, int i, ArrayLiteralExpr* a){
+  ExprVector* nodes = malloc(sizeof(ExprVector));
+  memset(nodes, 0, sizeof(ExprVector));
+  vector_init_expr(nodes, BUFSIZ);
 
   expect_token(tokens, i, LSQUARE);
   i += 1;
@@ -262,7 +281,15 @@ int parse_array(Vector* tokens, int i, ArrayLiteralExpr* a){
       memset(e, 0, sizeof(Expr));
       e->start = i;
       i = parse_expr(tokens, i, e);
-      vector_append(nodes, e);
+      vector_append_expr(nodes, e);
+
+      if (peek_token(tokens, i) == RSQUARE){
+        a->list = (Expr**)(nodes->data);
+        a->list_size = nodes->size;
+        i += 1;
+        break;
+      }
+
       expect_token(tokens, i, COMMA);
       i += 1;
     }
@@ -271,16 +298,16 @@ int parse_array(Vector* tokens, int i, ArrayLiteralExpr* a){
   return i;
 }
 
-int peek_token(Vector* tokens, int idx){
+int peek_token(TokenVector* tokens, int idx){
   Token* t = vector_get_token(tokens, idx);
   return t->type;
 }
 
-void expect_token(Vector* tokens, int idx, int tok_type){
+void expect_token(TokenVector* tokens, int idx, int tok_type){
   Token* t = vector_get_token(tokens, idx);
   if (t->type != tok_type){
     char* msg = malloc(BUFSIZ);
-    sprintf(msg, "Unexpected token of type %d at %d", tok_type, t->start);
+    sprintf(msg, "Unexpected token '%s' at %d", vector_get_token(tokens, idx)->text, idx);
     parse_error(msg);
   }
 }

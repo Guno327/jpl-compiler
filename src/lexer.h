@@ -4,7 +4,7 @@
 #include "token.h"
 #include "vector.h"
 
-Vector* lex(const char *src);
+TokenVector* lex(const char *src);
 int lex_str(const char *src, int i, Token *t);
 int lex_wrd(const char *src, int i, Token *t);
 int lex_num(const char *src, int i, Token *t);

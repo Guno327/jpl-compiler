@@ -47,7 +47,7 @@ int lex_wrd(const char *src, int i, Token *t) {
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
-    if (isalpha(src[i]) || isdigit(src[i]) || src[i] == '_')
+    if (isalpha(src[i]) || isdigit(src[i]) || src[i] == '_' || src[i] == '.')
       continue;
     else
       break;
@@ -247,7 +247,7 @@ int lex_op(const char *src, int i, Token *t) {
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
-  default:
+  default:;
     char* msg = malloc(BUFSIZ);
 		sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
 		lex_error(msg);
@@ -353,7 +353,7 @@ int lex_pnct(const char *src, int i, Token *t) {
   case '/':
     i = lex_op(src, i, t);
     break;
-  default:
+  default:;
     char* msg = malloc(BUFSIZ);
 		sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
 		lex_error(msg);
@@ -362,7 +362,7 @@ int lex_pnct(const char *src, int i, Token *t) {
   return i;
 }
 
-Vector* lex(const char *src) {
+TokenVector* lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n'){
@@ -372,9 +372,9 @@ Vector* lex(const char *src) {
     }
   }
 
-  Vector *tokens = malloc(sizeof(Vector));
-  memset(tokens, 0, sizeof(Vector));
-  vector_init(tokens, BUFSIZ, TOKEN);
+  TokenVector *tokens = malloc(sizeof(TokenVector));
+  memset(tokens, 0, sizeof(TokenVector));
+  vector_init_token(tokens, BUFSIZ);
 
   int i = 0;
   while (i < strlen(src)) {
@@ -384,13 +384,13 @@ Vector* lex(const char *src) {
     // Check letter
     if (isalpha(src[i])) {
       i = lex_wrd(src, i, t);
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
 
     // Check number
     else if (isdigit(src[i]) || src[i] == '.') {
       i = lex_num(src, i, t);
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
 
     // All other valid chars
@@ -407,13 +407,13 @@ Vector* lex(const char *src) {
         free(t);
         continue;
       }
-      vector_append(tokens, t);
+      vector_append_token(tokens, t);
     }
   };
   Token *last = malloc(sizeof(Token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
-  vector_append(tokens, last);
+  vector_append_token(tokens, last);
 
   return tokens;
 }

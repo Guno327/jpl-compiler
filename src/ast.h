@@ -71,12 +71,12 @@ typedef struct {
 // EXPR types
 typedef struct{
   int start;
-  int val;
+  long val;
 } IntExpr;
 
 typedef struct{
   int start;
-  float val;
+  double val;
 } FloatExpr;
 
 typedef struct{
@@ -97,9 +97,5 @@ typedef struct{
 char* print_cmd(Cmd* cmd);
 char* print_expr(Expr* cmd);
 char* print_lvalue(VarLValue* lvalue);
-
-void free_cmd(Cmd* cmd);
-void free_lvalue(VarLValue* lval);
-void free_expr(Expr* expr);
 
 #endif

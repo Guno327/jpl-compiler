@@ -6,7 +6,7 @@
 
 int keyword(char *text) {
   int ret = 0;
-  int len = sizeof(text) + 1;
+  int len = strlen(text) + 1;
   char *wrd_upper = malloc(len);
   memset(wrd_upper, 0, len);
   for (int j = 0; j < strlen(text); j++)
@@ -192,10 +192,4 @@ char *print_token(Token *t) {
     break;
   }
   return token_str;
-}
-
-void free_token(Token* t){
-  if (t->type != NEWLINE && t->type != END_OF_FILE)
-    free(t->text);
-  free(t);
 }

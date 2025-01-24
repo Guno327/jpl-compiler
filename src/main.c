@@ -8,7 +8,7 @@
 typedef enum {LEX, PARSE, TYPECHECK, ALL} RunMode;
 
 int main(int argc, char **argv) {
-  RunMode mode = ALL;
+  RunMode mode = PARSE;
 
   // Handle args
   if (argc < 2) {
@@ -24,12 +24,8 @@ int main(int argc, char **argv) {
         mode = PARSE;
     else if (!strcmp(argv[i], "-t"))
         mode = TYPECHECK;
-    else if (strchr(argv[i], '-') == NULL)
+    else
         filename = argv[i];
-    else{
-        printf("Unknown flag: %s\n", argv[i]);
-      exit(EXIT_SUCCESS);
-    }
   }
 
   // Open File
@@ -75,7 +71,7 @@ int main(int argc, char **argv) {
   fclose(src_file);
 
   // Lex
-  Vector *tokens = lex(src);
+  TokenVector *tokens = lex(src);
   free(src);
 
   if (mode == LEX){
@@ -86,26 +82,18 @@ int main(int argc, char **argv) {
       free(t_str);
     }
 
-    // Clean up
-    for (int i = 0; i < tokens->size; i++) {
-      Token *t = vector_get_token(tokens, i);
-      free_token(t);
-    }
-    free(tokens->data);
-    free(tokens);
-
     printf("Compilation succeeded: lexical analysis complete\n");
     exit(EXIT_SUCCESS);
   }
 
   // Parse
-  Vector* program = parse(tokens);
+  CmdVector* program = parse(tokens);
 
-  // Clean up tokens
-  for (int i = 0; i < tokens->size; i++) {
-    Token *t = vector_get_token(tokens, i);
-    free_token(t);
+  // Print
+  for(int i = 0; i < program->size; i++){
+    printf("%s\n", print_cmd(vector_get_cmd(program, i)));
   }
-  free(tokens->data);
-  free(tokens);
+  printf("Compilation succeeded: parsing complete\n");
+
+  exit(EXIT_SUCCESS);
 }
