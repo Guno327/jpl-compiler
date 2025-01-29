@@ -1,4 +1,5 @@
 #include "parse_lvalue.h"
+#include "alloc.h"
 #include "ast.h"
 #include "compiler_error.h"
 #include "parser.h"
@@ -10,13 +11,11 @@ int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
   v->start = i;
   expect_token(tokens, i, VARIABLE);
   char *v_var = vector_get_token(tokens, i)->text;
-  char *var = malloc(strlen(v_var) + 1);
-  memset(var, 0, strlen(v_var) + 1);
+  char *var = alloc(strlen(v_var) + 1);
   memcpy(var, v_var, strlen(v_var));
 
   if (i < tokens->size - 1 && peek_token(tokens, i + 1) == LSQUARE) {
-    ArrayLValue *alv = malloc(sizeof(ArrayLValue));
-    memset(alv, 0, sizeof(ArrayLValue));
+    ArrayLValue *alv = alloc(sizeof(ArrayLValue));
     alv->start = i;
     alv->var = var;
 
@@ -34,8 +33,7 @@ int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
 
         char *str = vector_get_token(tokens, i)->text;
         int len = strlen(str);
-        char *cur_var = malloc(len + 1);
-        memset(cur_var, 0, len + 1);
+        char *cur_var = alloc(len + 1);
         memcpy(cur_var, str, len);
         vars[count - 1] = cur_var;
 
@@ -48,8 +46,7 @@ int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
         i += 1;
         goto finish;
       default:;
-        char *msg = malloc(BUFSIZ);
-        memset(msg, 0, BUFSIZ);
+        char *msg = alloc(BUFSIZ);
         sprintf(msg, "Unexpected token '%s' at '%d'",
                 vector_get_token(tokens, i)->text, i);
         parse_error(msg);
@@ -62,8 +59,7 @@ int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
   }
 
   else if (peek_token(tokens, i) == VARIABLE) {
-    VarLValue *lvl = malloc(sizeof(VarLValue));
-    memset(lvl, 0, sizeof(VarLValue));
+    VarLValue *lvl = alloc(sizeof(VarLValue));
     lvl->start = i;
     lvl->var = var;
 

@@ -1,4 +1,5 @@
 #include "token.h"
+#include "alloc.h"
 #include "compiler_error.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -8,8 +9,7 @@
 TokenType keyword(char *text) {
   TokenType ret = 0;
   int len = strlen(text) + 1;
-  char *wrd_upper = malloc(len);
-  memset(wrd_upper, 0, len);
+  char *wrd_upper = alloc(len);
   for (int j = 0; j < strlen(text); j++)
     wrd_upper[j] = toupper(text[j]);
 
@@ -68,8 +68,7 @@ TokenType keyword(char *text) {
 
 char *print_token(Token *t) {
   size_t len = BUFSIZ + (sizeof(t->text));
-  char *token_str = malloc(len);
-  memset(token_str, 0, len);
+  char *token_str = alloc(len);
   switch (t->type) {
   case ARRAY:
     sprintf(token_str, "ARRAY '%s'", t->text);
@@ -192,7 +191,7 @@ char *print_token(Token *t) {
     sprintf(token_str, "WRITE '%s'", t->text);
     break;
   default:;
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpcted token of type %d", t->type);
     lex_error(msg);
   }

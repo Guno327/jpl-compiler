@@ -1,9 +1,10 @@
 #include "vector.h"
+#include "alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 void vector_init_token(TokenVector *v, size_t capacity) {
-  v->data = malloc(capacity * sizeof(Token));
+  v->data = alloc(capacity * sizeof(Token));
   v->size = 0;
   v->capacity = capacity;
 }

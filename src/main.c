@@ -1,3 +1,4 @@
+#include "alloc.h"
 #include "lexer.h"
 #include "parser.h"
 #include "vector.h"
@@ -37,10 +38,8 @@ int main(int argc, char **argv) {
   };
 
   // Read File
-  char *src = malloc(BUFSIZ);
-  char *buf = malloc(BUFSIZ);
-  memset(src, 0, BUFSIZ);
-  memset(buf, 0, BUFSIZ);
+  char *src = alloc(BUFSIZ);
+  char *buf = alloc(BUFSIZ);
 
   int read = 0;
   char *ptr = NULL;
