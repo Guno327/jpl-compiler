@@ -78,13 +78,15 @@ char *print_expr(Expr *expr) {
     break;
   case ARRAYLITERALEXPR:;
     ArrayLiteralExpr *ale = (ArrayLiteralExpr *)expr->node;
-    Expr **exprs = ale->exprs;
     sprintf(result, "(ArrayLiteralExpr");
-    for (int i = 0; i < ale->exprs_size; i++) {
-      char *expr_str = print_expr(exprs[i]);
-      strcat(result, " ");
-      strcat(result, expr_str);
-      free(expr_str);
+    if (ale->list != NULL) {
+      Expr **exprs = ale->list->exprs;
+      for (int i = 0; i < ale->list->exprs_size; i++) {
+        char *expr_str = print_expr(exprs[i]);
+        strcat(result, " ");
+        strcat(result, expr_str);
+        free(expr_str);
+      }
     }
     strcat(result, ")");
     break;

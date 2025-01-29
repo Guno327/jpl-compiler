@@ -60,20 +60,87 @@ int parse_expr(TokenVector *tokens, int i, Expr *e) {
     i += 1;
     break;
   case VARIABLE:;
-    VarExpr *ve = alloc(sizeof(VarExpr));
-    ve->start = i;
-    char *ve_var = vector_get_token(tokens, i)->text;
-    ve->var = alloc(strlen(ve_var) + 1);
-    memcpy(ve->var, ve_var, strlen(ve_var));
-    e->node = ve;
-    e->type = VAREXPR;
+    char *v_str = vector_get_token(tokens, i)->text;
+    char *v_var = alloc(strlen(v_str) + 1);
+    memcpy(v_var, v_str, strlen(v_str));
+
+    switch (peek_token(tokens, i + 1)) {
+    case LCURLY:;
+      StructLiteralExpr *sle = alloc(sizeof(StructLiteralExpr));
+      sle->start = i;
+      sle->var = v_var;
+      i += 2;
+
+      sle->list = NULL;
+      if (peek_token(tokens, i) != RCURLY) {
+        sle->list = alloc(sizeof(ExprList));
+        i = parse_expr_list(tokens, i, sle->list);
+        expect_token(tokens, i, RCURLY);
+      }
+
+      e->type = STRUCTLITERALEXPR;
+      e->node = sle;
+      i += 1;
+      break;
+    case LPAREN:;
+      CallExpr *ce = alloc(sizeof(CallExpr));
+      ce->start = i;
+      ce->var = v_var;
+      i += 2;
+
+      ce->list = NULL;
+      if (peek_token(tokens, i) != RPAREN) {
+        ce->list = alloc(sizeof(ExprList));
+        i = parse_expr_list(tokens, i, ce->list);
+        expect_token(tokens, i, RPAREN);
+      }
+
+      e->type = CALLEXPR;
+      e->node = ce;
+      i += 1;
+      break;
+    default:;
+      VarExpr *ve = alloc(sizeof(VarExpr));
+      ve->start = i;
+      ve->var = v_var;
+      e->node = ve;
+      e->type = VAREXPR;
+      i += 1;
+    }
+    break;
+  case LPAREN:;
+    i += 1;
+    Expr *new_e = alloc(sizeof(Expr));
+    i = parse_expr(tokens, i, new_e);
+    expect_token(tokens, i, RPAREN);
+
+    e->type = EXPR;
+    e->node = new_e;
     i += 1;
     break;
   case LSQUARE:;
     ArrayLiteralExpr *ale = alloc(sizeof(ArrayLiteralExpr));
-    i = parse_array(tokens, i, ale);
+    ale->start = i;
+    i += 1;
+
+    ale->list = NULL;
+    if (peek_token(tokens, i) != RSQUARE) {
+      ale->list = alloc(sizeof(ExprList));
+      i = parse_expr_list(tokens, i, ale->list);
+
+      expect_token(tokens, i, RSQUARE);
+    }
+
     e->node = ale;
     e->type = ARRAYLITERALEXPR;
+    i += 1;
+    break;
+  case VOID:;
+    VoidExpr *vde = alloc(sizeof(VoidExpr));
+    vde->start = i;
+    e->type = VOIDEXPR;
+    e->node = vde;
+    i += 1;
     break;
   default:;
     char *msg = alloc(BUFSIZ);
@@ -82,37 +149,69 @@ int parse_expr(TokenVector *tokens, int i, Expr *e) {
     parse_error(msg);
   }
 
+  // Check dot and array index
+  i = parse_expr_cont(tokens, i, e);
+
   return i;
 }
 
-int parse_array(TokenVector *tokens, int i, ArrayLiteralExpr *a) {
-  ExprVector *nodes = alloc(sizeof(ExprVector));
-  vector_init_expr(nodes, BUFSIZ);
+int parse_expr_cont(TokenVector *tokens, int i, Expr *e) {
+  int type = peek_token(tokens, i);
+  if (type != DOT && type != LSQUARE)
+    return i;
+  if (type == DOT) {
+    DotExpr *de = alloc(sizeof(DotExpr));
+    de->start = e->start;
+    de->expr = e->node;
+    i += 1;
 
-  expect_token(tokens, i, LSQUARE);
-  i += 1;
-  while (i < tokens->size - 1) {
-    if (peek_token(tokens, i) == RSQUARE) {
-      a->exprs = (Expr **)(nodes->data);
-      a->exprs_size = nodes->size;
-      i += 1;
-      break;
-    } else {
-      Expr *e = alloc(sizeof(Expr));
-      e->start = i;
-      i = parse_expr(tokens, i, e);
-      vector_append_expr(nodes, e);
+    expect_token(tokens, i, VARIABLE);
+    char *de_str = vector_get_token(tokens, i)->text;
+    de->var = alloc(strlen(de_str) + 1);
+    memcpy(de->var, de_str, strlen(de_str));
 
-      if (peek_token(tokens, i) == RSQUARE) {
-        a->exprs = (Expr **)(nodes->data);
-        a->exprs_size = nodes->size;
-        i += 1;
-        break;
-      }
+    e->type = DOTEXPR;
+    e->node = de;
+    i += 1;
+  } else if (type == LSQUARE) {
+    ArrayIndexExpr *aie = alloc(sizeof(ArrayIndexExpr));
+    aie->start = aie->start;
+    aie->expr = e->node;
+    i += 1;
 
-      expect_token(tokens, i, COMMA);
-      i += 1;
+    aie->list = NULL;
+    if (peek_token(tokens, i) != RSQUARE) {
+      aie->list = alloc(sizeof(ExprList));
+      i = parse_expr_list(tokens, i, aie->list);
     }
+    expect_token(tokens, i, RSQUARE);
+
+    e->type = ARRAYINDEXEXPR;
+    e->node = aie;
+    i += 1;
+  }
+
+  i = parse_expr_cont(tokens, i, e);
+  return i;
+}
+
+int parse_expr_list(TokenVector *tokens, int i, ExprList *list) {
+  ExprVector *nodes = alloc(sizeof(ExprVector));
+  vector_init_expr(nodes, 8);
+
+  while (i < tokens->size - 1) {
+    Expr *e = alloc(sizeof(Expr));
+    e->start = i;
+    i = parse_expr(tokens, i, e);
+    vector_append_expr(nodes, e);
+
+    if (peek_token(tokens, i) != COMMA) {
+      list->exprs_size = nodes->size;
+      list->exprs = nodes->data;
+      break;
+    }
+
+    i += 1;
   }
 
   return i;

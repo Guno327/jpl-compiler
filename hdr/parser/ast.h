@@ -26,6 +26,7 @@ typedef enum {
   TRUEEXPR,
   FALSEEXPR,
   VAREXPR,
+  EXPR,
   ARRAYLITERALEXPR,
   VOIDEXPR,
   STRUCTLITERALEXPR,
@@ -224,9 +225,13 @@ typedef struct {
 } FalseExpr;
 
 typedef struct {
-  int start;
   int exprs_size;
   Expr **exprs;
+} ExprList;
+
+typedef struct {
+  int start;
+  ExprList *list;
 } ArrayLiteralExpr;
 
 typedef struct {
@@ -236,8 +241,7 @@ typedef struct {
 typedef struct {
   int start;
   char *var;
-  int exprs_size;
-  Expr **exprs;
+  ExprList *list;
 } StructLiteralExpr;
 
 typedef struct {
@@ -246,18 +250,17 @@ typedef struct {
   char *var;
 } DotExpr;
 
+// back to standard exprs
 typedef struct {
   int start;
   Expr *expr;
-  int exprs_size;
-  Expr **exprs;
+  ExprList *list;
 } ArrayIndexExpr;
 
 typedef struct {
   int start;
   char *var;
-  int list_size;
-  Expr *list;
+  ExprList *list;
 } CallExpr;
 
 // Methods
