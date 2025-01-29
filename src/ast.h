@@ -118,11 +118,20 @@ typedef struct {
   int start;
 } FloatType;
 
+// Array grammar needs some work to be LL1
 typedef struct {
   int start;
   int rank;
+  void *typearr;
+} TypeArr;
+
+typedef struct {
+  int start;
+  Type *type;
+  TypeArr *arr;
 } ArrayType;
 
+// Back to standard types
 typedef struct {
   int start;
 } VoidType;
