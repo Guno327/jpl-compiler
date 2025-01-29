@@ -1,6 +1,6 @@
 #include "parse_cmd.h"
 #include "ast.h"
-#include "error.h"
+#include "compiler_error.h"
 #include "parse_expr.h"
 #include "parse_lvalue.h"
 #include "parser.h"

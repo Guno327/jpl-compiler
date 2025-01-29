@@ -1,23 +1,25 @@
-SRC := ./src
-BIN := ./
-OBJ := ./obj
 TEST= ./examples/red.jpl
-EXE := $(BIN)compiler
 FLAGS = -p
 CFLAGS := -Wall -O3 -g
+INCLUDES := -Ihdr -Ihdr/helper -Ihdr/lexer -Ihdr/parser
 $(CC)= clang
-SRCS := $(wildcard $(SRC)/*.c)
-OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
+SRC := $(shell find ./ -wholename "./src/*.c")
+OBJ := $(patsubst ./src/%, ./obj/%, $(patsubst %.c, %.o, $(SRC)))
+DIR := obj obj/parser obj/lexer obj/helper
 LIBS :=
-.PHONY: all clean
-compile: $(EXE)
-$(EXE): $(OBJS) | $(BIN)
-	$(CC) $(CFLAGS) $(LIBS)  $^ -o $@
-$(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
-	$(CC) $(CFLAGS) -c $< -o $@
-$(OBJ) $(SRC) $(BIN): 
-	mkdir $@
-run: $(EXE)
-	$(EXE) $(FLAGS) $(TEST)
+
+compile: compiler
+compiler: $(OBJ)
+	$(CC) $(CFLAGS) $(LIBS) $^ -o $@
+
+./obj/%.o: ./src/%.c | $(DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@ 
+
+$(DIR):
+	mkdir $(DIR)
+
+run: compiler
+	./compiler $(FLAGS) $(TEST)
+
 clean:
-	rm -rf $(OBJ) $(EXE)
+	rm -rf compiler $(DIR)

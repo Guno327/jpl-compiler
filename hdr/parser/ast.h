@@ -83,8 +83,8 @@ typedef struct {
 typedef struct {
   int start;
   char *var;
-  int lvals_size;
-  char **lvals;
+  int vars_size;
+  char **vars;
 } ArrayLValue;
 
 // Stmt types

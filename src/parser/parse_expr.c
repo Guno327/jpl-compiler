@@ -1,6 +1,6 @@
 #include "parse_expr.h"
 #include "ast.h"
-#include "error.h"
+#include "compiler_error.h"
 #include "parser.h"
 #include <errno.h>
 #include <stdio.h>

@@ -1,5 +1,5 @@
 #include "ast.h"
-#include "error.h"
+#include "compiler_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

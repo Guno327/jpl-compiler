@@ -2,6 +2,10 @@
   inherit (pkgs) lib stdenv;
 in
   pkgs.mkShell {
+    shellHook = ''
+      export C_INCLUDE_PATH=$(pwd)/hdr:$(pwd)/hdr/helper:$(pwd)/hdr/lexer:$(pwd)/hdr/parser
+    '';
+
     NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [
       stdenv.cc.cc
       pkgs.mlib

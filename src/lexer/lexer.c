@@ -1,5 +1,5 @@
 #include "lexer.h"
-#include "error.h"
+#include "compiler_error.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>

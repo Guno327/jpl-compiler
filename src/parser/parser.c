@@ -1,6 +1,6 @@
 #include "parser.h"
 #include "ast.h"
-#include "error.h"
+#include "compiler_error.h"
 #include "parse_cmd.h"
 #include "token.h"
 #include <stdio.h>

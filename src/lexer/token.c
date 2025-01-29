@@ -1,5 +1,5 @@
 #include "token.h"
-#include "error.h"
+#include "compiler_error.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
