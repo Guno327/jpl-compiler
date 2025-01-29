@@ -4,8 +4,8 @@
 #include "token.h"
 #include "vector.h"
 
-CmdVector *parse(TokenVector *tokens);
-int peek_token(TokenVector *tokens, int idx);
-void expect_token(TokenVector *tokens, int idx, int tok_type);
+Vector *parse(Vector *tokens);
+int peek_token(Vector *tokens, int idx);
+void expect_token(Vector *tokens, int idx, int tok_type);
 
 #endif

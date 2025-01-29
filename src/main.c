@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   fclose(src_file);
 
   // Lex
-  TokenVector *tokens = lex(src);
+  Vector *tokens = lex(src);
   free(src);
 
   if (mode == LEX) {
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   }
 
   // Parse
-  CmdVector *program = parse(tokens);
+  Vector *program = parse(tokens);
   free(tokens);
 
   // Print

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
+int parse_lvalue(Vector *tokens, int i, LValue *v) {
   v->start = i;
   expect_token(tokens, i, VARIABLE);
   char *v_var = vector_get_token(tokens, i)->text;

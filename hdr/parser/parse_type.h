@@ -3,7 +3,7 @@
 #include "token.h"
 #include "vector.h"
 
-int parse_type(TokenVector *tokens, int i, Type *t);
-int parse_type_arr(TokenVector *tokens, int i, TypeArr *ta);
+int parse_type(Vector *tokens, int i, Type *t);
+int parse_type_arr(Vector *tokens, int i, TypeArr *ta);
 
 #endif

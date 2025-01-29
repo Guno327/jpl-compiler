@@ -70,7 +70,6 @@ typedef struct {
 
 // Binding
 typedef struct {
-  int start;
   LValue *lval;
   Type *type;
 } Binding;
@@ -187,6 +186,7 @@ typedef struct {
   char *var;
   int binds_size;
   Binding **binds;
+  Type *type;
   int stmts_size;
   Stmt **stmts;
 } FnCmd;

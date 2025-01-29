@@ -6,9 +6,9 @@
 #include "token.h"
 #include <stdio.h>
 
-CmdVector *parse(TokenVector *tokens) {
-  CmdVector *program = alloc(sizeof(CmdVector));
-  vector_init_cmd(program, BUFSIZ);
+Vector *parse(Vector *tokens) {
+  Vector *program = alloc(sizeof(Vector));
+  vector_init(program, BUFSIZ, CMDVECTOR);
 
   int i = 0;
   for (; i < tokens->size; i++) {
@@ -19,18 +19,18 @@ CmdVector *parse(TokenVector *tokens) {
 
     Cmd *c = alloc(sizeof(Cmd));
     i = parse_cmd(tokens, i, c);
-    vector_append_cmd(program, c);
+    vector_append(program, c);
     expect_token(tokens, i, NEWLINE);
   }
   return program;
 }
 
-int peek_token(TokenVector *tokens, int idx) {
+int peek_token(Vector *tokens, int idx) {
   Token *t = vector_get_token(tokens, idx);
   return t->type;
 }
 
-void expect_token(TokenVector *tokens, int idx, int tok_type) {
+void expect_token(Vector *tokens, int idx, int tok_type) {
   Token *t = vector_get_token(tokens, idx);
   if (t->type != tok_type) {
     char *msg = alloc(BUFSIZ);

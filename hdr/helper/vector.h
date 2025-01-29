@@ -1,38 +1,35 @@
 #ifndef VECTOR_H
 #define VECTOR_H
-
 #include "ast.h"
 #include "token.h"
 #include <stddef.h>
 
-typedef struct {
-  Token **data;
-  size_t size;
-  size_t capacity;
-} TokenVector;
+typedef enum {
+  TOKENVECTOR,
+  CMDVECTOR,
+  EXPRVECTOR,
+  LVALUEVECTOR,
+  TYPEVECTOR,
+  STMTVECTOR,
+  STRVECTOR,
+} VectorType;
 
 typedef struct {
-  Cmd **data;
+  VectorType type;
+  void **data;
   size_t size;
   size_t capacity;
-} CmdVector;
+} Vector;
 
-typedef struct {
-  Expr **data;
-  size_t size;
-  size_t capacity;
-} ExprVector;
+void vector_init(Vector *v, size_t capacity, VectorType type);
+void vector_append(Vector *v, void *item);
 
-void vector_init_token(TokenVector *v, size_t capacity);
-void vector_init_cmd(CmdVector *v, size_t capacity);
-void vector_init_expr(ExprVector *v, size_t capacity);
-
-void vector_append_token(TokenVector *v, Token *item);
-void vector_append_cmd(CmdVector *v, Cmd *item);
-void vector_append_expr(ExprVector *v, Expr *item);
-
-Token *vector_get_token(TokenVector *v, int idx);
-Cmd *vector_get_cmd(CmdVector *v, int idx);
-Expr *vector_get_expr(ExprVector *v, int idx);
+Token *vector_get_token(Vector *v, int idx);
+Cmd *vector_get_cmd(Vector *v, int idx);
+Expr *vector_get_expr(Vector *v, int idx);
+LValue *vector_get_lvalue(Vector *v, int idx);
+Type *vector_get_type(Vector *v, int idx);
+Stmt *vector_get_stmt(Vector *v, int idx);
+char *vector_get_str(Vector *v, int idx);
 
 #endif

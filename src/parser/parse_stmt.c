@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int parse_stmt(TokenVector *tokens, int i, Stmt *s) {
+int parse_stmt(Vector *tokens, int i, Stmt *s) {
   s->start = i;
 
   switch (peek_token(tokens, i)) {

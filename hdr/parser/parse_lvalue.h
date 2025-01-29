@@ -3,6 +3,6 @@
 #include "ast.h"
 #include "vector.h"
 
-int parse_lvalue(TokenVector *tokens, int i, LValue *v);
+int parse_lvalue(Vector *tokens, int i, LValue *v);
 
 #endif

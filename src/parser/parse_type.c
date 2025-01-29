@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int parse_type(TokenVector *tokens, int i, Type *t) {
+int parse_type(Vector *tokens, int i, Type *t) {
   t->start = i;
   switch (peek_token(tokens, i)) {
   case INT:;
@@ -83,7 +83,7 @@ int parse_type(TokenVector *tokens, int i, Type *t) {
   return i;
 }
 
-int parse_type_arr(TokenVector *tokens, int i, TypeArr *ta) {
+int parse_type_arr(Vector *tokens, int i, TypeArr *ta) {
   ta->start = i;
   expect_token(tokens, i, LSQUARE);
   i += 1;

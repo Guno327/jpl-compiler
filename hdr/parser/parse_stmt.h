@@ -3,6 +3,6 @@
 #include "ast.h"
 #include "vector.h"
 
-int parse_stmt(TokenVector *tokens, int i, Stmt *s);
+int parse_stmt(Vector *tokens, int i, Stmt *s);
 
 #endif

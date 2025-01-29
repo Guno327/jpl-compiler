@@ -338,7 +338,7 @@ int lex_pnct(const char *src, int i, Token *t) {
   return i;
 }
 
-TokenVector *lex(const char *src) {
+Vector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
@@ -348,8 +348,8 @@ TokenVector *lex(const char *src) {
     }
   }
 
-  TokenVector *tokens = alloc(sizeof(TokenVector));
-  vector_init_token(tokens, BUFSIZ);
+  Vector *tokens = alloc(sizeof(Vector));
+  vector_init(tokens, BUFSIZ, TOKENVECTOR);
 
   int i = 0;
   while (i < strlen(src)) {
@@ -359,13 +359,13 @@ TokenVector *lex(const char *src) {
     // Check letter
     if (isalpha(src[i])) {
       i = lex_wrd(src, i, t);
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
 
     // Check number
     else if (isdigit(src[i]) || src[i] == '.') {
       i = lex_num(src, i, t);
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
 
     // All other valid chars
@@ -382,13 +382,13 @@ TokenVector *lex(const char *src) {
         free(t);
         continue;
       }
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
   };
   Token *last = alloc(sizeof(Token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
-  vector_append_token(tokens, last);
+  vector_append(tokens, last);
 
   return tokens;
 }

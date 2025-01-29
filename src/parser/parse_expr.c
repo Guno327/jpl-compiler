@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int parse_expr(TokenVector *tokens, int i, Expr *e) {
+int parse_expr(Vector *tokens, int i, Expr *e) {
   e->start = i;
   int type = peek_token(tokens, i);
 
@@ -155,7 +155,7 @@ int parse_expr(TokenVector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_expr_cont(TokenVector *tokens, int i, Expr *e) {
+int parse_expr_cont(Vector *tokens, int i, Expr *e) {
   int type = peek_token(tokens, i);
   if (type != DOT && type != LSQUARE)
     return i;
@@ -195,19 +195,19 @@ int parse_expr_cont(TokenVector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_expr_list(TokenVector *tokens, int i, ExprList *list) {
-  ExprVector *nodes = alloc(sizeof(ExprVector));
-  vector_init_expr(nodes, 8);
+int parse_expr_list(Vector *tokens, int i, ExprList *list) {
+  Vector *nodes = alloc(sizeof(Vector));
+  vector_init(nodes, 8, EXPRVECTOR);
 
   while (i < tokens->size - 1) {
     Expr *e = alloc(sizeof(Expr));
     e->start = i;
     i = parse_expr(tokens, i, e);
-    vector_append_expr(nodes, e);
+    vector_append(nodes, e);
 
     if (peek_token(tokens, i) != COMMA) {
       list->exprs_size = nodes->size;
-      list->exprs = nodes->data;
+      list->exprs = (Expr **)nodes->data;
       break;
     }
 
