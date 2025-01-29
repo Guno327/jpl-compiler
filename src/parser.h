@@ -9,6 +9,9 @@ int parse_cmd(TokenVector *tokens, int i, Cmd *c);
 int parse_expr(TokenVector *, int i, Expr *e);
 int parse_lvalue(TokenVector *tokens, int i, LValue *v);
 int parse_array(TokenVector *tokens, int i, ArrayLiteralExpr *a);
+int parse_type(TokenVector *tokens, int i, Type *t);
+int parse_stmt(TokenVector *tokens, int i, Type *t);
+int parse_binding(TokenVector *tokens, int i, Type *t);
 
 int peek_token(TokenVector *tokens, int idx);
 void expect_token(TokenVector *tokens, int idx, int tok_type);
