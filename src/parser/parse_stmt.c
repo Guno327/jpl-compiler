@@ -1,8 +1,11 @@
 #include "parse_stmt.h"
 #include "alloc.h"
+#include "compiler_error.h"
 #include "parse_expr.h"
 #include "parse_lvalue.h"
 #include "parser.h"
+#include <stdio.h>
+#include <string.h>
 
 int parse_stmt(TokenVector *tokens, int i, Stmt *s) {
   s->start = i;
@@ -31,7 +34,37 @@ int parse_stmt(TokenVector *tokens, int i, Stmt *s) {
     i += 1;
 
     as->expr = alloc(sizeof(Expr));
-  case RETURN:
-  default:
+    i = parse_expr(tokens, i, as->expr);
+
+    expect_token(tokens, i, COMMA);
+    i += 1;
+
+    expect_token(tokens, i, STRING);
+    char *as_str = vector_get_token(tokens, i)->text;
+    as->str = alloc(strlen(as_str) + 1);
+    memcpy(as->str, as_str, strlen(as_str));
+    i += 1;
+
+    s->type = ASSERTSTMT;
+    s->node = as;
+    break;
+  case RETURN:;
+    ReturnStmt *rs = alloc(sizeof(ReturnStmt));
+    rs->start = i;
+    i += 1;
+
+    rs->expr = alloc(sizeof(Expr));
+    i = parse_expr(tokens, i, rs->expr);
+
+    s->type = RETURNSTMT;
+    s->node = rs;
+    break;
+  default:;
+    char *msg = alloc(BUFSIZ);
+    sprintf(msg, "Unexpected token '%s' at %d",
+            vector_get_token(tokens, i)->text, i);
+    parse_error(msg);
   }
+
+  return i;
 }
