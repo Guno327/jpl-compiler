@@ -52,9 +52,9 @@ int parse_cmd(TokenVector *tokens, int i, Cmd *c) {
     expect_token(tokens, i, TO);
     expect_token(tokens, i + 1, VARIABLE);
     i += 1;
-    rc->lvalue = malloc(sizeof(VarLValue));
-    memset(rc->lvalue, 0, sizeof(VarLValue));
-    i = parse_lvalue(tokens, i, rc->lvalue);
+    rc->lval = malloc(sizeof(VarLValue));
+    memset(rc->lval, 0, sizeof(VarLValue));
+    i = parse_lvalue(tokens, i, rc->lval);
     c->node = rc;
     c->type = READCMD;
     break;
@@ -87,9 +87,9 @@ int parse_cmd(TokenVector *tokens, int i, Cmd *c) {
     lc->start = i;
     i += 1;
 
-    lc->lvalue = malloc(sizeof(VarLValue));
-    memset(lc->lvalue, 0, sizeof(VarLValue));
-    i = parse_lvalue(tokens, i, lc->lvalue);
+    lc->lval = malloc(sizeof(VarLValue));
+    memset(lc->lval, 0, sizeof(VarLValue));
+    i = parse_lvalue(tokens, i, lc->lval);
 
     expect_token(tokens, i, EQUALS);
     i += 1;
@@ -254,13 +254,17 @@ int parse_expr(TokenVector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_lvalue(TokenVector *tokens, int i, VarLValue *v) {
+int parse_lvalue(TokenVector *tokens, int i, LValue *v) {
   v->start = i;
+  v->type = VARLVALUE;
+  VarLValue *lvl = malloc(sizeof(VarLValue));
+  lvl->start = i;
   expect_token(tokens, i, VARIABLE);
   char *v_var = vector_get_token(tokens, i)->text;
-  v->var = malloc(strlen(v_var) + 1);
-  memset(v->var, 0, strlen(v_var) + 1);
-  memcpy(v->var, v_var, strlen(v_var));
+  lvl->var = malloc(strlen(v_var) + 1);
+  memset(lvl->var, 0, strlen(v_var) + 1);
+  memcpy(lvl->var, v_var, strlen(v_var));
+  v->node = lvl;
   return i + 1;
 }
 
@@ -273,8 +277,8 @@ int parse_array(TokenVector *tokens, int i, ArrayLiteralExpr *a) {
   i += 1;
   while (i < tokens->size - 1) {
     if (peek_token(tokens, i) == RSQUARE) {
-      a->list = (Expr **)(nodes->data);
-      a->list_size = nodes->size;
+      a->exprs = (Expr **)(nodes->data);
+      a->exprs_size = nodes->size;
       i += 1;
       break;
     } else {
@@ -285,8 +289,8 @@ int parse_array(TokenVector *tokens, int i, ArrayLiteralExpr *a) {
       vector_append_expr(nodes, e);
 
       if (peek_token(tokens, i) == RSQUARE) {
-        a->list = (Expr **)(nodes->data);
-        a->list_size = nodes->size;
+        a->exprs = (Expr **)(nodes->data);
+        a->exprs_size = nodes->size;
         i += 1;
         break;
       }

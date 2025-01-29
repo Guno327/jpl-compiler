@@ -67,12 +67,7 @@ typedef struct {
   void *node;
 } LValue;
 
-// Special Cases (VAR)
-typedef struct {
-  int start;
-  char *var;
-} VarExpr;
-
+// Binding
 typedef struct {
   int start;
   LValue *lval;
@@ -141,7 +136,7 @@ typedef struct {
 typedef struct {
   int start;
   char *str;
-  LValue *lvalue;
+  LValue *lval;
 } ReadCmd;
 
 typedef struct {
@@ -152,7 +147,7 @@ typedef struct {
 
 typedef struct {
   int start;
-  LValue *lvalue;
+  LValue *lval;
   Expr *expr;
 } LetCmd;
 
@@ -196,6 +191,11 @@ typedef struct {
 } StructCmd;
 
 // EXPR types
+typedef struct {
+  int start;
+  char *var;
+} VarExpr;
+
 typedef struct {
   int start;
   long val;
@@ -254,6 +254,6 @@ typedef struct {
 // Methods
 char *print_cmd(Cmd *cmd);
 char *print_expr(Expr *cmd);
-char *print_lvalue(LValue *lvalue);
+char *print_lvalue(LValue *lval);
 
 #endif

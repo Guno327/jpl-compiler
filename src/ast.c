@@ -9,7 +9,7 @@ char *print_cmd(Cmd *cmd) {
   switch (cmd->type) {
   case READCMD:;
     ReadCmd *rc = (ReadCmd *)cmd->node;
-    char *rc_lval = print_lvalue(rc->lvalue);
+    char *rc_lval = print_lvalue(rc->lval);
     sprintf(result, "(ReadCmd %s %s)", rc->str, rc_lval);
     free(rc_lval);
     break;
@@ -21,7 +21,7 @@ char *print_cmd(Cmd *cmd) {
     break;
   case LETCMD:;
     LetCmd *lc = (LetCmd *)cmd->node;
-    char *lc_lval = print_lvalue(lc->lvalue);
+    char *lc_lval = print_lvalue(lc->lval);
     char *lc_expr = print_expr(lc->expr);
     sprintf(result, "(LetCmd %s %s)", lc_lval, lc_expr);
     free(lc_lval);
@@ -78,9 +78,9 @@ char *print_expr(Expr *expr) {
     break;
   case ARRAYLITERALEXPR:;
     ArrayLiteralExpr *ale = (ArrayLiteralExpr *)expr->node;
-    Expr **exprs = ale->list;
+    Expr **exprs = ale->exprs;
     sprintf(result, "(ArrayLiteralExpr");
-    for (int i = 0; i < ale->list_size; i++) {
+    for (int i = 0; i < ale->exprs_size; i++) {
       char *expr_str = print_expr(exprs[i]);
       strcat(result, " ");
       strcat(result, expr_str);
@@ -95,8 +95,16 @@ char *print_expr(Expr *expr) {
   return result;
 }
 
-char *print_lvalue(VarLValue *lval) {
+char *print_lvalue(LValue *lval) {
   char *result = malloc(BUFSIZ);
-  sprintf(result, "(VarLValue %s)", lval->var);
+  switch (lval->type) {
+  case VARLVALUE:;
+    VarLValue *vlv = (VarLValue *)lval->node;
+    sprintf(result, "(VarLValue %s)", vlv->var);
+    break;
+  default:
+    sprintf(result, "Unexpected LVALUE in s-print: %d", lval->type);
+    parse_error(result);
+  }
   return result;
 }
