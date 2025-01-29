@@ -1,11 +1,12 @@
 #include "ast.h"
+#include "alloc.h"
 #include "compiler_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 char *print_cmd(Cmd *cmd) {
-  char *result = malloc(BUFSIZ);
+  char *result = alloc(BUFSIZ);
   switch (cmd->type) {
   case READCMD:;
     ReadCmd *rc = (ReadCmd *)cmd->node;
@@ -48,6 +49,33 @@ char *print_cmd(Cmd *cmd) {
     sprintf(result, "(TimeCmd %s)", tc_cmd);
     free(tc_cmd);
     break;
+  case FNCMD:;
+    FnCmd *fc = (FnCmd *)cmd->node;
+
+    sprintf(result, "(FnCmd %s ((", fc->var);
+    if (fc->binds != NULL) {
+      Binding **binds = fc->binds;
+      for (int i = 0; i < fc->binds_size; i++) {
+        char *cur_lv = print_lvalue(binds[i]->lval);
+        char *cur_t = print_type(binds[i]->type);
+        strcat(result, cur_lv);
+        strcat(result, " ");
+        strcat(result, cur_t);
+        if (i != fc->binds_size - 1)
+          strcat(result, " ");
+        free(cur_lv);
+        free(cur_t);
+      }
+    }
+    strcat(result, ")) ");
+
+    char *fc_type = print_type(fc->type);
+    strcat(result, fc_type);
+    free(fc_type);
+
+    char *fc_t = print_type(fc->type);
+
+  case STRUCTCMD:
   default:
     sprintf(result, "Unexpected CMD in s-print: %d", cmd->type);
     parse_error(result);
@@ -56,7 +84,7 @@ char *print_cmd(Cmd *cmd) {
 }
 
 char *print_expr(Expr *expr) {
-  char *result = malloc(BUFSIZ);
+  char *result = alloc(BUFSIZ);
   switch (expr->type) {
   case INTEXPR:;
     IntExpr *ie = (IntExpr *)expr->node;
@@ -90,6 +118,11 @@ char *print_expr(Expr *expr) {
     }
     strcat(result, ")");
     break;
+  case VOIDEXPR:
+  case STRUCTLITERALEXPR:
+  case DOTEXPR:
+  case ARRAYINDEXEXPR:
+  case CALLEXPR:
   default:
     sprintf(result, "Unexpected EXPR in s-print: %d", expr->type);
     parse_error(result);
@@ -98,14 +131,44 @@ char *print_expr(Expr *expr) {
 }
 
 char *print_lvalue(LValue *lval) {
-  char *result = malloc(BUFSIZ);
+  char *result = alloc(BUFSIZ);
   switch (lval->type) {
   case VARLVALUE:;
     VarLValue *vlv = (VarLValue *)lval->node;
     sprintf(result, "(VarLValue %s)", vlv->var);
     break;
+  case ARRAYLVALUE:
   default:
     sprintf(result, "Unexpected LVALUE in s-print: %d", lval->type);
+    parse_error(result);
+  }
+  return result;
+}
+
+char *print_stmt(Stmt *stmt) {
+  char *result = alloc(BUFSIZ);
+  switch (stmt->type) {
+  case LETSTMT:
+  case ASSERTSTMT:
+  case RETURNSTMT:
+  default:
+    sprintf(result, "Unexpected STMT in s-print: %d", stmt->type);
+    parse_error(result);
+  }
+  return result;
+}
+
+char *print_type(Type *type) {
+  char *result = alloc(BUFSIZ);
+  switch (type->type) {
+  case INTTYPE:
+  case FLOATTYPE:
+  case BOOLTYPE:
+  case ARRAYTYPE:
+  case VOIDTYPE:
+  case STRUCTTYPE:
+  default:
+    sprintf(result, "Unexpected STMT in s-print: %d", type->type);
     parse_error(result);
   }
   return result;
