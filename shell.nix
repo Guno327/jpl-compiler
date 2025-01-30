@@ -3,7 +3,7 @@
 in
   pkgs.mkShell {
     shellHook = ''
-      export C_INCLUDE_PATH=$(pwd)/hdr:$(pwd)/hdr/helper:$(pwd)/hdr/lexer:$(pwd)/hdr/parser
+      export C_INCLUDE_PATH=$(pwd)/hdr
     '';
 
     NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [

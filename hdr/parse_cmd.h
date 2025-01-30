@@ -6,6 +6,6 @@
 #include <stdlib.h>
 
 int parse_cmd(Vector *tokens, int i, Cmd *c);
-int parse_bindings(Vector *tokens, int i, Binding **b, int *b_size);
+int parse_bindings(Vector *tokens, int i, FnCmd *fc);
 
 #endif

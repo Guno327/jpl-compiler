@@ -162,13 +162,18 @@ int parse_expr_cont(Vector *tokens, int i, Expr *e) {
   if (type == DOT) {
     DotExpr *de = alloc(sizeof(DotExpr));
     de->start = e->start;
-    de->expr = e->node;
     i += 1;
 
     expect_token(tokens, i, VARIABLE);
     char *de_str = vector_get_token(tokens, i)->text;
     de->var = alloc(strlen(de_str) + 1);
     memcpy(de->var, de_str, strlen(de_str));
+
+    Expr *old_e = alloc(sizeof(Expr));
+    old_e->start = e->start;
+    old_e->type = e->type;
+    old_e->node = e->node;
+    de->expr = old_e;
 
     e->type = DOTEXPR;
     e->node = de;
@@ -185,6 +190,12 @@ int parse_expr_cont(Vector *tokens, int i, Expr *e) {
       i = parse_expr_list(tokens, i, aie->list);
     }
     expect_token(tokens, i, RSQUARE);
+
+    Expr *old_e = alloc(sizeof(Expr));
+    old_e->start = e->start;
+    old_e->type = e->type;
+    old_e->node = e->node;
+    aie->expr = old_e;
 
     e->type = ARRAYINDEXEXPR;
     e->node = aie;

@@ -12,6 +12,7 @@ typedef enum {
   TYPEVECTOR,
   STMTVECTOR,
   STRVECTOR,
+  BINDINGVECTOR,
 } VectorType;
 
 typedef struct {
@@ -31,5 +32,6 @@ LValue *vector_get_lvalue(Vector *v, int idx);
 Type *vector_get_type(Vector *v, int idx);
 Stmt *vector_get_stmt(Vector *v, int idx);
 char *vector_get_str(Vector *v, int idx);
+Binding *vector_get_binding(Vector *v, int idx);
 
 #endif

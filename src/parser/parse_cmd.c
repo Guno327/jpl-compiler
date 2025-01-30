@@ -141,14 +141,14 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
 
     fc->binds = NULL;
     if (peek_token(tokens, i) != RPAREN)
-      i = parse_bindings(tokens, i, fc->binds, &fc->binds_size);
+      i = parse_bindings(tokens, i, fc);
     expect_token(tokens, i, RPAREN);
     i += 1;
 
     expect_token(tokens, i, COLON);
     i += 1;
 
-    fc->type = alloc(sizeof(type));
+    fc->type = alloc(sizeof(Type));
     i = parse_type(tokens, i, fc->type);
 
     expect_token(tokens, i, LCURLY);
@@ -176,6 +176,8 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       parse_error(msg);
     }
     expect_token(tokens, i, RCURLY);
+    fc->stmts = (Stmt **)stmts->data;
+    fc->stmts_size = stmts->size;
 
     c->type = FNCMD;
     c->node = fc;
@@ -231,6 +233,13 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     }
     expect_token(tokens, i, RCURLY);
 
+    if (types->size != 0) {
+      stc->types = (Type **)types->data;
+      stc->vars = (char **)vars->data;
+      stc->types_size = types->size;
+      stc->vars_size = vars->size;
+    }
+
     c->type = STRUCTCMD;
     c->node = stc;
     i += 1;
@@ -245,20 +254,19 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
   return i;
 }
 
-int parse_bindings(Vector *tokens, int i, Binding **b, int *b_size) {
-  Vector *lvals = alloc(sizeof(Vector));
-  Vector *types = alloc(sizeof(Vector));
-  vector_init(lvals, 8, LVALUEVECTOR);
-  vector_init(types, 8, TYPEVECTOR);
+int parse_bindings(Vector *tokens, int i, FnCmd *fc) {
+  Vector *binds = alloc(sizeof(Vector));
+  vector_init(binds, 8, BINDINGVECTOR);
 
   while (i < tokens->size) {
-    LValue *lval = alloc(sizeof(LValue));
-    i = parse_lvalue(tokens, i, lval);
+    Binding *cur_b = alloc(sizeof(Binding));
+    cur_b->lval = alloc(sizeof(LValue));
+    cur_b->type = alloc(sizeof(Type));
+    i = parse_lvalue(tokens, i, cur_b->lval);
     expect_token(tokens, i, COLON);
     i += 1;
-
-    Type *type = alloc(sizeof(Type));
-    i = parse_type(tokens, i, type);
+    i = parse_type(tokens, i, cur_b->type);
+    vector_append(binds, cur_b);
 
     if (peek_token(tokens, i) != COMMA)
       break;
@@ -266,14 +274,8 @@ int parse_bindings(Vector *tokens, int i, Binding **b, int *b_size) {
     i += 1;
   }
 
-  *b_size = lvals->size;
-  b = alloc(sizeof(Binding *) * *b_size);
-  for (int j = 0; j < lvals->size; j++) {
-    Binding *cur_b = alloc(sizeof(Binding));
-    cur_b->lval = vector_get_lvalue(lvals, j);
-    cur_b->type = vector_get_type(types, j);
-    b[j] = cur_b;
-  }
+  fc->binds = (Binding **)binds->data;
+  fc->binds_size = binds->size;
 
   return i;
 }

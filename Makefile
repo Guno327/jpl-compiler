@@ -1,7 +1,7 @@
 TEST= ./examples/red.jpl
 FLAGS = -p
-CFLAGS := -Wall -O3 -g
-INCLUDES := -Ihdr -Ihdr/helper -Ihdr/lexer -Ihdr/parser
+CFLAGS := -Wall -O1 -g
+INCLUDES := -Ihdr
 $(CC)= clang
 SRC := $(shell find ./ -wholename "./src/*.c")
 OBJ := $(patsubst ./src/%, ./obj/%, $(patsubst %.c, %.o, $(SRC)))

@@ -24,6 +24,9 @@ void vector_init(Vector *v, size_t capacity, VectorType type) {
   case STMTVECTOR:
     size = sizeof(Stmt);
     break;
+  case BINDINGVECTOR:
+    size = sizeof(Binding);
+    break;
   case STRVECTOR:
     size = sizeof(char *);
     break;
@@ -56,6 +59,9 @@ void vector_append(Vector *v, void *item) {
     case STMTVECTOR:
       size = sizeof(Stmt);
       break;
+    case BINDINGVECTOR:
+      size = sizeof(Binding);
+      break;
     case STRVECTOR:
       size = sizeof(char *);
       break;
@@ -85,6 +91,9 @@ void vector_append(Vector *v, void *item) {
     break;
   case STMTVECTOR:
     ((Stmt **)v->data)[v->size++] = (Stmt *)item;
+    break;
+  case BINDINGVECTOR:
+    ((Binding **)v->data)[v->size++] = (Binding *)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -138,6 +147,14 @@ Stmt *vector_get_stmt(Vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((Stmt **)v->data)[idx];
+}
+
+Binding *vector_get_binding(Vector *v, int idx) {
+  if (v->type != BINDINGVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((Binding **)v->data)[idx];
 }
 
 char *vector_get_str(Vector *v, int idx) {

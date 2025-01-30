@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 #include <stdbool.h>
+#include <stdlib.h>
 
 // Overall types
 typedef enum {
@@ -118,20 +119,12 @@ typedef struct {
   int start;
 } FloatType;
 
-// Array grammar needs some work to be LL1
-typedef struct {
-  int start;
-  int rank;
-  void *typearr;
-} TypeArr;
-
 typedef struct {
   int start;
   Type *type;
-  TypeArr *arr;
+  int rank;
 } ArrayType;
 
-// Back to standard types
 typedef struct {
   int start;
 } VoidType;
@@ -269,5 +262,15 @@ char *print_expr(Expr *cmd);
 char *print_lvalue(LValue *lval);
 char *print_stmt(Stmt *stmt);
 char *print_type(Type *type);
+
+typedef enum {
+  CMDLIST,
+  EXPRLIST,
+  LVALUELIST,
+  STMTLIST,
+  TYPELIST,
+  VARLIST
+} ListType;
+char *print_list(void **list, size_t size, ListType type);
 
 #endif
