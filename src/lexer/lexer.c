@@ -1,5 +1,6 @@
 #include "lexer.h"
-#include "error.h"
+#include "alloc.h"
+#include "compiler_error.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -9,7 +10,7 @@
 // Lexes a string
 int lex_str(const char *src, int i, Token *t) {
   if (src[i] != '"') {
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -17,20 +18,19 @@ int lex_str(const char *src, int i, Token *t) {
 
   for (i += 1; i < strlen(src); i++) {
     if (src[i] == '\n') {
-      char *msg = malloc(BUFSIZ);
+      char *msg = alloc(BUFSIZ);
       sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
       lex_error(msg);
     } else if (src[i] == '"') {
       i += 1;
       t->type = STRING;
       int len = i - t->start;
-      t->text = malloc(len + 1);
-      memset(t->text, 0, len + 1);
+      t->text = alloc(len + 1);
       strncpy(t->text, src + t->start, len);
       return i;
     }
   }
-  char *msg = malloc(BUFSIZ);
+  char *msg = alloc(BUFSIZ);
   sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
   lex_error(msg);
   return i;
@@ -39,7 +39,7 @@ int lex_str(const char *src, int i, Token *t) {
 // lexes a keyword or variable
 int lex_wrd(const char *src, int i, Token *t) {
   if (!isalpha(src[i])) {
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -52,8 +52,7 @@ int lex_wrd(const char *src, int i, Token *t) {
       break;
   }
   int len = i - t->start;
-  char *wrd = malloc(len + 1);
-  memset(wrd, 0, len + 1);
+  char *wrd = alloc(len + 1);
   strncpy(wrd, src + t->start, len);
 
   t->type = keyword(wrd);
@@ -65,7 +64,7 @@ int lex_wrd(const char *src, int i, Token *t) {
 // Lexes an INTVAL or FLOATVAL
 int lex_num(const char *src, int i, Token *t) {
   if (!isdigit(src[i]) && src[i] != '.') {
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -92,8 +91,7 @@ int lex_num(const char *src, int i, Token *t) {
     t->type = INTVAL;
 
   int len = i - t->start;
-  t->text = malloc(len + 1);
-  memset(t->text, 0, len + 1);
+  t->text = alloc(len + 1);
   strncpy(t->text, src + t->start, len);
   return i;
 }
@@ -101,7 +99,7 @@ int lex_num(const char *src, int i, Token *t) {
 // Lexes a new line
 int lex_nl(const char *src, int i, Token *t) {
   if (src[i] != '\n') {
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -118,7 +116,7 @@ int lex_nl(const char *src, int i, Token *t) {
 // lexes whitespace
 int lex_ws(const char *src, int i, Token *t) {
   if (src[i] != ' ') {
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -140,77 +138,67 @@ int lex_op(const char *src, int i, Token *t) {
   switch (src[i]) {
   case '=':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
       t->type = EQUALS;
-      t->text = malloc(2);
-      memset(t->text, 0, 2);
+      t->text = alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '<':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = malloc(2);
-      memset(t->text, 0, 2);
+      t->text = alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '>':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = malloc(2);
-      memset(t->text, 0, 2);
+      t->text = alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '!':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = malloc(2);
-      memset(t->text, 0, 2);
+      t->text = alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '&':
     if (i + 1 < strlen(src) && src[i + 1] == '&') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      char *msg = malloc(BUFSIZ);
+      char *msg = alloc(BUFSIZ);
       sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
       lex_error(msg);
     }
     break;
   case '|':
     if (i + 1 < strlen(src) && src[i + 1] == '|') {
-      t->text = malloc(3);
-      memset(t->text, 0, 3);
+      t->text = alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      char *msg = malloc(BUFSIZ);
+      char *msg = alloc(BUFSIZ);
       sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
       lex_error(msg);
     }
@@ -231,8 +219,7 @@ int lex_op(const char *src, int i, Token *t) {
       t->type = WS;
     } else {
       t->type = OP;
-      t->text = malloc(2);
-      memset(t->text, 0, 2);
+      t->text = alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
@@ -241,13 +228,12 @@ int lex_op(const char *src, int i, Token *t) {
   case '+':
   case '*':
   case '%':
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   default:;
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -260,64 +246,55 @@ int lex_pnct(const char *src, int i, Token *t) {
     // Check punctuation
   case ':':
     t->type = COLON;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ',':
     t->type = COMMA;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '.':
     t->type = DOT;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '{':
     t->type = LCURLY;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '}':
     t->type = RCURLY;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '(':
     t->type = LPAREN;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ')':
     t->type = RPAREN;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '[':
     t->type = LSQUARE;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ']':
     t->type = RSQUARE;
-    t->text = malloc(2);
-    memset(t->text, 0, 2);
+    t->text = alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
@@ -353,7 +330,7 @@ int lex_pnct(const char *src, int i, Token *t) {
     i = lex_op(src, i, t);
     break;
   default:;
-    char *msg = malloc(BUFSIZ);
+    char *msg = alloc(BUFSIZ);
     sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
     lex_error(msg);
   }
@@ -361,35 +338,34 @@ int lex_pnct(const char *src, int i, Token *t) {
   return i;
 }
 
-TokenVector *lex(const char *src) {
+Vector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
-      char *msg = malloc(BUFSIZ);
+      char *msg = alloc(BUFSIZ);
       sprintf(msg, "Invalid char%c at%d", ' ', k);
       lex_error(msg);
     }
   }
 
-  TokenVector *tokens = malloc(sizeof(TokenVector));
-  memset(tokens, 0, sizeof(TokenVector));
-  vector_init_token(tokens, BUFSIZ);
+  Vector *tokens = alloc(sizeof(Vector));
+  vector_init(tokens, BUFSIZ, TOKENVECTOR);
 
   int i = 0;
   while (i < strlen(src)) {
-    Token *t = malloc(sizeof(Token));
+    Token *t = alloc(sizeof(Token));
     t->start = i;
 
     // Check letter
     if (isalpha(src[i])) {
       i = lex_wrd(src, i, t);
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
 
     // Check number
     else if (isdigit(src[i]) || src[i] == '.') {
       i = lex_num(src, i, t);
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
 
     // All other valid chars
@@ -406,13 +382,13 @@ TokenVector *lex(const char *src) {
         free(t);
         continue;
       }
-      vector_append_token(tokens, t);
+      vector_append(tokens, t);
     }
   };
-  Token *last = malloc(sizeof(Token));
+  Token *last = alloc(sizeof(Token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
-  vector_append_token(tokens, last);
+  vector_append(tokens, last);
 
   return tokens;
 }
