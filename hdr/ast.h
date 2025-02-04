@@ -33,8 +33,29 @@ typedef enum {
   STRUCTLITERALEXPR,
   DOTEXPR,
   ARRAYINDEXEXPR,
-  CALLEXPR
+  CALLEXPR,
+  UNOPEXPR,
+  BINOPEXPR,
+  IFEXPR,
+  ARRAYLOOPEXPR,
+  SUMLOOPEXPR
 } ExprType;
+typedef enum { NOTOP, NEGOP } UnOp;
+typedef enum {
+  MULTOP,
+  DIVOP,
+  MODOP,
+  ADDOP,
+  SUBOP,
+  GTOP,
+  LTOP,
+  GEOP,
+  LEOP,
+  EQOP,
+  NEOP,
+  ANDOP,
+  OROP
+} BinOp;
 typedef struct {
   int start;
   ExprType type;
@@ -242,6 +263,42 @@ typedef struct {
   Expr *expr;
   char *var;
 } DotExpr;
+
+typedef struct {
+  int start;
+  UnOp op;
+  Expr *rhs;
+} UnopExpr;
+
+typedef struct {
+  int start;
+  Expr *lhs;
+  BinOp op;
+  Expr *rhs;
+} BinopExpr;
+
+typedef struct {
+  int start;
+  Expr *if_expr;
+  Expr *then_expr;
+  Expr *else_expr;
+} IfExpr;
+
+typedef struct {
+  int start;
+  int vars_size;
+  char **vars;
+  ExprList *list;
+  Expr *expr;
+} ArrayLoopExpr;
+
+typedef struct {
+  int start;
+  int vars_size;
+  char **vars;
+  ExprList *list;
+  Expr *expr;
+} SumLoopExpr;
 
 // back to standard exprs
 typedef struct {

@@ -163,10 +163,8 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       i = parse_stmt(tokens, i, s);
       vector_append(stmts, s);
 
-      if (peek_token(tokens, i) == NEWLINE) {
-        i += 1;
-        continue;
-      }
+      expect_token(tokens, i, NEWLINE);
+      i += 1;
       if (peek_token(tokens, i) == RCURLY)
         break;
 
@@ -219,10 +217,8 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       i = parse_type(tokens, i, t);
       vector_append(types, t);
 
-      if (peek_token(tokens, i) == NEWLINE) {
-        i += 1;
-        continue;
-      }
+      expect_token(tokens, i, NEWLINE);
+      i += 1;
       if (peek_token(tokens, i) == RCURLY)
         break;
 
