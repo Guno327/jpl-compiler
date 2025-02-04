@@ -3,7 +3,6 @@
 #include "ast.h"
 #include "compiler_error.h"
 #include "parser.h"
-#include "precedence.h"
 #include "token.h"
 #include <errno.h>
 #include <stdio.h>
