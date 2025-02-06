@@ -316,6 +316,8 @@ typedef struct {
 // Methods
 char *print_cmd(Cmd *cmd);
 char *print_expr(Expr *cmd);
+char *print_uop(UnOp op);
+char *print_bop(BinOp op);
 char *print_lvalue(LValue *lval);
 char *print_stmt(Stmt *stmt);
 char *print_type(Type *type);

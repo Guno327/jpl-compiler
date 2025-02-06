@@ -167,11 +167,10 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       i += 1;
       if (peek_token(tokens, i) == RCURLY)
         break;
+      else
+        continue;
 
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Unexpected token '%s' at %d",
-              vector_get_token(tokens, i)->text, i);
-      parse_error(msg);
+      parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
     fc->stmts = (Stmt **)stmts->data;
@@ -221,11 +220,10 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       i += 1;
       if (peek_token(tokens, i) == RCURLY)
         break;
+      else
+        continue;
 
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Unexpected token '%s' at %d",
-              vector_get_token(tokens, i)->text, i);
-      parse_error(msg);
+      parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
 
@@ -241,10 +239,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     i += 1;
     break;
   default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected token '%s' at %d",
-            vector_get_token(tokens, i)->text, i);
-    parse_error(msg);
+    parse_error(vector_get_token(tokens, i));
   }
 
   return i;

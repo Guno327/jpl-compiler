@@ -1,6 +1,5 @@
 #include "token.h"
 #include "alloc.h"
-#include "compiler_error.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,10 +189,9 @@ char *print_token(Token *t) {
   case WRITE:
     sprintf(token_str, "WRITE '%s'", t->text);
     break;
-  default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpcted token of type %d", t->type);
-    lex_error(msg);
+  case WS:
+    printf("Print Error: THIS SHOULD NEVER HAPPEN\n");
+    exit(EXIT_FAILURE);
   }
   return token_str;
 }

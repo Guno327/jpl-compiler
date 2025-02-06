@@ -4,7 +4,6 @@
 #include "parse_expr.h"
 #include "parse_lvalue.h"
 #include "parser.h"
-#include <stdio.h>
 #include <string.h>
 
 int parse_stmt(Vector *tokens, int i, Stmt *s) {
@@ -60,10 +59,7 @@ int parse_stmt(Vector *tokens, int i, Stmt *s) {
     s->node = rs;
     break;
   default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected token '%s' at %d",
-            vector_get_token(tokens, i)->text, i);
-    parse_error(msg);
+    parse_error(vector_get_token(tokens, i));
   }
 
   return i;
