@@ -10,17 +10,13 @@
 // Lexes a string
 int lex_str(const char *src, int i, Token *t) {
   if (src[i] != '"') {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
   t->start = i;
 
   for (i += 1; i < strlen(src); i++) {
     if (src[i] == '\n') {
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-      lex_error(msg);
+      lex_error(src[i], i);
     } else if (src[i] == '"') {
       i += 1;
       t->type = STRING;
@@ -30,18 +26,14 @@ int lex_str(const char *src, int i, Token *t) {
       return i;
     }
   }
-  char *msg = alloc(BUFSIZ);
-  sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-  lex_error(msg);
+  lex_error(src[i], i);
   return i;
 }
 
 // lexes a keyword or variable
 int lex_wrd(const char *src, int i, Token *t) {
   if (!isalpha(src[i])) {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
   t->start = i;
 
@@ -64,9 +56,7 @@ int lex_wrd(const char *src, int i, Token *t) {
 // Lexes an INTVAL or FLOATVAL
 int lex_num(const char *src, int i, Token *t) {
   if (!isdigit(src[i]) && src[i] != '.') {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
 
   t->start = i;
@@ -99,9 +89,7 @@ int lex_num(const char *src, int i, Token *t) {
 // Lexes a new line
 int lex_nl(const char *src, int i, Token *t) {
   if (src[i] != '\n') {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
   t->start = i;
 
@@ -116,9 +104,7 @@ int lex_nl(const char *src, int i, Token *t) {
 // lexes whitespace
 int lex_ws(const char *src, int i, Token *t) {
   if (src[i] != ' ') {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
   t->start = i;
 
@@ -187,9 +173,7 @@ int lex_op(const char *src, int i, Token *t) {
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-      lex_error(msg);
+      lex_error(src[i], i);
     }
     break;
   case '|':
@@ -198,9 +182,7 @@ int lex_op(const char *src, int i, Token *t) {
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-      lex_error(msg);
+      lex_error(src[i], i);
     }
     break;
   case '/':
@@ -233,9 +215,7 @@ int lex_op(const char *src, int i, Token *t) {
     i += 1;
     break;
   default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
   return i;
 }
@@ -314,7 +294,7 @@ int lex_pnct(const char *src, int i, Token *t) {
         break;
     }
     i += 1;
-    t->type = ESC;
+    t->type = WS;
     break;
   case '=':
   case '+':
@@ -330,9 +310,7 @@ int lex_pnct(const char *src, int i, Token *t) {
     i = lex_op(src, i, t);
     break;
   default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected char '%c' at '%d'\n", src[i], i);
-    lex_error(msg);
+    lex_error(src[i], i);
   }
 
   return i;
@@ -342,9 +320,7 @@ Vector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Invalid char%c at%d", ' ', k);
-      lex_error(msg);
+      lex_error('?', k);
     }
   }
 
@@ -378,7 +354,7 @@ Vector *lex(const char *src) {
           continue;
         }
       }
-      if (t->type == WS || t->type == ESC) {
+      if (t->type == WS) {
         free(t);
         continue;
       }

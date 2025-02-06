@@ -52,10 +52,7 @@ int parse_type(Vector *tokens, int i, Type *t) {
     i += 1;
     break;
   default:;
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected token '%s' at %d",
-            vector_get_token(tokens, i)->text, i);
-    parse_error(msg);
+    parse_error(vector_get_token(tokens, i));
   }
 
   i = parse_type_arr(tokens, i, t);

@@ -33,9 +33,6 @@ int peek_token(Vector *tokens, int idx) {
 void expect_token(Vector *tokens, int idx, int tok_type) {
   Token *t = vector_get_token(tokens, idx);
   if (t->type != tok_type) {
-    char *msg = alloc(BUFSIZ);
-    sprintf(msg, "Unexpected token '%s' at %d",
-            vector_get_token(tokens, idx)->text, idx);
-    parse_error(msg);
+    parse_error(vector_get_token(tokens, idx));
   }
 }

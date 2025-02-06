@@ -6,6 +6,12 @@
 
 int parse_expr(Vector *tokens, int i, Expr *e);
 int parse_expr_list(Vector *tokens, int i, ExprList *a);
-int parse_expr_cont(Vector *tokens, int i, Expr *e);
+int parse_unary_level(Vector *tokens, int i, Expr *e);
+int parse_index_level(Vector *tokens, int i, Expr *e);
+int parse_mult_level(Vector *tokens, int i, Expr *e);
+int parse_add_level(Vector *tokens, int i, Expr *e);
+int parse_cmp_level(Vector *tokens, int i, Expr *e);
+int parse_bool_level(Vector *tokens, int i, Expr *e);
+int parse_base_level(Vector *tokens, int i, Expr *e);
 
 #endif

@@ -1,0 +1,56 @@
+base:
+  <integer>
+  <float>
+  true
+  false
+  <variable>
+  void 
+  [ <top>, ... ]
+  <top> { <top> , ... }
+  <variable> ( <top> , ... )
+  ( <top> )
+
+  if <top> then <top> else <top>
+  array [ <variable> : <top> , ... ] <top>
+  sum [ <variable> : <top> , ... ] <top>
+  ...
+
+bool: (input: empty..bool)
+  ((input) && <bool>) -> (result)
+  ((input) || <bool>) -> (result)
+  (input) -> <base> -> <bool> -> (result)
+
+cmp: (input: empty..cmp)
+  ((input) < <cmp>) -> (result)
+  ((input) > <cmp>) -> (result)
+  ((input) <= <cmp>) -> (result)
+  ((input) >= <cmp>) -> (result)
+  ((input) == <cmp>) -> (result)
+  ((input) != <cmp>) -> (result)
+  (intput) -> <bool> -> <cmp> -> (result)
+
+add: (input: empty..add)
+  ((input) + <add>) -> (result)
+  ((input) - <add>) -> (result)
+  (input) -> <cmp> -> <add> -> (result)
+
+mult: (input: empty, base, index, unary, mult)
+  ((input) * <mult>) -> (result)
+  ((input) / <mult>) -> (result)
+  ((input) % <mult>) -> (result)
+  ((input) -> <add>) -> <mult> -> (result)
+
+unary: (input: empty, base, index, unary)
+  (! <unary>) -> (result) # EMPTY INPUT ONLY
+  (- <unary>) -> (result) # EMPTY INPUT ONLY
+  (input) -> <mult> -> <unary> -> (result)
+
+index: (input: empty, base, index)
+  ((input) . <variable>) -> <index> -> (result)
+  ((input) [ <expr> , ... ]) -> <index> -> (result)
+  (input) -> <unary> -> <index> -> (result)
+
+top: (input: empty)
+  <base> -> <index> -> (result)
+  (empty) -> <index> -> (result)
+

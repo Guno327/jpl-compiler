@@ -1,6 +1,5 @@
 #include "ast.h"
 #include "alloc.h"
-#include "compiler_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,9 +98,6 @@ char *print_cmd(Cmd *cmd) {
     }
     strcat(result, ")");
     break;
-  default:
-    sprintf(result, "Unexpected CMD in s-print: %d", cmd->type);
-    parse_error(result);
   }
   return result;
 }
@@ -187,11 +183,112 @@ char *print_expr(Expr *expr) {
     Expr *inner_e = (Expr *)expr->node;
     result = print_expr(inner_e);
     break;
-  default:
-    sprintf(result, "Unexpected EXPR in s-print: %d", expr->type);
-    parse_error(result);
+  case UNOPEXPR:;
+    UnopExpr *ue = (UnopExpr *)expr->node;
+    char *u_op = print_uop(ue->op);
+    char *u_rhs = print_expr(ue->rhs);
+    sprintf(result, "(UnopExpr %s %s)", u_op, u_rhs);
+    free(u_rhs);
+    break;
+  case BINOPEXPR:;
+    BinopExpr *be = (BinopExpr *)expr->node;
+    char *b_op = print_bop(be->op);
+    char *b_lhs = print_expr(be->lhs);
+    char *b_rhs = print_expr(be->rhs);
+    sprintf(result, "(BinopExpr %s %s %s)", b_lhs, b_op, b_rhs);
+    free(b_lhs);
+    free(b_rhs);
+    break;
+  case IFEXPR:;
+    IfExpr *ife = (IfExpr *)expr->node;
+    char *if_e = print_expr(ife->if_expr);
+    char *then_e = print_expr(ife->then_expr);
+    char *else_e = print_expr(ife->else_expr);
+    sprintf(result, "(IfExpr %s %s %s)", if_e, then_e, else_e);
+    free(if_e);
+    free(else_e);
+    free(then_e);
+    break;
+  case ARRAYLOOPEXPR:;
+    ArrayLoopExpr *aloop = (ArrayLoopExpr *)expr->node;
+    sprintf(result, "(ArrayLoopExpr");
+    for (int i = 0; i < aloop->vars_size; i++) {
+      strcat(result, " ");
+      strcat(result, aloop->vars[i]);
+      strcat(result, " ");
+
+      char *cur_e = print_expr(aloop->list->exprs[i]);
+      strcat(result, cur_e);
+      free(cur_e);
+    }
+    char *a_final_e = print_expr(aloop->expr);
+    strcat(result, " ");
+    strcat(result, a_final_e);
+    strcat(result, ")");
+    free(a_final_e);
+    break;
+  case SUMLOOPEXPR:;
+    SumLoopExpr *sloop = (SumLoopExpr *)expr->node;
+    sprintf(result, "(SumLoopExpr");
+    for (int i = 0; i < sloop->vars_size; i++) {
+      strcat(result, " ");
+      strcat(result, sloop->vars[i]);
+      strcat(result, " ");
+
+      char *cur_e = print_expr(sloop->list->exprs[i]);
+      strcat(result, cur_e);
+      free(cur_e);
+    }
+    char *s_final_e = print_expr(sloop->expr);
+    strcat(result, " ");
+    strcat(result, s_final_e);
+    strcat(result, ")");
+    free(s_final_e);
+    break;
   }
   return result;
+}
+
+char *print_uop(UnOp op) {
+  switch (op) {
+  case NOTOP:
+    return "!";
+  case NEGOP:
+    return "-";
+  }
+  return NULL;
+}
+
+char *print_bop(BinOp op) {
+  switch (op) {
+  case MULTOP:
+    return "*";
+  case DIVOP:
+    return "/";
+  case MODOP:
+    return "%";
+  case ADDOP:
+    return "+";
+  case SUBOP:
+    return "-";
+  case GTOP:
+    return ">";
+  case LTOP:
+    return "<";
+  case GEOP:
+    return ">=";
+  case LEOP:
+    return "<=";
+  case EQOP:
+    return "==";
+  case NEOP:
+    return "!=";
+  case ANDOP:
+    return "&&";
+  case OROP:
+    return "||";
+  }
+  return NULL;
 }
 
 char *print_lvalue(LValue *lval) {
@@ -211,9 +308,6 @@ char *print_lvalue(LValue *lval) {
       sprintf(result, "(ArrayLValue %s)", alv->var);
     }
     break;
-  default:
-    sprintf(result, "Unexpected LVALUE in s-print: %d", lval->type);
-    parse_error(result);
   }
   return result;
 }
@@ -241,9 +335,6 @@ char *print_stmt(Stmt *stmt) {
     sprintf(result, "(ReturnStmt %s)", rs_expr);
     free(rs_expr);
     break;
-  default:
-    sprintf(result, "Unexpected STMT in s-print: %d", stmt->type);
-    parse_error(result);
   }
   return result;
 }
@@ -273,9 +364,6 @@ char *print_type(Type *type) {
   case VOIDTYPE:
     sprintf(result, "(VoidType)");
     break;
-  default:
-    sprintf(result, "Unexpected Type in s-print: %d", type->type);
-    parse_error(result);
   }
   return result;
 }

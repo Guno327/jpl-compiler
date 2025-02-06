@@ -2,7 +2,6 @@
 #define TOKEN_H
 
 typedef enum {
-  ESC,
   WS,
   ARRAY,
   ASSERT,
