@@ -28,6 +28,9 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   case BINDINGVECTOR:
     size = sizeof(binding);
     break;
+  case STRUCTINFOVECTOR:
+    size = sizeof(struct_info);
+    break;
   case STRVECTOR:
     size = sizeof(char *);
     break;
@@ -63,6 +66,9 @@ void vector_append(vector *v, void *item) {
     case BINDINGVECTOR:
       size = sizeof(binding);
       break;
+    case STRUCTINFOVECTOR:
+      size = sizeof(struct_info);
+      break;
     case STRVECTOR:
       size = sizeof(char *);
       break;
@@ -95,6 +101,9 @@ void vector_append(vector *v, void *item) {
     break;
   case BINDINGVECTOR:
     ((binding **)v->data)[v->size++] = (binding *)item;
+    break;
+  case STRUCTINFOVECTOR:
+    ((struct_info **)v->data)[v->size++] = (struct_info *)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -156,6 +165,14 @@ binding *vector_get_binding(vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((binding **)v->data)[idx];
+}
+
+struct_info *vector_get_struct_info(vector *v, int idx) {
+  if (v->type != STRUCTINFOVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((struct_info **)v->data)[idx];
 }
 
 char *vector_get_str(vector *v, int idx) {

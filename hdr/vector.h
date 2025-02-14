@@ -11,6 +11,7 @@ typedef enum {
   STMTVECTOR,
   STRVECTOR,
   BINDINGVECTOR,
+  STRUCTINFOVECTOR,
 } vector_t;
 
 typedef struct {

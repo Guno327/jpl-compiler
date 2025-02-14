@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "t.h"
 #include "token.h"
 #include "vector.h"
 #ifndef VECTOR_GET_H
@@ -12,5 +13,6 @@ type *vector_get_type(vector *v, int idx);
 stmt *vector_get_stmt(vector *v, int idx);
 char *vector_get_str(vector *v, int idx);
 binding *vector_get_binding(vector *v, int idx);
+struct_info *vector_get_struct_info(vector *v, int idx);
 
 #endif
