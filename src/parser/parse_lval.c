@@ -2,6 +2,7 @@
 #include "alloc.h"
 #include "ast.h"
 #include "parser.h"
+#include "vector_get.h"
 #include <string.h>
 
 int parse_lvalue(vector *tokens, int i, lval *v) {

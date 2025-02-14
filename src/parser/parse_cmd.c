@@ -7,6 +7,7 @@
 #include "parse_stmt.h"
 #include "parse_type.h"
 #include "parser.h"
+#include "vector_get.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -4,6 +4,7 @@
 #include "parse_expr.h"
 #include "parse_lval.h"
 #include "parser.h"
+#include "vector_get.h"
 #include <string.h>
 
 int parse_stmt(vector *tokens, int i, stmt *s) {

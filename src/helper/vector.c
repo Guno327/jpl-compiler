@@ -1,5 +1,6 @@
 #include "vector.h"
 #include "alloc.h"
+#include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
 

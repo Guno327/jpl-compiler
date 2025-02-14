@@ -4,6 +4,7 @@
 #include "compiler_error.h"
 #include "parse_cmd.h"
 #include "token.h"
+#include "vector_get.h"
 #include <stdio.h>
 
 vector *parse(vector *tokens) {

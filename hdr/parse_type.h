@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "token.h"
 #include "vector.h"
 #ifndef PARSE_TYPE_H

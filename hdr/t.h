@@ -1,3 +1,4 @@
+#include "vector.h"
 #ifndef T_H
 #define T_H
 
@@ -14,9 +15,7 @@ typedef struct {
 
 typedef struct {
   char *name;
-  int field_count;
-  char **names;
-  t **types;
+  vector *binds;
 } struct_info;
 
 typedef struct {

@@ -4,6 +4,7 @@
 #include "compiler_error.h"
 #include "parser.h"
 #include "token.h"
+#include "vector_get.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

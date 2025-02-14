@@ -2,6 +2,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "vector.h"
+#include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

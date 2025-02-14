@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "compiler_error.h"
 #include "parser.h"
+#include "vector_get.h"
 #include <string.h>
 
 int parse_type(vector *tokens, int i, type *t) {
