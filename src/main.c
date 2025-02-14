@@ -70,12 +70,12 @@ int main(int argc, char **argv) {
   fclose(src_file);
 
   // Lex
-  Vector *tokens = lex(src);
+  vector *tokens = lex(src);
   free(src);
 
   if (mode == LEX) {
     for (int i = 0; i < tokens->size; i++) {
-      Token *t = vector_get_token(tokens, i);
+      token *t = vector_get_token(tokens, i);
       char *t_str = print_token(t);
       printf("%s\n", t_str);
       free(t_str);
@@ -86,13 +86,13 @@ int main(int argc, char **argv) {
   }
 
   // Parse
-  Vector *program = parse(tokens);
+  vector *program = parse(tokens);
   free(tokens);
 
   // Print
   if (mode == PARSE) {
     for (int i = 0; i < program->size; i++) {
-      printf("%s\n", print_cmd(vector_get_cmd(program, i)));
+      printf("%s\n", cmd_to_str(vector_get_cmd(program, i)));
     }
     free(program);
     printf("Compilation succeeded: parsing complete\n");

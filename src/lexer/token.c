@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-TokenType keyword(char *text) {
-  TokenType ret = 0;
+tokentype keyword(char *text) {
+  tokentype ret = 0;
   int len = strlen(text) + 1;
   char *wrd_upper = alloc(len);
   for (int j = 0; j < strlen(text); j++)
@@ -65,7 +65,7 @@ TokenType keyword(char *text) {
   return ret;
 }
 
-char *print_token(Token *t) {
+char *print_token(token *t) {
   size_t len = BUFSIZ + (sizeof(t->text));
   char *token_str = alloc(len);
   switch (t->type) {

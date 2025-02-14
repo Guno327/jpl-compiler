@@ -3,29 +3,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void vector_init(Vector *v, size_t capacity, VectorType type) {
+void vector_init(vector *v, size_t capacity, vector_t type) {
   int size = 0;
   switch (type) {
   case CMDVECTOR:
-    size = sizeof(Cmd);
+    size = sizeof(cmd);
     break;
   case TOKENVECTOR:
-    size = sizeof(Token);
+    size = sizeof(token);
     break;
   case EXPRVECTOR:
-    size = sizeof(Expr);
+    size = sizeof(expr);
     break;
   case LVALUEVECTOR:
-    size = sizeof(LValue);
+    size = sizeof(lval);
     break;
   case TYPEVECTOR:
-    size = sizeof(Type);
+    size = sizeof(type);
     break;
   case STMTVECTOR:
-    size = sizeof(Stmt);
+    size = sizeof(stmt);
     break;
   case BINDINGVECTOR:
-    size = sizeof(Binding);
+    size = sizeof(binding);
     break;
   case STRVECTOR:
     size = sizeof(char *);
@@ -37,30 +37,30 @@ void vector_init(Vector *v, size_t capacity, VectorType type) {
   v->capacity = capacity;
 }
 
-void vector_append(Vector *v, void *item) {
+void vector_append(vector *v, void *item) {
   if (v->size == v->capacity) {
     int size = 0;
     switch (v->type) {
     case CMDVECTOR:
-      size = sizeof(Cmd);
+      size = sizeof(cmd);
       break;
     case TOKENVECTOR:
-      size = sizeof(Token);
+      size = sizeof(token);
       break;
     case EXPRVECTOR:
-      size = sizeof(Expr);
+      size = sizeof(expr);
       break;
     case LVALUEVECTOR:
-      size = sizeof(LValue);
+      size = sizeof(lval);
       break;
     case TYPEVECTOR:
-      size = sizeof(Type);
+      size = sizeof(type);
       break;
     case STMTVECTOR:
-      size = sizeof(Stmt);
+      size = sizeof(stmt);
       break;
     case BINDINGVECTOR:
-      size = sizeof(Binding);
+      size = sizeof(binding);
       break;
     case STRVECTOR:
       size = sizeof(char *);
@@ -75,25 +75,25 @@ void vector_append(Vector *v, void *item) {
 
   switch (v->type) {
   case CMDVECTOR:
-    ((Cmd **)v->data)[v->size++] = (Cmd *)item;
+    ((cmd **)v->data)[v->size++] = (cmd *)item;
     break;
   case TOKENVECTOR:
-    ((Token **)v->data)[v->size++] = (Token *)item;
+    ((token **)v->data)[v->size++] = (token *)item;
     break;
   case EXPRVECTOR:
-    ((Expr **)v->data)[v->size++] = (Expr *)item;
+    ((expr **)v->data)[v->size++] = (expr *)item;
     break;
   case LVALUEVECTOR:
-    ((LValue **)v->data)[v->size++] = (LValue *)item;
+    ((lval **)v->data)[v->size++] = (lval *)item;
     break;
   case TYPEVECTOR:
-    ((Type **)v->data)[v->size++] = (Type *)item;
+    ((type **)v->data)[v->size++] = (type *)item;
     break;
   case STMTVECTOR:
-    ((Stmt **)v->data)[v->size++] = (Stmt *)item;
+    ((stmt **)v->data)[v->size++] = (stmt *)item;
     break;
   case BINDINGVECTOR:
-    ((Binding **)v->data)[v->size++] = (Binding *)item;
+    ((binding **)v->data)[v->size++] = (binding *)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -101,63 +101,63 @@ void vector_append(Vector *v, void *item) {
   }
 }
 
-Token *vector_get_token(Vector *v, int idx) {
+token *vector_get_token(vector *v, int idx) {
   if (v->type != TOKENVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Token **)v->data)[idx];
+  return ((token **)v->data)[idx];
 }
 
-Cmd *vector_get_cmd(Vector *v, int idx) {
+cmd *vector_get_cmd(vector *v, int idx) {
   if (v->type != CMDVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Cmd **)v->data)[idx];
+  return ((cmd **)v->data)[idx];
 }
 
-Expr *vector_get_expr(Vector *v, int idx) {
+expr *vector_get_expr(vector *v, int idx) {
   if (v->type != EXPRVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Expr **)v->data)[idx];
+  return ((expr **)v->data)[idx];
 }
 
-LValue *vector_get_lvalue(Vector *v, int idx) {
+lval *vector_get_lvalue(vector *v, int idx) {
   if (v->type != LVALUEVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((LValue **)v->data)[idx];
+  return ((lval **)v->data)[idx];
 }
 
-Type *vector_get_type(Vector *v, int idx) {
+type *vector_get_type(vector *v, int idx) {
   if (v->type != TYPEVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Type **)v->data)[idx];
+  return ((type **)v->data)[idx];
 }
 
-Stmt *vector_get_stmt(Vector *v, int idx) {
+stmt *vector_get_stmt(vector *v, int idx) {
   if (v->type != STMTVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Stmt **)v->data)[idx];
+  return ((stmt **)v->data)[idx];
 }
 
-Binding *vector_get_binding(Vector *v, int idx) {
+binding *vector_get_binding(vector *v, int idx) {
   if (v->type != BINDINGVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;
-  return ((Binding **)v->data)[idx];
+  return ((binding **)v->data)[idx];
 }
 
-char *vector_get_str(Vector *v, int idx) {
+char *vector_get_str(vector *v, int idx) {
   if (v->type != STMTVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)

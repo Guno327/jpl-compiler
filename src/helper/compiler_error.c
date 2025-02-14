@@ -10,7 +10,7 @@ void lex_error(char c, int i) {
   exit(EXIT_FAILURE);
 }
 
-void parse_error(Token *t) {
+void parse_error(token *t) {
   char *token = print_token(t);
   printf("Compilation Failed: unexpected token of type %s starting at %d\n",
          token, t->start);

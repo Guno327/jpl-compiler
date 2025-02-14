@@ -1,7 +1,8 @@
-#ifndef AST_H
-#define AST_H
+#include "t.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#ifndef AST_H
+#define AST_H
 
 // Overall types
 typedef enum {
@@ -14,12 +15,12 @@ typedef enum {
   TIMECMD,
   FNCMD,
   STRUCTCMD
-} CmdType;
+} cmd_t;
 typedef struct {
   int start;
-  CmdType type;
+  cmd_t type;
   void *node;
-} Cmd;
+} cmd;
 
 typedef enum {
   INTEXPR,
@@ -39,8 +40,8 @@ typedef enum {
   IFEXPR,
   ARRAYLOOPEXPR,
   SUMLOOPEXPR
-} ExprType;
-typedef enum { NOTOP, NEGOP } UnOp;
+} expr_t;
+typedef enum { NOTOP, NEGOP } u_op;
 typedef enum {
   MULTOP,
   DIVOP,
@@ -55,12 +56,13 @@ typedef enum {
   NEOP,
   ANDOP,
   OROP
-} BinOp;
+} b_op;
 typedef struct {
   int start;
-  ExprType type;
+  expr_t type;
+  t *t_type;
   void *node;
-} Expr;
+} expr;
 
 typedef enum {
   INTTYPE,
@@ -69,141 +71,141 @@ typedef enum {
   ARRAYTYPE,
   VOIDTYPE,
   STRUCTTYPE
-} TypeType;
+} type_t;
 typedef struct {
   int start;
-  TypeType type;
+  type_t type;
   void *node;
-} Type;
+} type;
 
-typedef enum { LETSTMT, ASSERTSTMT, RETURNSTMT } StmtType;
+typedef enum { LETSTMT, ASSERTSTMT, RETURNSTMT } stmt_t;
 typedef struct {
   int start;
-  StmtType type;
+  stmt_t type;
   void *node;
-} Stmt;
+} stmt;
 
-typedef enum { VARLVALUE, ARRAYLVALUE } LValueType;
+typedef enum { VARLVALUE, ARRAYLVALUE } lval_t;
 typedef struct {
   int start;
-  LValueType type;
+  lval_t type;
   void *node;
-} LValue;
+} lval;
 
-// Binding
+// binding
 typedef struct {
-  LValue *lval;
-  Type *type;
-} Binding;
+  lval *lval;
+  type *type;
+} binding;
 
-// LValue types
+// lval types
 typedef struct {
   int start;
   char *var;
-} VarLValue;
+} var_lval;
 
 typedef struct {
   int start;
   char *var;
   int vars_size;
   char **vars;
-} ArrayLValue;
+} array_lval;
 
-// Stmt types
+// stmt types
 typedef struct {
   int start;
-  LValue *lval;
-  Expr *expr;
-} LetStmt;
+  lval *lval;
+  expr *expr;
+} let_stmt;
 
 typedef struct {
   int start;
-  Expr *expr;
+  expr *expr;
   char *str;
-} AssertStmt;
+} assert_stmt;
 
 typedef struct {
   int start;
-  Expr *expr;
-} ReturnStmt;
+  expr *expr;
+} return_stmt;
 
 // TYPE types
 typedef struct {
   int start;
-} IntType;
+} int_type;
 
 typedef struct {
   int start;
-} BoolType;
+} bool_type;
 
 typedef struct {
   int start;
-} FloatType;
+} float_type;
 
 typedef struct {
   int start;
-  Type *type;
+  type *type;
   int rank;
-} ArrayType;
+} array_type;
 
 typedef struct {
   int start;
-} VoidType;
+} void_type;
 
 typedef struct {
   int start;
   char *var;
-} StructType;
+} struct_type;
 
 // CMD types
 typedef struct {
   int start;
   char *str;
-  LValue *lval;
-} ReadCmd;
+  lval *lval;
+} read_cmd;
 
 typedef struct {
   int start;
-  Expr *expr;
+  expr *expr;
   char *str;
-} WriteCmd;
+} write_cmd;
 
 typedef struct {
   int start;
-  LValue *lval;
-  Expr *expr;
-} LetCmd;
+  lval *lval;
+  expr *expr;
+} Letcmd;
 
 typedef struct {
   int start;
-  Expr *expr;
+  expr *expr;
   char *str;
-} AssertCmd;
+} assert_cmd;
 
 typedef struct {
   int start;
   char *str;
-} PrintCmd;
+} print_cmd;
 
 typedef struct {
   int start;
-  Expr *expr;
-} ShowCmd;
+  expr *expr;
+} show_cmd;
 
 typedef struct {
   int start;
-  Cmd *cmd;
-} TimeCmd;
+  cmd *cmd;
+} time_cmd;
 
 typedef struct {
   int start;
   char *var;
   int binds_size;
-  Binding **binds;
-  Type *type;
+  binding **binds;
+  type *type;
   int stmts_size;
-  Stmt **stmts;
-} FnCmd;
+  stmt **stmts;
+} fn_cmd;
 
 typedef struct {
   int start;
@@ -211,116 +213,116 @@ typedef struct {
   int vars_size;
   char **vars;
   int types_size;
-  Type **types;
-} StructCmd;
+  type **types;
+} struct_cmd;
 
 // EXPR types
 typedef struct {
   int start;
   char *var;
-} VarExpr;
+} var_expr;
 
 typedef struct {
   int start;
   long val;
-} IntExpr;
+} int_expr;
 
 typedef struct {
   int start;
   double val;
-} FloatExpr;
+} float_expr;
 
 typedef struct {
   int start;
-} TrueExpr;
+} true_expr;
 
 typedef struct {
   int start;
-} FalseExpr;
+} false_expr;
 
 typedef struct {
   int exprs_size;
-  Expr **exprs;
-} ExprList;
+  expr **exprs;
+} expr_list;
 
 typedef struct {
   int start;
-  ExprList *list;
-} ArrayLiteralExpr;
+  expr_list *list;
+} array_literal_expr;
 
 typedef struct {
   int start;
-} VoidExpr;
+} void_expr;
 
 typedef struct {
   int start;
   char *var;
-  ExprList *list;
-} StructLiteralExpr;
+  expr_list *list;
+} struct_literal_expr;
 
 typedef struct {
   int start;
-  Expr *expr;
+  expr *expr;
   char *var;
-} DotExpr;
+} dot_expr;
 
 typedef struct {
   int start;
-  UnOp op;
-  Expr *rhs;
-} UnopExpr;
+  u_op op;
+  expr *rhs;
+} unop_expr;
 
 typedef struct {
   int start;
-  Expr *lhs;
-  BinOp op;
-  Expr *rhs;
-} BinopExpr;
+  expr *lhs;
+  b_op op;
+  expr *rhs;
+} binop_expr;
 
 typedef struct {
   int start;
-  Expr *if_expr;
-  Expr *then_expr;
-  Expr *else_expr;
-} IfExpr;
+  expr *if_expr;
+  expr *then_expr;
+  expr *else_expr;
+} if_expr;
 
 typedef struct {
   int start;
   int vars_size;
   char **vars;
-  ExprList *list;
-  Expr *expr;
-} ArrayLoopExpr;
+  expr_list *list;
+  expr *expr;
+} array_loop_expr;
 
 typedef struct {
   int start;
   int vars_size;
   char **vars;
-  ExprList *list;
-  Expr *expr;
-} SumLoopExpr;
+  expr_list *list;
+  expr *expr;
+} sum_loop_expr;
 
 // back to standard exprs
 typedef struct {
   int start;
-  Expr *expr;
-  ExprList *list;
-} ArrayIndexExpr;
+  expr *expr;
+  expr_list *list;
+} array_index_expr;
 
 typedef struct {
   int start;
   char *var;
-  ExprList *list;
-} CallExpr;
+  expr_list *list;
+} call_expr;
 
 // Methods
-char *print_cmd(Cmd *cmd);
-char *print_expr(Expr *cmd);
-char *print_uop(UnOp op);
-char *print_bop(BinOp op);
-char *print_lvalue(LValue *lval);
-char *print_stmt(Stmt *stmt);
-char *print_type(Type *type);
+char *cmd_to_str(cmd *cmd);
+char *expr_to_str(expr *expr);
+char *uop_to_str(u_op op);
+char *bop_to_str(b_op op);
+char *lval_to_str(lval *lval);
+char *stmt_to_str(stmt *stmt);
+char *type_to_str(type *type);
 
 typedef enum {
   CMDLIST,
@@ -329,7 +331,7 @@ typedef enum {
   STMTLIST,
   TYPELIST,
   VARLIST
-} ListType;
-char *print_list(void **list, size_t size, ListType type);
+} list_t;
+char *list_to_str(void **list, size_t size, list_t type);
 
 #endif

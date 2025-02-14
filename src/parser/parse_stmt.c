@@ -2,37 +2,37 @@
 #include "alloc.h"
 #include "compiler_error.h"
 #include "parse_expr.h"
-#include "parse_lvalue.h"
+#include "parse_lval.h"
 #include "parser.h"
 #include <string.h>
 
-int parse_stmt(Vector *tokens, int i, Stmt *s) {
+int parse_stmt(vector *tokens, int i, stmt *s) {
   s->start = i;
 
   switch (peek_token(tokens, i)) {
   case LET:;
-    LetStmt *ls = alloc(sizeof(LetStmt));
+    let_stmt *ls = alloc(sizeof(let_stmt));
     ls->start = i;
     i += 1;
 
-    ls->lval = alloc(sizeof(LValue));
+    ls->lval = alloc(sizeof(lval));
     i = parse_lvalue(tokens, i, ls->lval);
 
     expect_token(tokens, i, EQUALS);
     i += 1;
 
-    ls->expr = alloc(sizeof(Expr));
+    ls->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, ls->expr);
 
     s->type = LETSTMT;
     s->node = ls;
     break;
   case ASSERT:;
-    AssertStmt *as = alloc(sizeof(AssertStmt));
+    assert_stmt *as = alloc(sizeof(assert_stmt));
     as->start = i;
     i += 1;
 
-    as->expr = alloc(sizeof(Expr));
+    as->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, as->expr);
 
     expect_token(tokens, i, COMMA);
@@ -48,11 +48,11 @@ int parse_stmt(Vector *tokens, int i, Stmt *s) {
     s->node = as;
     break;
   case RETURN:;
-    ReturnStmt *rs = alloc(sizeof(ReturnStmt));
+    return_stmt *rs = alloc(sizeof(return_stmt));
     rs->start = i;
     i += 1;
 
-    rs->expr = alloc(sizeof(Expr));
+    rs->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, rs->expr);
 
     s->type = RETURNSTMT;

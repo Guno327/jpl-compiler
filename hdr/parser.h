@@ -1,11 +1,11 @@
-#ifndef PARSER_H
-#define PARSER_H
 #include "ast.h"
 #include "token.h"
 #include "vector.h"
+#ifndef PARSER_H
+#define PARSER_H
 
-Vector *parse(Vector *tokens);
-int peek_token(Vector *tokens, int idx);
-void expect_token(Vector *tokens, int idx, int tok_type);
+vector *parse(vector *tokens);
+int peek_token(vector *tokens, int idx);
+void expect_token(vector *tokens, int idx, int tok_type);
 
 #endif

@@ -3,22 +3,22 @@
 #include "ast.h"
 #include "compiler_error.h"
 #include "parse_expr.h"
-#include "parse_lvalue.h"
+#include "parse_lval.h"
 #include "parse_stmt.h"
 #include "parse_type.h"
 #include "parser.h"
 #include <stdio.h>
 #include <string.h>
 
-int parse_cmd(Vector *tokens, int i, Cmd *c) {
+int parse_cmd(vector *tokens, int i, cmd *c) {
   c->start = i;
-  int type = peek_token(tokens, i);
+  int token_t = peek_token(tokens, i);
 
   // Build sub-node
   // General form: Setup \n\n [single token step \n\n ...]
-  switch (type) {
+  switch (token_t) {
   case READ:;
-    ReadCmd *rc = alloc(sizeof(ReadCmd));
+    read_cmd *rc = alloc(sizeof(read_cmd));
     rc->start = i;
     i += 1;
 
@@ -33,19 +33,19 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     expect_token(tokens, i, TO);
     expect_token(tokens, i + 1, VARIABLE);
     i += 1;
-    rc->lval = alloc(sizeof(VarLValue));
+    rc->lval = alloc(sizeof(var_lval));
     i = parse_lvalue(tokens, i, rc->lval);
     c->node = rc;
     c->type = READCMD;
     break;
   case WRITE:;
-    WriteCmd *wc = alloc(sizeof(WriteCmd));
+    write_cmd *wc = alloc(sizeof(write_cmd));
     wc->start = i;
     i += 1;
 
     expect_token(tokens, i, IMAGE);
     i += 1;
-    wc->expr = alloc(sizeof(Expr));
+    wc->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, wc->expr);
 
     expect_token(tokens, i, TO);
@@ -59,27 +59,27 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     c->type = WRITECMD;
     break;
   case LET:;
-    LetCmd *lc = alloc(sizeof(LetCmd));
+    Letcmd *lc = alloc(sizeof(Letcmd));
     lc->start = i;
     i += 1;
 
-    lc->lval = alloc(sizeof(VarLValue));
+    lc->lval = alloc(sizeof(var_lval));
     i = parse_lvalue(tokens, i, lc->lval);
 
     expect_token(tokens, i, EQUALS);
     i += 1;
 
-    lc->expr = alloc(sizeof(Expr));
+    lc->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, lc->expr);
     c->node = lc;
     c->type = LETCMD;
     break;
   case ASSERT:;
-    AssertCmd *ac = alloc(sizeof(AssertCmd));
+    assert_cmd *ac = alloc(sizeof(assert_cmd));
     ac->start = i;
     i += 1;
 
-    ac->expr = alloc(sizeof(Expr));
+    ac->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, ac->expr);
 
     expect_token(tokens, i, COMMA);
@@ -93,7 +93,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     c->type = ASSERTCMD;
     break;
   case PRINT:;
-    PrintCmd *pc = alloc(sizeof(PrintCmd));
+    print_cmd *pc = alloc(sizeof(print_cmd));
     pc->start = i;
     i += 1;
 
@@ -106,27 +106,27 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     c->type = PRINTCMD;
     break;
   case SHOW:;
-    ShowCmd *sc = alloc(sizeof(ShowCmd));
+    show_cmd *sc = alloc(sizeof(show_cmd));
     sc->start = i;
     i += 1;
 
-    sc->expr = alloc(sizeof(Expr));
+    sc->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, sc->expr);
     c->node = sc;
     c->type = SHOWCMD;
     break;
   case TIME:;
-    TimeCmd *tc = alloc(sizeof(TimeCmd));
+    time_cmd *tc = alloc(sizeof(time_cmd));
     tc->start = i;
     i += 1;
 
-    tc->cmd = alloc(sizeof(Cmd));
+    tc->cmd = alloc(sizeof(cmd));
     i = parse_cmd(tokens, i, tc->cmd);
     c->node = tc;
     c->type = TIMECMD;
     break;
   case FN:;
-    FnCmd *fc = alloc(sizeof(FnCmd));
+    fn_cmd *fc = alloc(sizeof(fn_cmd));
     fc->start = i;
     i += 1;
 
@@ -148,7 +148,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     expect_token(tokens, i, COLON);
     i += 1;
 
-    fc->type = alloc(sizeof(Type));
+    fc->type = alloc(sizeof(type));
     i = parse_type(tokens, i, fc->type);
 
     expect_token(tokens, i, LCURLY);
@@ -156,10 +156,10 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     i += 2;
 
     fc->stmts = NULL;
-    Vector *stmts = alloc(sizeof(Vector));
+    vector *stmts = alloc(sizeof(vector));
     vector_init(stmts, 8, STMTVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
-      Stmt *s = alloc(sizeof(Stmt));
+      stmt *s = alloc(sizeof(stmt));
       i = parse_stmt(tokens, i, s);
       vector_append(stmts, s);
 
@@ -173,7 +173,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
-    fc->stmts = (Stmt **)stmts->data;
+    fc->stmts = (stmt **)stmts->data;
     fc->stmts_size = stmts->size;
 
     c->type = FNCMD;
@@ -181,7 +181,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     i += 1;
     break;
   case STRUCT:;
-    StructCmd *stc = alloc(sizeof(StructCmd));
+    struct_cmd *stc = alloc(sizeof(struct_cmd));
     stc->start = i;
     i += 1;
 
@@ -197,8 +197,8 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
 
     stc->types = NULL;
     stc->vars = NULL;
-    Vector *types = alloc(sizeof(Vector));
-    Vector *vars = alloc(sizeof(Vector));
+    vector *types = alloc(sizeof(vector));
+    vector *vars = alloc(sizeof(vector));
     vector_init(types, 8, TYPEVECTOR);
     vector_init(vars, 8, STRVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
@@ -212,7 +212,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
       expect_token(tokens, i, COLON);
       i += 1;
 
-      Type *t = alloc(sizeof(Type));
+      type *t = alloc(sizeof(type));
       i = parse_type(tokens, i, t);
       vector_append(types, t);
 
@@ -228,7 +228,7 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
     expect_token(tokens, i, RCURLY);
 
     if (types->size != 0) {
-      stc->types = (Type **)types->data;
+      stc->types = (type **)types->data;
       stc->vars = (char **)vars->data;
       stc->types_size = types->size;
       stc->vars_size = vars->size;
@@ -245,14 +245,14 @@ int parse_cmd(Vector *tokens, int i, Cmd *c) {
   return i;
 }
 
-int parse_bindings(Vector *tokens, int i, FnCmd *fc) {
-  Vector *binds = alloc(sizeof(Vector));
+int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
+  vector *binds = alloc(sizeof(vector));
   vector_init(binds, 8, BINDINGVECTOR);
 
   while (i < tokens->size) {
-    Binding *cur_b = alloc(sizeof(Binding));
-    cur_b->lval = alloc(sizeof(LValue));
-    cur_b->type = alloc(sizeof(Type));
+    binding *cur_b = alloc(sizeof(binding));
+    cur_b->lval = alloc(sizeof(lval));
+    cur_b->type = alloc(sizeof(type));
     i = parse_lvalue(tokens, i, cur_b->lval);
     expect_token(tokens, i, COLON);
     i += 1;
@@ -265,7 +265,7 @@ int parse_bindings(Vector *tokens, int i, FnCmd *fc) {
     i += 1;
   }
 
-  fc->binds = (Binding **)binds->data;
+  fc->binds = (binding **)binds->data;
   fc->binds_size = binds->size;
 
   return i;

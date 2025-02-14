@@ -4,3 +4,5 @@ a.out
 *.o
 .direnv
 vgcore.*
+grader
+rt
