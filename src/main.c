@@ -1,6 +1,7 @@
 #include "alloc.h"
 #include "lexer.h"
 #include "parser.h"
+#include "typecheck.h"
 #include "vector.h"
 #include "vector_get.h"
 #include <stdio.h>
@@ -10,7 +11,7 @@
 typedef enum { LEX, PARSE, TYPECHECK, ALL } RunMode;
 
 int main(int argc, char **argv) {
-  RunMode mode = LEX;
+  RunMode mode = TYPECHECK;
 
   // Handle args
   if (argc < 2) {
@@ -90,8 +91,12 @@ int main(int argc, char **argv) {
   vector *program = parse(tokens);
   free(tokens);
 
+  if (mode == TYPECHECK) {
+    typecheck(program);
+  }
+
   // Print
-  if (mode == PARSE) {
+  if (mode != ALL) {
     for (int i = 0; i < program->size; i++) {
       printf("%s\n", cmd_to_str(vector_get_cmd(program, i)));
     }

@@ -3,6 +3,7 @@
 #include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void vector_init(vector *v, size_t capacity, vector_t type) {
   int size = 0;
@@ -31,8 +32,11 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   case STRUCTINFOVECTOR:
     size = sizeof(struct_info);
     break;
-  case T_TYPEVECTOR:
-    size = sizeof(t_type);
+  case ARRAYINFOVECTOR:
+    size = sizeof(array_info);
+    break;
+  case TVECTOR:
+    size = sizeof(t);
     break;
   case STRVECTOR:
     size = sizeof(char *);
@@ -42,6 +46,81 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   v->data = alloc(capacity * size);
   v->size = 0;
   v->capacity = capacity;
+}
+
+bool vector_contains(vector *v, void *item) {
+  for (int i = 0; i < v->size; i++) {
+    switch (v->type) {
+    case CMDVECTOR:;
+      cmd *cur_cmd = vector_get_cmd(v, i);
+      cmd *cmd_item = (cmd *)item;
+      if (cur_cmd->node == cmd_item->node)
+        return true;
+      break;
+    case TOKENVECTOR:;
+      token *cur_token = vector_get_token(v, i);
+      token *token_item = (token *)item;
+      if (!strcmp(cur_token->text, token_item->text))
+        return true;
+      break;
+    case EXPRVECTOR:;
+      expr *cur_expr = vector_get_expr(v, i);
+      expr *expr_item = (expr *)item;
+      if (cur_expr->node == expr_item->node)
+        return true;
+      break;
+    case LVALUEVECTOR:;
+      lval *cur_lval = vector_get_lvalue(v, i);
+      lval *lval_item = (lval *)item;
+      if (cur_lval->node == lval_item->node)
+        return true;
+      break;
+    case TYPEVECTOR:;
+      type *cur_type = vector_get_type(v, i);
+      type *type_item = (type *)item;
+      if (cur_type->node == type_item->node)
+        return true;
+      break;
+    case STMTVECTOR:;
+      stmt *cur_stmt = vector_get_stmt(v, i);
+      stmt *stmt_item = (stmt *)item;
+      if (cur_stmt->node == stmt_item->node)
+        return true;
+      break;
+    case BINDINGVECTOR:;
+      binding *cur_binding = vector_get_binding(v, i);
+      binding *binding_item = (binding *)item;
+      if (cur_binding->lval == binding_item->lval &&
+          cur_binding->type == binding_item->type)
+        return true;
+      break;
+    case STRUCTINFOVECTOR:;
+      struct_info *cur_struct_info = vector_get_struct_info(v, i);
+      struct_info *struct_info_item = (struct_info *)item;
+      if (cur_struct_info->name == struct_info_item->name)
+        return true;
+      break;
+    case ARRAYINFOVECTOR:;
+      array_info *cur_array_info = vector_get_array_info(v, i);
+      array_info *array_info_item = (array_info *)item;
+      if (cur_array_info->type == array_info_item->type)
+        return true;
+      break;
+    case TVECTOR:;
+      t *cur_t = vector_get_t(v, i);
+      t *t_item = (t *)item;
+      if (cur_t->type == t_item->type && cur_t->info == t_item->info)
+        return true;
+      break;
+    case STRVECTOR:;
+      char *cur_str = vector_get_str(v, i);
+      char *str_item = (char *)item;
+      if (!strcmp(cur_str, str_item))
+        return true;
+      break;
+    }
+  }
+  return false;
 }
 
 void vector_append(vector *v, void *item) {
@@ -71,6 +150,9 @@ void vector_append(vector *v, void *item) {
       break;
     case STRUCTINFOVECTOR:
       size = sizeof(struct_info);
+      break;
+    case ARRAYINFOVECTOR:
+      size = sizeof(array_info);
       break;
     case TVECTOR:
       size = sizeof(t);
@@ -110,6 +192,9 @@ void vector_append(vector *v, void *item) {
     break;
   case STRUCTINFOVECTOR:
     ((struct_info **)v->data)[v->size++] = (struct_info *)item;
+    break;
+  case ARRAYINFOVECTOR:
+    ((array_info **)v->data)[v->size++] = (array_info *)item;
     break;
   case TVECTOR:
     ((t **)v->data)[v->size++] = (t *)item;
@@ -184,6 +269,14 @@ struct_info *vector_get_struct_info(vector *v, int idx) {
   return ((struct_info **)v->data)[idx];
 }
 
+array_info *vector_get_array_info(vector *v, int idx) {
+  if (v->type != ARRAYINFOVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((array_info **)v->data)[idx];
+}
+
 t *vector_get_t(vector *v, int idx) {
   if (v->type != TVECTOR)
     return NULL;
@@ -193,7 +286,7 @@ t *vector_get_t(vector *v, int idx) {
 }
 
 char *vector_get_str(vector *v, int idx) {
-  if (v->type != STMTVECTOR)
+  if (v->type != STRVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
     return NULL;

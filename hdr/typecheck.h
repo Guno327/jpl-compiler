@@ -6,6 +6,7 @@
 #define TYPECHECK_H
 
 void typecheck(vector *program);
-void typeof_expr(expr *e, ctx *c);
+t *typeof_type(type *t, ctx *c);
+t *typeof_expr(expr *e, ctx *c);
 
 #endif

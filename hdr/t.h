@@ -14,4 +14,9 @@ typedef struct {
   vector *ts;
 } struct_info;
 
+typedef struct {
+  t *type;
+  int rank;
+} array_info;
+
 #endif

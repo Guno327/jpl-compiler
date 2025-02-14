@@ -107,8 +107,7 @@ typedef struct {
 typedef struct {
   int start;
   char *var;
-  int vars_size;
-  char **vars;
+  vector *vars;
 } array_lval;
 
 // stmt types
@@ -200,20 +199,16 @@ typedef struct {
 typedef struct {
   int start;
   char *var;
-  int binds_size;
-  binding **binds;
+  vector *binds;
   type *type;
-  int stmts_size;
-  stmt **stmts;
+  vector *stmts;
 } fn_cmd;
 
 typedef struct {
   int start;
   char *var;
-  int vars_size;
-  char **vars;
-  int types_size;
-  type **types;
+  vector *vars;
+  vector *types;
 } struct_cmd;
 
 // EXPR types
@@ -241,13 +236,8 @@ typedef struct {
 } false_expr;
 
 typedef struct {
-  int exprs_size;
-  expr **exprs;
-} expr_list;
-
-typedef struct {
   int start;
-  expr_list *list;
+  vector *exprs;
 } array_literal_expr;
 
 typedef struct {
@@ -257,7 +247,7 @@ typedef struct {
 typedef struct {
   int start;
   char *var;
-  expr_list *list;
+  vector *exprs;
 } struct_literal_expr;
 
 typedef struct {
@@ -288,17 +278,15 @@ typedef struct {
 
 typedef struct {
   int start;
-  int vars_size;
-  char **vars;
-  expr_list *list;
+  vector *vars;
+  vector *exprs;
   expr *expr;
 } array_loop_expr;
 
 typedef struct {
   int start;
-  int vars_size;
-  char **vars;
-  expr_list *list;
+  vector *vars;
+  vector *exprs;
   expr *expr;
 } sum_loop_expr;
 
@@ -306,13 +294,13 @@ typedef struct {
 typedef struct {
   int start;
   expr *expr;
-  expr_list *list;
+  vector *exprs;
 } array_index_expr;
 
 typedef struct {
   int start;
   char *var;
-  expr_list *list;
+  vector *exprs;
 } call_expr;
 
 // Methods
@@ -333,6 +321,6 @@ typedef enum {
   TYPELIST,
   VARLIST
 } list_t;
-char *list_to_str(void **list, size_t size, list_t type);
+char *vector_to_str(vector *v);
 
 #endif

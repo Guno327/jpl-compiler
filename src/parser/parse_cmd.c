@@ -174,8 +174,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
       parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
-    fc->stmts = (stmt **)stmts->data;
-    fc->stmts_size = stmts->size;
+    fc->stmts = stmts;
 
     c->type = FNCMD;
     c->node = fc;
@@ -196,18 +195,16 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     expect_token(tokens, i + 1, NEWLINE);
     i += 2;
 
-    stc->types = NULL;
-    stc->vars = NULL;
-    vector *types = alloc(sizeof(vector));
-    vector *vars = alloc(sizeof(vector));
-    vector_init(types, 8, TYPEVECTOR);
-    vector_init(vars, 8, STRVECTOR);
+    stc->types = alloc(sizeof(vector));
+    stc->vars = alloc(sizeof(vector));
+    vector_init(stc->types, 8, TYPEVECTOR);
+    vector_init(stc->vars, 8, STRVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
       expect_token(tokens, i, VARIABLE);
       char *str = vector_get_token(tokens, i)->text;
       char *var = alloc(strlen(str) + 1);
       memcpy(var, str, strlen(str));
-      vector_append(vars, var);
+      vector_append(stc->vars, var);
       i += 1;
 
       expect_token(tokens, i, COLON);
@@ -215,7 +212,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
 
       type *t = alloc(sizeof(type));
       i = parse_type(tokens, i, t);
-      vector_append(types, t);
+      vector_append(stc->types, t);
 
       expect_token(tokens, i, NEWLINE);
       i += 1;
@@ -228,11 +225,9 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     }
     expect_token(tokens, i, RCURLY);
 
-    if (types->size != 0) {
-      stc->types = (type **)types->data;
-      stc->vars = (char **)vars->data;
-      stc->types_size = types->size;
-      stc->vars_size = vars->size;
+    if (stc->types->size == 0 || stc->vars->size == 0) {
+      stc->vars = NULL;
+      stc->types = NULL;
     }
 
     c->type = STRUCTCMD;
@@ -266,8 +261,7 @@ int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
     i += 1;
   }
 
-  fc->binds = (binding **)binds->data;
-  fc->binds_size = binds->size;
+  fc->binds = binds;
 
   return i;
 }

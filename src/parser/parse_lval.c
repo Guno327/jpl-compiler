@@ -35,8 +35,7 @@ int parse_lvalue(vector *tokens, int i, lval *v) {
       expect_token(tokens, i, COMMA);
       i += 1;
     }
-    alv->vars = (char **)vars->data;
-    alv->vars_size = vars->size;
+    alv->vars = vars;
 
     v->node = alv;
     v->type = ARRAYLVALUE;

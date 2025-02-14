@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 #ifndef VECTOR_H
 #define VECTOR_H
@@ -12,6 +13,7 @@ typedef enum {
   STRVECTOR,
   BINDINGVECTOR,
   STRUCTINFOVECTOR,
+  ARRAYINFOVECTOR,
   TVECTOR,
 } vector_t;
 
@@ -24,5 +26,6 @@ typedef struct {
 
 void vector_init(vector *v, size_t capacity, vector_t type);
 void vector_append(vector *v, void *item);
+bool vector_contains(vector *v, void *item);
 
 #endif
