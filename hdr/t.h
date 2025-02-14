@@ -9,19 +9,9 @@ typedef struct {
 } t;
 
 typedef struct {
-  t *type;
-  int rank;
-} array_info;
-
-typedef struct {
   char *name;
-  vector *binds;
+  vector *vars;
+  vector *ts;
 } struct_info;
-
-typedef struct {
-  int arg_count;
-  t **args;
-  t *ret;
-} fn_info;
 
 #endif

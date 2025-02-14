@@ -31,6 +31,9 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   case STRUCTINFOVECTOR:
     size = sizeof(struct_info);
     break;
+  case T_TYPEVECTOR:
+    size = sizeof(t_type);
+    break;
   case STRVECTOR:
     size = sizeof(char *);
     break;
@@ -69,6 +72,9 @@ void vector_append(vector *v, void *item) {
     case STRUCTINFOVECTOR:
       size = sizeof(struct_info);
       break;
+    case TVECTOR:
+      size = sizeof(t);
+      break;
     case STRVECTOR:
       size = sizeof(char *);
       break;
@@ -104,6 +110,9 @@ void vector_append(vector *v, void *item) {
     break;
   case STRUCTINFOVECTOR:
     ((struct_info **)v->data)[v->size++] = (struct_info *)item;
+    break;
+  case TVECTOR:
+    ((t **)v->data)[v->size++] = (t *)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -173,6 +182,14 @@ struct_info *vector_get_struct_info(vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((struct_info **)v->data)[idx];
+}
+
+t *vector_get_t(vector *v, int idx) {
+  if (v->type != TVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((t **)v->data)[idx];
 }
 
 char *vector_get_str(vector *v, int idx) {
