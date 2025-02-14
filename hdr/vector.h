@@ -26,6 +26,5 @@ typedef struct {
 
 void vector_init(vector *v, size_t capacity, vector_t type);
 void vector_append(vector *v, void *item);
-bool vector_contains(vector *v, void *item);
 
 #endif

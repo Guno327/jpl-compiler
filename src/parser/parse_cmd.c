@@ -225,11 +225,6 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     }
     expect_token(tokens, i, RCURLY);
 
-    if (stc->types->size == 0 || stc->vars->size == 0) {
-      stc->vars = NULL;
-      stc->types = NULL;
-    }
-
     c->type = STRUCTCMD;
     c->node = stc;
     i += 1;

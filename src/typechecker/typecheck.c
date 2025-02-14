@@ -18,14 +18,14 @@ void typecheck(vector *program) {
   struct_info *rgba = alloc(sizeof(struct_info));
   rgba->name = "rgba";
   rgba->ts = alloc(sizeof(vector));
-  vector *b_vec = alloc(sizeof(vector));
-  vector_init(b_vec, 4, STRVECTOR);
+  rgba->vars = alloc(sizeof(vector));
+  vector_init(rgba->vars, 4, STRVECTOR);
   vector_init(rgba->ts, 4, TVECTOR);
 
-  vector_append(b_vec, "r");
-  vector_append(b_vec, "g");
-  vector_append(b_vec, "b");
-  vector_append(b_vec, "a");
+  vector_append(rgba->vars, "r");
+  vector_append(rgba->vars, "g");
+  vector_append(rgba->vars, "b");
+  vector_append(rgba->vars, "a");
 
   for (int i = 0; i < 4; i++) {
     t *float_t = alloc(sizeof(t));
@@ -47,7 +47,7 @@ void typecheck(vector *program) {
       s_info->vars = s_cmd->vars;
 
       vector *s_ts = alloc(sizeof(vector));
-      vector_init(s_ts, s_cmd->types->size, TVECTOR);
+      vector_init(s_ts, 8, TVECTOR);
       for (int i = 0; i < s_cmd->types->size; i++) {
         t *cur = typeof_type(vector_get_type(s_cmd->types, i), global);
         vector_append(s_ts, cur);
@@ -60,9 +60,10 @@ void typecheck(vector *program) {
       t *expr_t = typeof_expr(sh_cmd->expr, global);
       sh_cmd->expr->t_type = expr_t;
       break;
-    default:
-      printf("Compilation Failed [TYPECHECKER]: CMD not yet implemented\n");
-      exit(EXIT_FAILURE);
+    default:;
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "CMD not yet implemented\n");
+      typecheck_error(msg, cur_cmd->start);
     }
   }
 
@@ -99,17 +100,25 @@ t *typeof_type(type *type, ctx *c) {
     break;
   case STRUCTTYPE:;
     struct_type *s_t = (struct_type *)type->node;
-    struct_info *s_info = alloc(sizeof(struct_info));
-    s_info->name = s_t->var;
-    if (!vector_contains(c->structs, s_info)) {
-      printf("Compilation Failed [TYPECHECKER]: struct of name '%s' is not "
-             "declared at %d\n",
-             s_t->var, s_t->start);
-      exit(EXIT_FAILURE);
+    struct_info *found = NULL;
+    for (int i = 0; i < c->structs->size; i++) {
+      struct_info *cur = vector_get_struct_info(c->structs, i);
+      if (!strcmp(cur->name, s_t->var)) {
+        found = cur;
+        break;
+      }
+    }
+    if (found == NULL) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg,
+              "struct of name '%s' is not "
+              "declared at %d\n",
+              s_t->var, s_t->start);
+      typecheck_error(msg, s_t->start);
     }
 
     result->type = STRUCT_T;
-    result->info = s_info;
+    result->info = found;
     break;
   }
   return result;
@@ -151,8 +160,10 @@ t *typeof_expr(expr *e, ctx *c) {
     case DIVOP:
     case MODOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, lhs_t, bop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of INT_T or FLOAT_T got %s",
+                t_to_str(lhs_t));
+        typecheck_error(msg, bop_expr->start);
       }
       result->type = lhs_t->type;
       result->info = NULL;
@@ -162,8 +173,10 @@ t *typeof_expr(expr *e, ctx *c) {
     case GTOP:
     case GEOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, lhs_t, bop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of INT_T or FLOAT_T got %s",
+                t_to_str(lhs_t));
+        typecheck_error(msg, bop_expr->start);
       }
       result->type = BOOL_T;
       result->info = NULL;
@@ -171,26 +184,33 @@ t *typeof_expr(expr *e, ctx *c) {
     case ANDOP:
     case OROP:
       if (lhs_t->type != BOOL_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, lhs_t, bop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(lhs_t));
+        typecheck_error(msg, bop_expr->start);
       }
-      break;
       result->type = BOOL_T;
       result->info = NULL;
+      break;
     case EQOP:
     case NEOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T &&
           lhs_t->type != BOOL_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, lhs_t, bop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of BOOL_T, FLOAT_T, or INT_T got %s",
+                t_to_str(lhs_t));
+        typecheck_error(msg, bop_expr->start);
       }
       result->type = BOOL_T;
       result->info = NULL;
     }
 
     // we know lhs is valid, make sure rhs_t == lhs_t
-    if (lhs_t->type != rhs_t->type)
-      typecheck_error(lhs_t, rhs_t, bop_expr->start);
+    if (lhs_t->type != rhs_t->type) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected type of %s got %s", t_to_str(lhs_t),
+              t_to_str(rhs_t));
+      typecheck_error(msg, bop_expr->start);
+    }
 
     bop_expr->lhs->t_type = lhs_t;
     bop_expr->rhs->t_type = rhs_t;
@@ -202,14 +222,17 @@ t *typeof_expr(expr *e, ctx *c) {
     switch (uop_expr->op) {
     case NEGOP:
       if (item_t->type != FLOAT_T && item_t->type != INT_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, item_t, uop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of FLOAT_T or INT_T got %s",
+                t_to_str(item_t));
+        typecheck_error(msg, uop_expr->start);
       }
       break;
     case NOTOP:
       if (item_t->type != BOOL_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, item_t, uop_expr->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(item_t));
+        typecheck_error(msg, uop_expr->start);
       }
       break;
     }
@@ -228,10 +251,13 @@ t *typeof_expr(expr *e, ctx *c) {
       dec = vector_get_struct_info(c->structs, i);
       if (strcmp(dec->name, sle->var)) {
         if (i == c->structs->size - 1) {
-          printf(
+          char *msg = alloc(BUFSIZ);
+          sprintf(
+              msg,
               "Compilation Failed [TYPECHECKER]: struct of name '%s' has not "
               "been declared at %d\n",
               sle->var, sle->start);
+          typecheck_error(msg, sle->start);
         }
         continue;
       }
@@ -240,11 +266,18 @@ t *typeof_expr(expr *e, ctx *c) {
         expr *cur_e = vector_get_expr(sle->exprs, j);
         t *cur_t = typeof_expr(cur_e, c);
         t *dec_t = vector_get_t(dec->ts, j);
-        if (cur_t->type != dec_t->type)
-          typecheck_error(dec_t, cur_t, cur_e->start);
+        if (cur_t->type != dec_t->type) {
+          char *msg = alloc(BUFSIZ);
+          sprintf(msg, "Expected type of %s got %s", t_to_str(dec_t),
+                  t_to_str(cur_t));
+          typecheck_error(msg, cur_e->start);
+        }
 
         cur_e->t_type = cur_t;
       }
+
+      result->info = dec;
+      result->type = STRUCT_T;
       break;
     }
 
@@ -262,7 +295,10 @@ t *typeof_expr(expr *e, ctx *c) {
         found_t = cur_t;
       } else {
         if (found_t->type != cur_t->type) {
-          typecheck_error(found_t, cur_t, cur_e->start);
+          char *msg = alloc(BUFSIZ);
+          sprintf(msg, "Expected type of %s got %s", t_to_str(found_t),
+                  t_to_str(cur_t));
+          typecheck_error(msg, cur_e->start);
         } else {
           cur_e->t_type = cur_t;
         }
@@ -271,15 +307,17 @@ t *typeof_expr(expr *e, ctx *c) {
 
     array_info *a_info = alloc(sizeof(array_info));
     a_info->type = found_t;
-    a_info->rank = ale->exprs->size - 1;
+    a_info->rank = 1;
 
     result->info = a_info;
     result->type = ARRAY_T;
     break;
   case EXPR:;
     t *inner_t = typeof_expr((expr *)e->node, c);
+    ((expr *)e->node)->t_type = inner_t;
     free(result);
     result = inner_t;
+    break;
   case IFEXPR:;
     if_expr *if_e = (if_expr *)e->node;
     t *if_t = typeof_expr(if_e->if_expr, c);
@@ -287,12 +325,16 @@ t *typeof_expr(expr *e, ctx *c) {
     t *else_t = typeof_expr(if_e->else_expr, c);
 
     if (if_t->type != BOOL_T) {
-      t expected = {BOOL_T, NULL};
-      typecheck_error(&expected, if_t, if_e->if_expr->start);
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(if_t));
+      typecheck_error(msg, if_e->if_expr->start);
     }
 
     if (then_t->type != else_t->type) {
-      typecheck_error(then_t, else_t, if_e->else_expr->start);
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected type of %s got %s", t_to_str(then_t),
+              t_to_str(else_t));
+      typecheck_error(msg, if_e->else_expr->start);
     }
 
     if_e->if_expr->t_type = if_t;
@@ -306,40 +348,41 @@ t *typeof_expr(expr *e, ctx *c) {
     dot_expr *de = (dot_expr *)e->node;
     t *de_lhs_t = typeof_expr(de->expr, c);
     if (de_lhs_t->type != STRUCT_T) {
-      t expected = {STRUCT_T, NULL};
-      typecheck_error(&expected, de_lhs_t, de->start);
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected type of STRUCT_T got %s", t_to_str(de_lhs_t));
+      typecheck_error(msg, de->start);
     }
     de->expr->t_type = de_lhs_t;
 
-    struct_info *de_s_info = (struct_info *)de_lhs_t->info;
-    for (int i = 0; i < de_s_info->vars->size; i++) {
-      char *cur_var = vector_get_str(de_s_info->vars, i);
-      if (!strcmp(cur_var, de->var)) {
-        t *var_t = vector_get_t(de_s_info->ts, i);
-        result->type = var_t->type;
-        result->info = var_t->info;
+    struct_info *lhs_info = (struct_info *)de_lhs_t->info;
+    t *found = NULL;
+    for (int i = 0; i < lhs_info->vars->size; i++) {
+      if (!strcmp(vector_get_str(lhs_info->vars, i), de->var)) {
+        found = vector_get_t(lhs_info->ts, i);
         break;
       }
     }
-
-    if (result->info == NULL) {
-      printf("Compilation Failed [TYPECHECKER]: variable '%s' is not a member "
-             "of struct '%s' at %d\n",
-             de->var, de_s_info->name, de->start);
+    if (found == NULL) {
+      printf("Compilation Failed [TYPECHECKER]: var '%s' is not a member of "
+             "struct '%s'\n",
+             de->var, lhs_info->name);
       exit(EXIT_FAILURE);
     }
+    result->type = found->type;
+    result->info = found->info;
     break;
   case ARRAYINDEXEXPR:;
     array_index_expr *aie = (array_index_expr *)e->node;
     t *aie_lhs_t = typeof_expr(aie->expr, c);
     if (aie_lhs_t->type != ARRAY_T) {
-      t expected = {ARRAY_T, NULL};
-      typecheck_error(&expected, aie_lhs_t, aie->start);
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected type of ARRAY_T got %s", t_to_str(aie_lhs_t));
+      typecheck_error(msg, aie->start);
     }
     aie->expr->t_type = aie_lhs_t;
 
     array_info *aie_info = (array_info *)aie_lhs_t->info;
-    if (aie_info->rank != aie->exprs->size - 1) {
+    if (aie_info->rank != aie->exprs->size) {
       printf("Compilation Failed [TYPECHECKER]: expected index of rank %d, but "
              "was of rank %lu at %d\n",
              aie_info->rank, aie->exprs->size, aie->start);
@@ -350,8 +393,9 @@ t *typeof_expr(expr *e, ctx *c) {
       expr *cur_e = vector_get_expr(aie->exprs, i);
       t *cur_t = typeof_expr(cur_e, c);
       if (cur_t->type != INT_T) {
-        t expected = {INT_T, NULL};
-        typecheck_error(&expected, cur_t, cur_e->start);
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of INT_T got %s", t_to_str(cur_t));
+        typecheck_error(msg, cur_e->start);
       }
       cur_e->t_type = cur_t;
     }
@@ -359,9 +403,12 @@ t *typeof_expr(expr *e, ctx *c) {
     result->type = aie_info->type->type;
     result->info = aie_info->type->info;
     break;
-  default:
-    printf("Compilation Failed [TYPECHECKER]: EXPR not yet implemented\n");
-    exit(EXIT_FAILURE);
+  case VAREXPR:
+  case CALLEXPR:
+  case ARRAYLOOPEXPR:
+  case SUMLOOPEXPR:;
+    char *msg = "EXPR not yet implemented";
+    typecheck_error(msg, e->start);
   }
   return result;
 }

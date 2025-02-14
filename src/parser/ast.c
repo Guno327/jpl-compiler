@@ -140,7 +140,7 @@ char *expr_to_str(expr *expr) {
     break;
   case ARRAYLITERALEXPR:;
     array_literal_expr *ale = (array_literal_expr *)expr->node;
-    if (ale->exprs != NULL) {
+    if (ale->exprs->size != 0) {
       char *ale_list = vector_to_str(ale->exprs);
       sprintf(result, "(ArrayLiteralExpr%s %s)", type_str, ale_list);
       free(ale_list);
@@ -153,7 +153,7 @@ char *expr_to_str(expr *expr) {
     break;
   case STRUCTLITERALEXPR:;
     struct_literal_expr *sle = (struct_literal_expr *)expr->node;
-    if (sle->exprs != NULL) {
+    if (sle->exprs->size != 0) {
       char *sle_list = vector_to_str(sle->exprs);
       sprintf(result, "(StructLiteralExpr%s %s %s)", type_str, sle->var,
               sle_list);
@@ -172,7 +172,7 @@ char *expr_to_str(expr *expr) {
     array_index_expr *aie = (array_index_expr *)expr->node;
     char *aie_expr = expr_to_str(aie->expr);
 
-    if (aie->exprs != NULL) {
+    if (aie->exprs->size != 0) {
       char *aie_list = vector_to_str(aie->exprs);
       sprintf(result, "(ArrayIndexExpr%s %s %s)", type_str, aie_expr, aie_list);
       free(aie_list);
@@ -183,7 +183,7 @@ char *expr_to_str(expr *expr) {
     break;
   case CALLEXPR:;
     call_expr *ce = (call_expr *)expr->node;
-    if (ce->exprs != NULL) {
+    if (ce->exprs->size != 0) {
       char *ce_list = vector_to_str(ce->exprs);
       sprintf(result, "(CallExpr%s %s %s)", type_str, ce->var, ce_list);
       free(ce_list);
@@ -224,7 +224,7 @@ char *expr_to_str(expr *expr) {
   case ARRAYLOOPEXPR:;
     array_loop_expr *aloop = (array_loop_expr *)expr->node;
     sprintf(result, "(ArrayLoopExpr%s", type_str);
-    if (aloop->vars != NULL) {
+    if (aloop->vars->size != 0) {
       for (int i = 0; i < aloop->vars->size; i++) {
         strcat(result, " ");
         strcat(result, vector_get_str(aloop->vars, i));
@@ -244,7 +244,7 @@ char *expr_to_str(expr *expr) {
   case SUMLOOPEXPR:;
     sum_loop_expr *sloop = (sum_loop_expr *)expr->node;
     sprintf(result, "(SumLoopExpr%s", type_str);
-    if (sloop->vars != NULL) {
+    if (sloop->vars->size != 0) {
       for (int i = 0; i < sloop->vars->size; i++) {
         strcat(result, " ");
         strcat(result, vector_get_str(sloop->vars, i));
@@ -318,7 +318,7 @@ char *lval_to_str(lval *lval) {
     break;
   case ARRAYLVALUE:;
     array_lval *alv = (array_lval *)lval->node;
-    if (alv->vars != NULL) {
+    if (alv->vars->size != 0) {
       char *alv_vars = vector_to_str(alv->vars);
       sprintf(result, "(ArrayLValue %s %s)", alv->var, alv_vars);
       free(alv_vars);

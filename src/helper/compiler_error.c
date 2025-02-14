@@ -6,25 +6,20 @@
 
 void lex_error(char c, int i) {
   if (c == '\n')
-    printf("Compilation Failed [LEXER]: unexpected char NEWLINE at %d\n", i);
+    printf("Compilation Failed [LEXER] (%d): unexpected char NEWLINE\n", i);
   else
-    printf("Compilation Failed [LEXER]: unexpected char %c at %d\n", c, i);
+    printf("Compilation Failed [LEXER] (%d): unexpected char %c\n", i, c);
   exit(EXIT_FAILURE);
 }
 
 void parse_error(token *t) {
   char *token = print_token(t);
-  printf("Compilation Failed [PARSER]: unexpected token of type %s starting at "
-         "%d\n",
-         token, t->start);
+  printf("Compilation Failed [PARSER] (%d): unexpected token of type %s\n",
+         t->start, token);
   exit(EXIT_FAILURE);
 }
 
-void typecheck_error(t *got, t *expected, int i) {
-  char *got_str = t_to_str(got);
-  char *expected_str = t_to_str(expected);
-  printf("Compilation failed [TYPECHECKER]: expected type %s, got type %s, at "
-         "%d\n",
-         expected_str, got_str, i);
+void typecheck_error(char *msg, int i) {
+  printf("Compilation failed [TYPECHECKER] (%d): %s\n", i, msg);
   exit(EXIT_FAILURE);
 }

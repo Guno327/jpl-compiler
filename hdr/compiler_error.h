@@ -5,6 +5,6 @@
 
 void lex_error(char c, int i);
 void parse_error(token *t);
-void typecheck_error(t *got, t *expected, int i);
+void typecheck_error(char *msg, int i);
 
 #endif
