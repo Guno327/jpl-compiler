@@ -13,6 +13,7 @@ typedef struct {
 } array_info;
 
 typedef struct {
+  char *name;
   int field_count;
   char **names;
   t **types;

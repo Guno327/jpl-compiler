@@ -323,6 +323,7 @@ char *bop_to_str(b_op op);
 char *lval_to_str(lval *lval);
 char *stmt_to_str(stmt *stmt);
 char *type_to_str(type *type);
+char *t_to_str(t *t);
 
 typedef enum {
   CMDLIST,

@@ -10,48 +10,48 @@ char *cmd_to_str(cmd *cmd) {
   case READCMD:;
     read_cmd *rc = (read_cmd *)cmd->node;
     char *rc_lval = lval_to_str(rc->lval);
-    sprintf(result, "(read_cmd %s %s)", rc->str, rc_lval);
+    sprintf(result, "(ReadCmd %s %s)", rc->str, rc_lval);
     free(rc_lval);
     break;
   case WRITECMD:;
     write_cmd *wc = (write_cmd *)cmd->node;
     char *wc_expr = expr_to_str(wc->expr);
-    sprintf(result, "(write_cmd %s %s)", wc_expr, wc->str);
+    sprintf(result, "(WriteCmd %s %s)", wc_expr, wc->str);
     free(wc_expr);
     break;
   case LETCMD:;
     Letcmd *lc = (Letcmd *)cmd->node;
     char *lc_lval = lval_to_str(lc->lval);
     char *lc_expr = expr_to_str(lc->expr);
-    sprintf(result, "(Letcmd %s %s)", lc_lval, lc_expr);
+    sprintf(result, "(LetCmd %s %s)", lc_lval, lc_expr);
     free(lc_lval);
     free(lc_expr);
     break;
   case ASSERTCMD:;
     assert_cmd *ac = (assert_cmd *)cmd->node;
     char *ac_expr = expr_to_str(ac->expr);
-    sprintf(result, "(assert_cmd %s %s)", ac_expr, ac->str);
+    sprintf(result, "(AssertCmd %s %s)", ac_expr, ac->str);
     break;
   case PRINTCMD:;
     print_cmd *pc = (print_cmd *)cmd->node;
-    sprintf(result, "(print_cmd %s)", pc->str);
+    sprintf(result, "(PrintCmd %s)", pc->str);
     break;
   case SHOWCMD:;
     show_cmd *sc = (show_cmd *)cmd->node;
     char *sc_expr = expr_to_str(sc->expr);
-    sprintf(result, "(show_cmd %s)", sc_expr);
+    sprintf(result, "(ShowCmd %s)", sc_expr);
     free(sc_expr);
     break;
   case TIMECMD:;
     time_cmd *tc = (time_cmd *)cmd->node;
     char *tc_cmd = cmd_to_str(tc->cmd);
-    sprintf(result, "(time_cmd %s)", tc_cmd);
+    sprintf(result, "(TimeCmd %s)", tc_cmd);
     free(tc_cmd);
     break;
   case FNCMD:;
     fn_cmd *fc = (fn_cmd *)cmd->node;
 
-    sprintf(result, "(fn_cmd %s ((", fc->var);
+    sprintf(result, "(FnCmd %s ((", fc->var);
     if (fc->binds != NULL) {
       for (int i = 0; i < fc->binds_size; i++) {
         char *cur_lv = lval_to_str(fc->binds[i]->lval);
@@ -83,7 +83,7 @@ char *cmd_to_str(cmd *cmd) {
     break;
   case STRUCTCMD:;
     struct_cmd *stc = (struct_cmd *)cmd->node;
-    sprintf(result, "(struct_cmd %s", stc->var);
+    sprintf(result, "(StructCmd %s", stc->var);
 
     if (stc->vars != NULL && stc->types != NULL) {
       for (int i = 0; i < stc->vars_size; i++) {
@@ -104,55 +104,68 @@ char *cmd_to_str(cmd *cmd) {
 }
 
 char *expr_to_str(expr *expr) {
+  // Get type
+  char *type_str = t_to_str(expr->t_type);
+  if (type_str != NULL) {
+    char *tmp = type_str;
+    type_str = alloc(BUFSIZ + 1);
+    sprintf(type_str, " %s", tmp);
+    free(tmp);
+  } else {
+    type_str = alloc(1);
+  }
+
+  // rest
   char *result = alloc(BUFSIZ);
   switch (expr->type) {
   case INTEXPR:;
     int_expr *ie = (int_expr *)expr->node;
-    sprintf(result, "(int_expr %lu)", ie->val);
+    sprintf(result, "(IntExpr%s %lu)", type_str, ie->val);
     break;
   case FLOATEXPR:;
     float_expr *fe = (float_expr *)expr->node;
-    sprintf(result, "(float_expr %lu)", (long)fe->val);
+    sprintf(result, "(FloatExpr%s %lu)", type_str, (long)fe->val);
     break;
   case TRUEEXPR:
-    sprintf(result, "(true_expr)");
+    sprintf(result, "(TrueExpr%s)", type_str);
     break;
   case FALSEEXPR:
-    sprintf(result, "(false_expr)");
+    sprintf(result, "(FalseExpr%s)", type_str);
     break;
   case VAREXPR:;
     var_expr *ve = (var_expr *)expr->node;
-    sprintf(result, "(var_expr %s)", ve->var);
+    sprintf(result, "(VarExpr%s %s)", type_str, ve->var);
     break;
   case ARRAYLITERALEXPR:;
     array_literal_expr *ale = (array_literal_expr *)expr->node;
     if (ale->list != NULL) {
       char *ale_list = list_to_str((void **)ale->list->exprs,
                                    ale->list->exprs_size, EXPRLIST);
-      sprintf(result, "(array_literal_expr %s)", ale_list);
+      sprintf(result, "(ArrayLiteralExpr%s %s)", type_str, ale_list);
       free(ale_list);
     } else {
-      sprintf(result, "(array_literal_expr)");
+      sprintf(result, "(ArrayLiteralExpr%s)", type_str);
     }
     break;
   case VOIDEXPR:
-    sprintf(result, "(void_expr)");
+    sprintf(result, "(VoidExpr%s)", type_str);
     break;
   case STRUCTLITERALEXPR:;
     struct_literal_expr *sle = (struct_literal_expr *)expr->node;
     if (sle->list != NULL) {
       char *sle_list = list_to_str((void **)sle->list->exprs,
                                    sle->list->exprs_size, EXPRLIST);
-      sprintf(result, "(struct_literal_expr %s %s)", sle->var, sle_list);
+      sprintf(result, "(StructLiteralExpr%s %s %s)", type_str, sle->var,
+              sle_list);
       free(sle_list);
     } else {
-      sprintf(result, "(struct_literal_expr %s)", sle->var);
+      sprintf(result, "(StructLiteralExpr%s %s)", type_str, sle->var);
     }
     break;
   case DOTEXPR:;
     dot_expr *de = (dot_expr *)expr->node;
     char *de_expr = expr_to_str(de->expr);
-    sprintf(result, "(dot_expr %s %s)", de_expr, de->var);
+    sprintf(result, "(DotExpr%s %s %s)", type_str, de_expr, de->var);
     free(de_expr);
     break;
   case ARRAYINDEXEXPR:;
@@ -162,10 +175,10 @@ char *expr_to_str(expr *expr) {
     if (aie->list != NULL) {
       char *aie_list = list_to_str((void **)aie->list->exprs,
                                    aie->list->exprs_size, EXPRLIST);
-      sprintf(result, "(array_index_expr %s %s)", aie_expr, aie_list);
+      sprintf(result, "(ArrayIndexExpr%s %s %s)", type_str, aie_expr, aie_list);
       free(aie_list);
     } else {
-      sprintf(result, "(array_index_expr %s)", aie_expr);
+      sprintf(result, "(ArrayIndexExpr%s %s)", type_str, aie_expr);
     }
     free(aie_expr);
     break;
@@ -174,10 +187,10 @@ char *expr_to_str(expr *expr) {
     if (ce->list != NULL) {
       char *ce_list =
           list_to_str((void **)ce->list->exprs, ce->list->exprs_size, EXPRLIST);
-      sprintf(result, "(call_expr %s %s)", ce->var, ce_list);
+      sprintf(result, "(CallExpr%s %s %s)", type_str, ce->var, ce_list);
       free(ce_list);
     } else {
-      sprintf(result, "(call_expr %s)", ce->var);
+      sprintf(result, "(CallExpr%s %s)", type_str, ce->var);
     }
     break;
   case EXPR:;
@@ -188,7 +201,7 @@ char *expr_to_str(expr *expr) {
     unop_expr *ue = (unop_expr *)expr->node;
     char *u_op = uop_to_str(ue->op);
     char *u_rhs = expr_to_str(ue->rhs);
-    sprintf(result, "(unop_expr %s %s)", u_op, u_rhs);
+    sprintf(result, "(UnopExpr%s %s %s)", type_str, u_op, u_rhs);
     free(u_rhs);
     break;
   case BINOPEXPR:;
@@ -196,7 +209,7 @@ char *expr_to_str(expr *expr) {
     char *b_op = bop_to_str(be->op);
     char *b_lhs = expr_to_str(be->lhs);
     char *b_rhs = expr_to_str(be->rhs);
-    sprintf(result, "(binop_expr %s %s %s)", b_lhs, b_op, b_rhs);
+    sprintf(result, "(BinopExpr%s %s %s %s)", type_str, b_lhs, b_op, b_rhs);
     free(b_lhs);
     free(b_rhs);
     break;
@@ -205,14 +218,14 @@ char *expr_to_str(expr *expr) {
     char *if_e = expr_to_str(ife->if_expr);
     char *then_e = expr_to_str(ife->then_expr);
     char *else_e = expr_to_str(ife->else_expr);
-    sprintf(result, "(if_expr %s %s %s)", if_e, then_e, else_e);
+    sprintf(result, "(IfExpr%s %s %s %s)", type_str, if_e, then_e, else_e);
     free(if_e);
     free(else_e);
     free(then_e);
     break;
   case ARRAYLOOPEXPR:;
     array_loop_expr *aloop = (array_loop_expr *)expr->node;
-    sprintf(result, "(array_loop_expr");
+    sprintf(result, "(ArrayLoopExpr%s", type_str);
     for (int i = 0; i < aloop->vars_size; i++) {
       strcat(result, " ");
       strcat(result, aloop->vars[i]);
@@ -230,7 +243,7 @@ char *expr_to_str(expr *expr) {
     break;
   case SUMLOOPEXPR:;
     sum_loop_expr *sloop = (sum_loop_expr *)expr->node;
-    sprintf(result, "(sum_loop_expr");
+    sprintf(result, "(SumLoopExpr%s", type_str);
     for (int i = 0; i < sloop->vars_size; i++) {
       strcat(result, " ");
       strcat(result, sloop->vars[i]);
@@ -247,6 +260,8 @@ char *expr_to_str(expr *expr) {
     free(s_final_e);
     break;
   }
+
+  free(type_str);
   return result;
 }
 
@@ -297,16 +312,16 @@ char *lval_to_str(lval *lval) {
   switch (lval->type) {
   case VARLVALUE:;
     var_lval *vlv = (var_lval *)lval->node;
-    sprintf(result, "(var_lval %s)", vlv->var);
+    sprintf(result, "(VarLValue %s)", vlv->var);
     break;
   case ARRAYLVALUE:;
     array_lval *alv = (array_lval *)lval->node;
     if (alv->vars != NULL) {
       char *alv_vars = list_to_str((void **)alv->vars, alv->vars_size, VARLIST);
-      sprintf(result, "(array_lval %s %s)", alv->var, alv_vars);
+      sprintf(result, "(ArrayLValue %s %s)", alv->var, alv_vars);
       free(alv_vars);
     } else {
-      sprintf(result, "(array_lval %s)", alv->var);
+      sprintf(result, "(ArrayLValue %s)", alv->var);
     }
     break;
   }
@@ -320,20 +335,20 @@ char *stmt_to_str(stmt *stmt) {
     let_stmt *ls = (let_stmt *)stmt->node;
     char *ls_lval = lval_to_str(ls->lval);
     char *ls_expr = expr_to_str(ls->expr);
-    sprintf(result, "(let_stmt %s %s)", ls_lval, ls_expr);
+    sprintf(result, "(LetStmt %s %s)", ls_lval, ls_expr);
     free(ls_lval);
     free(ls_expr);
     break;
   case ASSERTSTMT:;
     assert_stmt *as = (assert_stmt *)stmt->node;
     char *as_expr = expr_to_str(as->expr);
-    sprintf(result, "(assert_stmt %s %s)", as_expr, as->str);
+    sprintf(result, "(AssertStmt %s %s)", as_expr, as->str);
     free(as_expr);
     break;
   case RETURNSTMT:;
     return_stmt *rs = (return_stmt *)stmt->node;
     char *rs_expr = expr_to_str(rs->expr);
-    sprintf(result, "(return_stmt %s)", rs_expr);
+    sprintf(result, "(ReturnStmt %s)", rs_expr);
     free(rs_expr);
     break;
   }
@@ -344,26 +359,26 @@ char *type_to_str(type *type) {
   char *result = alloc(BUFSIZ);
   switch (type->type) {
   case INTTYPE:
-    sprintf(result, "(int_type)");
+    sprintf(result, "(IntType)");
     break;
   case FLOATTYPE:
-    sprintf(result, "(float_type)");
+    sprintf(result, "(FloatType)");
     break;
   case BOOLTYPE:
-    sprintf(result, "(bool_type)");
+    sprintf(result, "(BoolType)");
     break;
   case ARRAYTYPE:;
     array_type *at = (array_type *)type->node;
     char *at_t = type_to_str(at->type);
-    sprintf(result, "(array_type %s %d)", at_t, at->rank);
+    sprintf(result, "(ArrayType %s %d)", at_t, at->rank);
     free(at);
     break;
   case STRUCTTYPE:;
     struct_type *st = (struct_type *)type->node;
-    sprintf(result, "(struct_type %s)", st->var);
+    sprintf(result, "(StructType %s)", st->var);
     break;
   case VOIDTYPE:
-    sprintf(result, "(void_type)");
+    sprintf(result, "(VoidType)");
     break;
   }
   return result;
@@ -417,6 +432,45 @@ char *list_to_str(void **list, size_t size, list_t list_t) {
     free(cur);
     if (i != size - 1)
       strcat(result, " ");
+  }
+
+  return result;
+}
+
+char *t_to_str(t *t) {
+  if (t == NULL)
+    return NULL;
+
+  char *result = alloc(BUFSIZ);
+  switch (t->type) {
+  case INT_T:
+    sprintf(result, "(IntType)");
+    break;
+  case FLOAT_T:
+    sprintf(result, "(FloatType)");
+    break;
+  case BOOL_T:
+    sprintf(result, "(BoolType)");
+    break;
+  case VOID_T:
+    sprintf(result, "(VoidType)");
+    break;
+  case ARRAY_T:;
+    array_info *a_info = (array_info *)t->info;
+    char *a_type = t_to_str(a_info->type);
+    sprintf(result, "(ArrayType) %s %d", a_type, a_info->rank);
+    free(a_type);
+    break;
+  case STRUCT_T:;
+    struct_info *s_info = (struct_info *)t->info;
+    sprintf(result, "(StructType %s)", s_info->name);
+    break;
+  case FN_T:
+    // TODO HW7
+    sprintf(result, "(FnType)");
+    break;
+  default:
+    return NULL;
   }
 
   return result;
