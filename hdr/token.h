@@ -43,15 +43,15 @@ typedef enum {
   VARIABLE,
   VOID,
   WRITE
-} TokenType;
+} tokentype;
 
 typedef struct {
-  TokenType type;
+  tokentype type;
   int start;
   char *text;
-} Token;
+} token;
 
-char *print_token(Token *t);
-TokenType keyword(char *text);
+char *print_token(token *t);
+tokentype keyword(char *text);
 
 #endif

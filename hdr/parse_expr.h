@@ -1,17 +1,17 @@
-#ifndef PARSE_EXPR_H
-#define PARSE_EXPR_H
 #include "ast.h"
 #include "token.h"
 #include "vector.h"
+#ifndef PARSE_EXPR_H
+#define PARSE_EXPR_H
 
-int parse_expr(Vector *tokens, int i, Expr *e);
-int parse_expr_list(Vector *tokens, int i, ExprList *a);
-int parse_unary_level(Vector *tokens, int i, Expr *e);
-int parse_index_level(Vector *tokens, int i, Expr *e);
-int parse_mult_level(Vector *tokens, int i, Expr *e);
-int parse_add_level(Vector *tokens, int i, Expr *e);
-int parse_cmp_level(Vector *tokens, int i, Expr *e);
-int parse_bool_level(Vector *tokens, int i, Expr *e);
-int parse_base_level(Vector *tokens, int i, Expr *e);
+int parse_expr(vector *tokens, int i, expr *e);
+int parse_expr_vec(vector *tokens, int i, vector *v);
+int parse_unary_level(vector *tokens, int i, expr *e);
+int parse_index_level(vector *tokens, int i, expr *e);
+int parse_mult_level(vector *tokens, int i, expr *e);
+int parse_add_level(vector *tokens, int i, expr *e);
+int parse_cmp_level(vector *tokens, int i, expr *e);
+int parse_bool_level(vector *tokens, int i, expr *e);
+int parse_base_level(vector *tokens, int i, expr *e);
 
 #endif

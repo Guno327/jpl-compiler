@@ -1,7 +1,10 @@
 #include "alloc.h"
+#include "compiler_error.h"
 #include "lexer.h"
 #include "parser.h"
+#include "typecheck.h"
 #include "vector.h"
+#include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +12,7 @@
 typedef enum { LEX, PARSE, TYPECHECK, ALL } RunMode;
 
 int main(int argc, char **argv) {
-  RunMode mode = LEX;
+  RunMode mode = TYPECHECK;
 
   // Handle args
   if (argc < 2) {
@@ -69,13 +72,15 @@ int main(int argc, char **argv) {
   } while (read != 0);
   fclose(src_file);
 
+  // Save for error handling
+  set_src(src);
+
   // Lex
-  Vector *tokens = lex(src);
-  free(src);
+  vector *tokens = lex(src);
 
   if (mode == LEX) {
     for (int i = 0; i < tokens->size; i++) {
-      Token *t = vector_get_token(tokens, i);
+      token *t = vector_get_token(tokens, i);
       char *t_str = print_token(t);
       printf("%s\n", t_str);
       free(t_str);
@@ -86,13 +91,17 @@ int main(int argc, char **argv) {
   }
 
   // Parse
-  Vector *program = parse(tokens);
+  vector *program = parse(tokens);
   free(tokens);
 
+  if (mode == TYPECHECK) {
+    typecheck(program);
+  }
+
   // Print
-  if (mode == PARSE) {
+  if (mode != ALL) {
     for (int i = 0; i < program->size; i++) {
-      printf("%s\n", print_cmd(vector_get_cmd(program, i)));
+      printf("%s\n", cmd_to_str(vector_get_cmd(program, i)));
     }
     free(program);
     printf("Compilation succeeded: parsing complete\n");

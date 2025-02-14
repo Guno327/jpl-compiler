@@ -8,7 +8,7 @@
 #include <string.h>
 
 // Lexes a string
-int lex_str(const char *src, int i, Token *t) {
+int lex_str(const char *src, int i, token *t) {
   if (src[i] != '"') {
     lex_error(src[i], i);
   }
@@ -31,7 +31,7 @@ int lex_str(const char *src, int i, Token *t) {
 }
 
 // lexes a keyword or variable
-int lex_wrd(const char *src, int i, Token *t) {
+int lex_wrd(const char *src, int i, token *t) {
   if (!isalpha(src[i])) {
     lex_error(src[i], i);
   }
@@ -54,7 +54,7 @@ int lex_wrd(const char *src, int i, Token *t) {
 }
 
 // Lexes an INTVAL or FLOATVAL
-int lex_num(const char *src, int i, Token *t) {
+int lex_num(const char *src, int i, token *t) {
   if (!isdigit(src[i]) && src[i] != '.') {
     lex_error(src[i], i);
   }
@@ -87,7 +87,7 @@ int lex_num(const char *src, int i, Token *t) {
 }
 
 // Lexes a new line
-int lex_nl(const char *src, int i, Token *t) {
+int lex_nl(const char *src, int i, token *t) {
   if (src[i] != '\n') {
     lex_error(src[i], i);
   }
@@ -102,7 +102,7 @@ int lex_nl(const char *src, int i, Token *t) {
 }
 
 // lexes whitespace
-int lex_ws(const char *src, int i, Token *t) {
+int lex_ws(const char *src, int i, token *t) {
   if (src[i] != ' ') {
     lex_error(src[i], i);
   }
@@ -117,7 +117,7 @@ int lex_ws(const char *src, int i, Token *t) {
 }
 
 // lexes an OP
-int lex_op(const char *src, int i, Token *t) {
+int lex_op(const char *src, int i, token *t) {
   t->start = i;
   t->type = OP;
 
@@ -221,7 +221,7 @@ int lex_op(const char *src, int i, Token *t) {
 }
 
 // lexes single char tokens (pnct | nl | ws | op)
-int lex_pnct(const char *src, int i, Token *t) {
+int lex_pnct(const char *src, int i, token *t) {
   switch (src[i]) {
     // Check punctuation
   case ':':
@@ -316,7 +316,7 @@ int lex_pnct(const char *src, int i, Token *t) {
   return i;
 }
 
-Vector *lex(const char *src) {
+vector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
@@ -324,12 +324,12 @@ Vector *lex(const char *src) {
     }
   }
 
-  Vector *tokens = alloc(sizeof(Vector));
+  vector *tokens = alloc(sizeof(vector));
   vector_init(tokens, BUFSIZ, TOKENVECTOR);
 
   int i = 0;
   while (i < strlen(src)) {
-    Token *t = alloc(sizeof(Token));
+    token *t = alloc(sizeof(token));
     t->start = i;
 
     // Check letter
@@ -349,7 +349,7 @@ Vector *lex(const char *src) {
       i = lex_pnct(src, i, t);
       if (t->type == NEWLINE) {
         if (tokens->size > 0 &&
-            ((Token *)(tokens->data[tokens->size - 1]))->type == NEWLINE) {
+            ((token *)(tokens->data[tokens->size - 1]))->type == NEWLINE) {
           free(t);
           continue;
         }
@@ -361,7 +361,7 @@ Vector *lex(const char *src) {
       vector_append(tokens, t);
     }
   };
-  Token *last = alloc(sizeof(Token));
+  token *last = alloc(sizeof(token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
   vector_append(tokens, last);

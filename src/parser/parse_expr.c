@@ -4,17 +4,19 @@
 #include "compiler_error.h"
 #include "parser.h"
 #include "token.h"
+#include "vector_get.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-int parse_expr(Vector *tokens, int i, Expr *e) {
-  // Setup Expr to be empty
+int parse_expr(vector *tokens, int i, expr *e) {
+  // Setup expr to be empty
   e->start = i;
   e->node = NULL;
   e->type = 0;
+  e->t_type = NULL;
 
   i = parse_base_level(tokens, i, e);
   if (e->node == NULL)
@@ -28,7 +30,7 @@ int parse_expr(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_base_level(Vector *tokens, int i, Expr *e) {
+int parse_base_level(vector *tokens, int i, expr *e) {
   e->start = i;
   int type = peek_token(tokens, i);
 
@@ -36,7 +38,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case INTVAL:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    IntExpr *ie = alloc(sizeof(IntExpr));
+    int_expr *ie = alloc(sizeof(int_expr));
     ie->start = i;
 
     char *ie_str = vector_get_token(tokens, i)->text;
@@ -53,7 +55,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case FLOATVAL:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    FloatExpr *fe = alloc(sizeof(FloatExpr));
+    float_expr *fe = alloc(sizeof(float_expr));
     fe->start = i;
 
     char *fe_str = vector_get_token(tokens, i)->text;
@@ -70,7 +72,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case TRUE:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    TrueExpr *te = alloc(sizeof(TrueExpr));
+    true_expr *te = alloc(sizeof(true_expr));
     te->start = i;
     e->node = te;
     e->type = TRUEEXPR;
@@ -79,7 +81,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case FALSE:;
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    FalseExpr *fae = alloc(sizeof(FalseExpr));
+    false_expr *fae = alloc(sizeof(false_expr));
     fae->start = i;
     e->node = fae;
     e->type = FALSEEXPR;
@@ -94,41 +96,39 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
 
     switch (peek_token(tokens, i + 1)) {
     case LCURLY:;
-      StructLiteralExpr *sle = alloc(sizeof(StructLiteralExpr));
+      struct_literal_expr *sle = alloc(sizeof(struct_literal_expr));
       sle->start = i;
       sle->var = v_var;
       i += 2;
 
-      sle->list = NULL;
-      if (peek_token(tokens, i) != RCURLY) {
-        sle->list = alloc(sizeof(ExprList));
-        i = parse_expr_list(tokens, i, sle->list);
-        expect_token(tokens, i, RCURLY);
-      }
+      sle->exprs = alloc(sizeof(vector));
+      vector_init(sle->exprs, 8, EXPRVECTOR);
+      if (peek_token(tokens, i) != RCURLY)
+        i = parse_expr_vec(tokens, i, sle->exprs);
+      expect_token(tokens, i, RCURLY);
 
       e->type = STRUCTLITERALEXPR;
       e->node = sle;
       i += 1;
       break;
     case LPAREN:;
-      CallExpr *ce = alloc(sizeof(CallExpr));
+      call_expr *ce = alloc(sizeof(call_expr));
       ce->start = i;
       ce->var = v_var;
       i += 2;
 
-      ce->list = NULL;
-      if (peek_token(tokens, i) != RPAREN) {
-        ce->list = alloc(sizeof(ExprList));
-        i = parse_expr_list(tokens, i, ce->list);
-        expect_token(tokens, i, RPAREN);
-      }
+      ce->exprs = alloc(sizeof(vector));
+      vector_init(ce->exprs, 8, EXPRVECTOR);
+      if (peek_token(tokens, i) != RPAREN)
+        i = parse_expr_vec(tokens, i, ce->exprs);
+      expect_token(tokens, i, RPAREN);
 
       e->type = CALLEXPR;
       e->node = ce;
       i += 1;
       break;
     default:;
-      VarExpr *ve = alloc(sizeof(VarExpr));
+      var_expr *ve = alloc(sizeof(var_expr));
       ve->start = i;
       ve->var = v_var;
       e->node = ve;
@@ -140,7 +140,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
     i += 1;
-    Expr *new_e = alloc(sizeof(Expr));
+    expr *new_e = alloc(sizeof(expr));
     i = parse_expr(tokens, i, new_e);
     expect_token(tokens, i, RPAREN);
 
@@ -151,17 +151,15 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case LSQUARE:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    ArrayLiteralExpr *ale = alloc(sizeof(ArrayLiteralExpr));
+    array_literal_expr *ale = alloc(sizeof(array_literal_expr));
     ale->start = i;
     i += 1;
 
-    ale->list = NULL;
-    if (peek_token(tokens, i) != RSQUARE) {
-      ale->list = alloc(sizeof(ExprList));
-      i = parse_expr_list(tokens, i, ale->list);
-
-      expect_token(tokens, i, RSQUARE);
-    }
+    ale->exprs = alloc(sizeof(vector));
+    vector_init(ale->exprs, 8, EXPRVECTOR);
+    if (peek_token(tokens, i) != RSQUARE)
+      i = parse_expr_vec(tokens, i, ale->exprs);
+    expect_token(tokens, i, RSQUARE);
 
     e->node = ale;
     e->type = ARRAYLITERALEXPR;
@@ -170,7 +168,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case VOID:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    VoidExpr *vde = alloc(sizeof(VoidExpr));
+    void_expr *vde = alloc(sizeof(void_expr));
     vde->start = i;
     e->type = VOIDEXPR;
     e->node = vde;
@@ -179,23 +177,23 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case IF:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    IfExpr *ife = alloc(sizeof(IfExpr));
+    if_expr *ife = alloc(sizeof(if_expr));
     ife->start = i;
     i += 1;
 
-    ife->if_expr = alloc(sizeof(Expr));
+    ife->if_expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, ife->if_expr);
 
     expect_token(tokens, i, THEN);
     i += 1;
 
-    ife->then_expr = alloc(sizeof(Expr));
+    ife->then_expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, ife->then_expr);
 
     expect_token(tokens, i, ELSE);
     i += 1;
 
-    ife->else_expr = alloc(sizeof(Expr));
+    ife->else_expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, ife->else_expr);
 
     e->type = IFEXPR;
@@ -204,13 +202,13 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case ARRAY:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    ArrayLoopExpr *aloop = alloc(sizeof(ArrayLoopExpr));
+    array_loop_expr *aloop = alloc(sizeof(array_loop_expr));
     aloop->start = i;
     expect_token(tokens, i += 1, LSQUARE);
     i += 1;
 
-    Vector *a_vars = alloc(sizeof(Vector));
-    Vector *a_exprs = alloc(sizeof(Vector));
+    vector *a_vars = alloc(sizeof(vector));
+    vector *a_exprs = alloc(sizeof(vector));
     vector_init(a_vars, 8, STRVECTOR);
     vector_init(a_exprs, 8, EXPRVECTOR);
     while (i < tokens->size) {
@@ -226,7 +224,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
       expect_token(tokens, i, COLON);
       i += 1;
 
-      Expr *a_cur_e = alloc(sizeof(Expr));
+      expr *a_cur_e = alloc(sizeof(expr));
       i = parse_expr(tokens, i, a_cur_e);
       vector_append(a_exprs, a_cur_e);
 
@@ -237,17 +235,9 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
     expect_token(tokens, i, RSQUARE);
     i += 1;
 
-    aloop->vars_size = a_vars->size;
-    if (a_vars->size == 0)
-      aloop->vars = NULL;
-    else
-      aloop->vars = (char **)a_vars->data;
-
-    aloop->list = alloc(sizeof(ExprList));
-    aloop->list->exprs_size = a_exprs->size;
-    aloop->list->exprs = (Expr **)a_exprs->data;
-
-    aloop->expr = alloc(sizeof(Expr));
+    aloop->vars = a_vars;
+    aloop->exprs = a_exprs;
+    aloop->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, aloop->expr);
 
     e->type = ARRAYLOOPEXPR;
@@ -256,13 +246,13 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   case SUM:
     if (e->node != NULL)
       parse_error(vector_get_token(tokens, i));
-    SumLoopExpr *sloop = alloc(sizeof(SumLoopExpr));
+    sum_loop_expr *sloop = alloc(sizeof(sum_loop_expr));
     sloop->start = i;
     expect_token(tokens, i += 1, LSQUARE);
     i += 1;
 
-    Vector *s_vars = alloc(sizeof(Vector));
-    Vector *s_exprs = alloc(sizeof(Vector));
+    vector *s_vars = alloc(sizeof(vector));
+    vector *s_exprs = alloc(sizeof(vector));
     vector_init(s_vars, 8, STRVECTOR);
     vector_init(s_exprs, 8, EXPRVECTOR);
     while (i < tokens->size) {
@@ -278,7 +268,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
       expect_token(tokens, i, COLON);
       i += 1;
 
-      Expr *s_cur_e = alloc(sizeof(Expr));
+      expr *s_cur_e = alloc(sizeof(expr));
       i = parse_expr(tokens, i, s_cur_e);
       vector_append(s_exprs, s_cur_e);
 
@@ -289,17 +279,10 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
     expect_token(tokens, i, RSQUARE);
     i += 1;
 
-    sloop->vars_size = s_vars->size;
-    if (s_vars->size == 0)
-      sloop->vars = NULL;
-    else
-      sloop->vars = (char **)s_vars->data;
+    sloop->vars = s_vars;
+    sloop->exprs = s_exprs;
 
-    sloop->list = alloc(sizeof(ExprList));
-    sloop->list->exprs_size = s_exprs->size;
-    sloop->list->exprs = (Expr **)s_exprs->data;
-
-    sloop->expr = alloc(sizeof(Expr));
+    sloop->expr = alloc(sizeof(expr));
     i = parse_expr(tokens, i, sloop->expr);
 
     e->type = SUMLOOPEXPR;
@@ -313,7 +296,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
       break;
     if (e->node != NULL)
       break;
-    UnopExpr *unop = alloc(sizeof(UnopExpr));
+    unop_expr *unop = alloc(sizeof(unop_expr));
     unop->start = i;
     if (op == '!') {
       unop->op = NOTOP;
@@ -327,7 +310,7 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
 
     // Since base checks for unary and index
     // this should eval just fine
-    unop->rhs = alloc(sizeof(Expr));
+    unop->rhs = alloc(sizeof(expr));
     i = parse_base_level(tokens, i, unop->rhs);
     if (unop->rhs->node == NULL)
       parse_error(vector_get_token(tokens, i));
@@ -346,12 +329,12 @@ int parse_base_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_index_level(Vector *tokens, int i, Expr *e) {
+int parse_index_level(vector *tokens, int i, expr *e) {
   // If DOT or LSQUARE we have index
   int type = peek_token(tokens, i);
-  // DotExpr
+  // dot_expr
   if (type == DOT) {
-    DotExpr *de = alloc(sizeof(DotExpr));
+    dot_expr *de = alloc(sizeof(dot_expr));
     de->start = e->start;
     i += 1;
 
@@ -360,7 +343,7 @@ int parse_index_level(Vector *tokens, int i, Expr *e) {
     de->var = alloc(strlen(de_str) + 1);
     memcpy(de->var, de_str, strlen(de_str));
 
-    Expr *old_e = alloc(sizeof(Expr));
+    expr *old_e = alloc(sizeof(expr));
     old_e->start = e->start;
     old_e->type = e->type;
     old_e->node = e->node;
@@ -370,21 +353,20 @@ int parse_index_level(Vector *tokens, int i, Expr *e) {
     e->node = de;
     i += 1;
   }
-  // ArrayIndexExpr
+  // array_index_expr
   else if (type == LSQUARE) {
-    ArrayIndexExpr *aie = alloc(sizeof(ArrayIndexExpr));
+    array_index_expr *aie = alloc(sizeof(array_index_expr));
     aie->start = aie->start;
     aie->expr = e->node;
     i += 1;
 
-    aie->list = NULL;
-    if (peek_token(tokens, i) != RSQUARE) {
-      aie->list = alloc(sizeof(ExprList));
-      i = parse_expr_list(tokens, i, aie->list);
-    }
+    aie->exprs = alloc(sizeof(vector));
+    vector_init(aie->exprs, 8, EXPRVECTOR);
+    if (peek_token(tokens, i) != RSQUARE)
+      i = parse_expr_vec(tokens, i, aie->exprs);
     expect_token(tokens, i, RSQUARE);
 
-    Expr *old_e = alloc(sizeof(Expr));
+    expr *old_e = alloc(sizeof(expr));
     old_e->start = e->start;
     old_e->type = e->type;
     old_e->node = e->node;
@@ -401,7 +383,7 @@ int parse_index_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_mult_level(Vector *tokens, int i, Expr *e) {
+int parse_mult_level(vector *tokens, int i, expr *e) {
   int type = peek_token(tokens, i);
   // Not mult, move deeper
   if (type != OP || e->node == NULL) {
@@ -410,20 +392,20 @@ int parse_mult_level(Vector *tokens, int i, Expr *e) {
     if (old_i == i)
       return i;
   } else {
-    Token *t = vector_get_token(tokens, i);
+    token *t = vector_get_token(tokens, i);
     char c = t->text[0];
     if (c == '*' || c == '%' || c == '/') {
-      BinopExpr *be = alloc(sizeof(BinopExpr));
+      binop_expr *be = alloc(sizeof(binop_expr));
       be->start = i;
       i += 1;
 
-      Expr *old_e = alloc(sizeof(Expr));
+      expr *old_e = alloc(sizeof(expr));
       old_e->start = e->start;
       old_e->type = e->type;
       old_e->node = e->node;
       be->lhs = old_e;
 
-      be->rhs = alloc(sizeof(Expr));
+      be->rhs = alloc(sizeof(expr));
       i = parse_base_level(tokens, i, be->rhs);
       if (be->rhs->node == NULL)
         parse_error(vector_get_token(tokens, i));
@@ -458,7 +440,7 @@ int parse_mult_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_add_level(Vector *tokens, int i, Expr *e) {
+int parse_add_level(vector *tokens, int i, expr *e) {
   int type = peek_token(tokens, i);
   // Not add, move deeper
   if (type != OP || e->node == NULL) {
@@ -467,20 +449,20 @@ int parse_add_level(Vector *tokens, int i, Expr *e) {
     if (old_i == i)
       return i;
   } else {
-    Token *t = vector_get_token(tokens, i);
+    token *t = vector_get_token(tokens, i);
     char c = t->text[0];
     if (c == '+' || c == '-') {
-      BinopExpr *be = alloc(sizeof(BinopExpr));
+      binop_expr *be = alloc(sizeof(binop_expr));
       be->start = i;
       i += 1;
 
-      Expr *old_e = alloc(sizeof(Expr));
+      expr *old_e = alloc(sizeof(expr));
       old_e->start = e->start;
       old_e->type = e->type;
       old_e->node = e->node;
       be->lhs = old_e;
 
-      be->rhs = alloc(sizeof(Expr));
+      be->rhs = alloc(sizeof(expr));
       i = parse_mult_level(tokens, i, be->rhs);
       if (be->rhs->node == NULL)
         parse_error(vector_get_token(tokens, i));
@@ -512,7 +494,7 @@ int parse_add_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_cmp_level(Vector *tokens, int i, Expr *e) {
+int parse_cmp_level(vector *tokens, int i, expr *e) {
   int type = peek_token(tokens, i);
   // Not cmp, move deeper
   if (type != OP || e->node == NULL) {
@@ -521,7 +503,7 @@ int parse_cmp_level(Vector *tokens, int i, Expr *e) {
     if (old_i == i)
       return i;
   } else {
-    Token *t = vector_get_token(tokens, i);
+    token *t = vector_get_token(tokens, i);
     char c = t->text[0];
     if (c == '<' || c == '>' || c == '=' || c == '!') {
       if (c == '!' && strlen(t->text) == 1) {
@@ -530,17 +512,17 @@ int parse_cmp_level(Vector *tokens, int i, Expr *e) {
         if (old_i == i)
           return i;
       } else {
-        BinopExpr *be = alloc(sizeof(BinopExpr));
+        binop_expr *be = alloc(sizeof(binop_expr));
         be->start = i;
         i += 1;
 
-        Expr *old_e = alloc(sizeof(Expr));
+        expr *old_e = alloc(sizeof(expr));
         old_e->start = e->start;
         old_e->type = e->type;
         old_e->node = e->node;
         be->lhs = old_e;
 
-        be->rhs = alloc(sizeof(Expr));
+        be->rhs = alloc(sizeof(expr));
         i = parse_add_level(tokens, i, be->rhs);
         if (be->rhs->node == NULL)
           parse_error(vector_get_token(tokens, i));
@@ -599,7 +581,7 @@ int parse_cmp_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_bool_level(Vector *tokens, int i, Expr *e) {
+int parse_bool_level(vector *tokens, int i, expr *e) {
   int type = peek_token(tokens, i);
   // Not bool, move deeper
   if (type != OP || e->node == NULL) {
@@ -608,20 +590,20 @@ int parse_bool_level(Vector *tokens, int i, Expr *e) {
     if (old_i == i)
       return i;
   } else {
-    Token *t = vector_get_token(tokens, i);
+    token *t = vector_get_token(tokens, i);
     char c = t->text[0];
     if (c == '&' || c == '|') {
-      BinopExpr *be = alloc(sizeof(BinopExpr));
+      binop_expr *be = alloc(sizeof(binop_expr));
       be->start = i;
       i += 1;
 
-      Expr *old_e = alloc(sizeof(Expr));
+      expr *old_e = alloc(sizeof(expr));
       old_e->start = e->start;
       old_e->type = e->type;
       old_e->node = e->node;
       be->lhs = old_e;
 
-      be->rhs = alloc(sizeof(Expr));
+      be->rhs = alloc(sizeof(expr));
       i = parse_cmp_level(tokens, i, be->rhs);
       if (be->rhs->node == NULL)
         parse_error(vector_get_token(tokens, i));
@@ -661,19 +643,14 @@ int parse_bool_level(Vector *tokens, int i, Expr *e) {
   return i;
 }
 
-int parse_expr_list(Vector *tokens, int i, ExprList *list) {
-  Vector *nodes = alloc(sizeof(Vector));
-  vector_init(nodes, 8, EXPRVECTOR);
-
+int parse_expr_vec(vector *tokens, int i, vector *exprs) {
   while (i < tokens->size - 1) {
-    Expr *e = alloc(sizeof(Expr));
+    expr *e = alloc(sizeof(expr));
     e->start = i;
     i = parse_expr(tokens, i, e);
-    vector_append(nodes, e);
+    vector_append(exprs, e);
 
     if (peek_token(tokens, i) != COMMA) {
-      list->exprs_size = nodes->size;
-      list->exprs = (Expr **)nodes->data;
       break;
     }
 

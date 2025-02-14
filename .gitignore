@@ -1,6 +1,9 @@
 __pycache__/*
 a.out
 *.class
-*.o
+obj
+compiler
 .direnv
 vgcore.*
+grader
+rt
