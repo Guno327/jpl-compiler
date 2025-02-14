@@ -161,7 +161,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case MODOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of INT_T or FLOAT_T got %s",
+        sprintf(msg, "Expected type of (IntType) or (FloatType) got %s",
                 t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
       }
@@ -174,7 +174,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case GEOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of INT_T or FLOAT_T got %s",
+        sprintf(msg, "Expected type of (IntType) or (FloatType) got %s",
                 t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
       }
@@ -185,7 +185,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case OROP:
       if (lhs_t->type != BOOL_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(lhs_t));
+        sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
       }
       result->type = BOOL_T;
@@ -196,7 +196,8 @@ t *typeof_expr(expr *e, ctx *c) {
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T &&
           lhs_t->type != BOOL_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of BOOL_T, FLOAT_T, or INT_T got %s",
+        sprintf(msg,
+                "Expected type of (BoolType), (FloatType), or (IntType) got %s",
                 t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
       }
@@ -223,7 +224,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case NEGOP:
       if (item_t->type != FLOAT_T && item_t->type != INT_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of FLOAT_T or INT_T got %s",
+        sprintf(msg, "Expected type of (FloatType) or (IntType) got %s",
                 t_to_str(item_t));
         typecheck_error(msg, uop_expr->start);
       }
@@ -231,7 +232,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case NOTOP:
       if (item_t->type != BOOL_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(item_t));
+        sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(item_t));
         typecheck_error(msg, uop_expr->start);
       }
       break;
@@ -326,7 +327,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     if (if_t->type != BOOL_T) {
       char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Expected type of BOOL_T got %s", t_to_str(if_t));
+      sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(if_t));
       typecheck_error(msg, if_e->if_expr->start);
     }
 
@@ -349,7 +350,7 @@ t *typeof_expr(expr *e, ctx *c) {
     t *de_lhs_t = typeof_expr(de->expr, c);
     if (de_lhs_t->type != STRUCT_T) {
       char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Expected type of STRUCT_T got %s", t_to_str(de_lhs_t));
+      sprintf(msg, "Expected type of (StructType) got %s", t_to_str(de_lhs_t));
       typecheck_error(msg, de->start);
     }
     de->expr->t_type = de_lhs_t;
@@ -376,7 +377,7 @@ t *typeof_expr(expr *e, ctx *c) {
     t *aie_lhs_t = typeof_expr(aie->expr, c);
     if (aie_lhs_t->type != ARRAY_T) {
       char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Expected type of ARRAY_T got %s", t_to_str(aie_lhs_t));
+      sprintf(msg, "Expected type of (ArrayType) got %s", t_to_str(aie_lhs_t));
       typecheck_error(msg, aie->start);
     }
     aie->expr->t_type = aie_lhs_t;
@@ -394,7 +395,7 @@ t *typeof_expr(expr *e, ctx *c) {
       t *cur_t = typeof_expr(cur_e, c);
       if (cur_t->type != INT_T) {
         char *msg = alloc(BUFSIZ);
-        sprintf(msg, "Expected type of INT_T got %s", t_to_str(cur_t));
+        sprintf(msg, "Expected type of (IntType) got %s", t_to_str(cur_t));
         typecheck_error(msg, cur_e->start);
       }
       cur_e->t_type = cur_t;

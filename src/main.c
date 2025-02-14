@@ -1,4 +1,5 @@
 #include "alloc.h"
+#include "compiler_error.h"
 #include "lexer.h"
 #include "parser.h"
 #include "typecheck.h"
@@ -71,9 +72,11 @@ int main(int argc, char **argv) {
   } while (read != 0);
   fclose(src_file);
 
+  // Save for error handling
+  set_src(src);
+
   // Lex
   vector *tokens = lex(src);
-  free(src);
 
   if (mode == LEX) {
     for (int i = 0; i < tokens->size; i++) {
