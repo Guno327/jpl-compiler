@@ -22,7 +22,7 @@ char *cmd_to_str(cmd *cmd) {
     free(wc_expr);
     break;
   case LETCMD:;
-    Letcmd *lc = (Letcmd *)cmd->node;
+    let_cmd *lc = (let_cmd *)cmd->node;
     char *lc_lval = lval_to_str(lc->lval);
     char *lc_expr = expr_to_str(lc->expr);
     sprintf(result, "(LetCmd %s %s)", lc_lval, lc_expr);

@@ -15,8 +15,20 @@ typedef struct {
 } struct_info;
 
 typedef struct {
+  char *name;
   t *type;
   int rank;
 } array_info;
+
+typedef struct {
+  char *name;
+  vector *args;
+  t *ret;
+} fn_info;
+
+typedef struct {
+  char *name;
+  t *type;
+} var_info;
 
 #endif

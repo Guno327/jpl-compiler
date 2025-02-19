@@ -8,6 +8,8 @@ typedef struct ctx {
   struct ctx *parent;
   vector *structs;
   vector *arrays;
+  vector *fns;
+  vector *vars;
 } ctx;
 
 #endif

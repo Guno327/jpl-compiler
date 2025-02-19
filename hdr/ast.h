@@ -82,6 +82,7 @@ typedef enum { LETSTMT, ASSERTSTMT, RETURNSTMT } stmt_t;
 typedef struct {
   int start;
   stmt_t type;
+  t *t_type;
   void *node;
 } stmt;
 
@@ -89,6 +90,7 @@ typedef enum { VARLVALUE, ARRAYLVALUE } lval_t;
 typedef struct {
   int start;
   lval_t type;
+  t *t_type;
   void *node;
 } lval;
 
@@ -173,7 +175,7 @@ typedef struct {
   int start;
   lval *lval;
   expr *expr;
-} Letcmd;
+} let_cmd;
 
 typedef struct {
   int start;

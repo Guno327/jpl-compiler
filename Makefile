@@ -22,4 +22,4 @@ run: compiler
 	./compiler $(FLAGS) $(TEST)
 
 clean:
-	rm -rf compiler $(DIR)
+	rm -rf compiler $(DIR) vgcore.*

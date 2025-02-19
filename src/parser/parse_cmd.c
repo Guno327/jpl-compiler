@@ -60,7 +60,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     c->type = WRITECMD;
     break;
   case LET:;
-    Letcmd *lc = alloc(sizeof(Letcmd));
+    let_cmd *lc = alloc(sizeof(let_cmd));
     lc->start = i;
     i += 1;
 
