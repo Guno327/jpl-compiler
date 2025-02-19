@@ -35,7 +35,7 @@ t *typeof_expr(expr *e, ctx *c) {
     t *lhs_t = typeof_expr(bop_expr->lhs, c);
     t *rhs_t = typeof_expr(bop_expr->rhs, c);
 
-    // check lhs is valid for op
+    // check LHS is valid for op
     switch (bop_expr->op) {
     case ADDOP:
     case SUBOP:
@@ -88,7 +88,7 @@ t *typeof_expr(expr *e, ctx *c) {
       result->info = NULL;
     }
 
-    // we know lhs is valid, make sure rhs_t == lhs_t
+    // We know LHS is valid, make sure rhs_t == lhs_t
     if (lhs_t->type != rhs_t->type) {
       char *msg = alloc(BUFSIZ);
       sprintf(msg, "Expected type of %s got %s", t_to_str(lhs_t),
@@ -129,44 +129,37 @@ t *typeof_expr(expr *e, ctx *c) {
   case STRUCTLITERALEXPR:;
     struct_literal_expr *sle = (struct_literal_expr *)e->node;
 
-    // check exprs again decleration, and update
-    struct_info *dec = NULL;
-    for (int i = 0; i < c->structs->size; i++) {
-      dec = vector_get_struct_info(c->structs, i);
-      if (strcmp(dec->name, sle->var)) {
-        if (i == c->structs->size - 1) {
-          char *msg = alloc(BUFSIZ);
-          sprintf(
-              msg,
-              "Compilation Failed [TYPECHECKER]: struct of name '%s' has not "
-              "been declared at %d\n",
-              sle->var, sle->start);
-          typecheck_error(msg, sle->start);
-        }
-        continue;
-      }
-
-      for (int j = 0; j < sle->exprs->size; j++) {
-        expr *cur_e = vector_get_expr(sle->exprs, j);
-        t *cur_t = typeof_expr(cur_e, c);
-        t *dec_t = vector_get_t(dec->ts, j);
-        if (cur_t->type != dec_t->type) {
-          char *msg = alloc(BUFSIZ);
-          sprintf(msg, "Expected type of %s got %s", t_to_str(dec_t),
-                  t_to_str(cur_t));
-          typecheck_error(msg, cur_e->start);
-        }
-
-        cur_e->t_type = cur_t;
-      }
-
-      result->info = dec;
-      result->type = STRUCT_T;
-      break;
+    // Check exprs again decleration, and update
+    info *sle_exist = check_ctx(c, sle->var);
+    if (sle_exist == NULL) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Struct '%s' has not been declared yet", sle->var);
+      typecheck_error(msg, sle->start);
+    }
+    if (sle_exist->type != STRUCTINFO) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Symbol '%s' is not a struct", sle->var);
+      typecheck_error(msg, sle->start);
     }
 
+    // check exprs again definition
+    struct_info *sle_dec = (struct_info *)sle_exist->node;
+    for (int j = 0; j < sle->exprs->size; j++) {
+      expr *cur_e = vector_get_expr(sle->exprs, j);
+      t *cur_t = typeof_expr(cur_e, c);
+      t *dec_t = vector_get_t(sle_dec->ts, j);
+      if (cur_t->type != dec_t->type) {
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected type of %s got %s", t_to_str(dec_t),
+                t_to_str(cur_t));
+        typecheck_error(msg, cur_e->start);
+      }
+
+      cur_e->t_type = cur_t;
+    }
+
+    result->info = sle_dec;
     result->type = STRUCT_T;
-    result->info = dec;
     break;
   case ARRAYLITERALEXPR:;
     array_literal_expr *ale = (array_literal_expr *)e->node;
@@ -287,12 +280,164 @@ t *typeof_expr(expr *e, ctx *c) {
     result->type = aie_info->type->type;
     result->info = aie_info->type->info;
     break;
-  case VAREXPR:
-  case CALLEXPR:
-  case ARRAYLOOPEXPR:
+  case VAREXPR:;
+    var_expr *ve = (var_expr *)e->node;
+    info *ve_def = check_ctx(c, ve->var);
+    if (ve_def == NULL) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Variable '%s' has not been defined yet", ve->var);
+      typecheck_error(msg, ve->start);
+    }
+
+    switch (ve_def->type) {
+    case STRUCTINFO:;
+      struct_info *si = (struct_info *)ve_def->node;
+      result->type = STRUCT_T;
+      result->info = si;
+      break;
+    case ARRAYINFO:;
+      array_info *ai = (array_info *)ve_def->node;
+      result->type = ARRAY_T;
+      result->info = ai;
+      break;
+    case VARINFO:;
+      var_info *vi = (var_info *)ve_def->node;
+      free(result);
+      result = vi->t;
+      break;
+    default:;
+      typecheck_error("Expected variable, found function", ve->start);
+    }
+    break;
+  case CALLEXPR:;
+    call_expr *ce = (call_expr *)e->node;
+
+    // Check for function in ctx
+    info *ce_exist = check_ctx(c, ce->var);
+    if (ce_exist == NULL) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Function '%s' has not been defined yet", ce->var);
+      typecheck_error(msg, ce->start);
+    }
+    if (ce_exist->type != FNINFO) {
+      typecheck_error("Expected function, found variable", ce->start);
+    }
+    fn_info *ce_info = (fn_info *)ce_exist->node;
+
+    // Make sure we have the right number of args
+    if (ce_info->args->size != ce->exprs->size) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Function '%s' expects %lu args, found %lu", ce->var,
+              ce_info->args->size, ce->exprs->size);
+      typecheck_error(msg, ce->start);
+    }
+
+    // Loop through args, check types
+    for (int i = 0; i < ce_info->args->size; i++) {
+      expr *e = vector_get_expr(ce->exprs, i);
+      t *et = typeof_expr(e, c);
+
+      binding *b = vector_get_binding(ce_info->args, i);
+      t *deft = typeof_type(b->type, c);
+
+      if (et->type != deft->type || et->info != deft->info) {
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Argument %d should be of type %s, is of type %s", i,
+                t_to_str(deft), t_to_str(et));
+        typecheck_error(msg, e->start);
+      }
+      e->t_type = deft;
+    }
+
+    result = ce_info->ret;
+    break;
+  case ARRAYLOOPEXPR:;
+    array_loop_expr *aloop = (array_loop_expr *)e->node;
+
+    // Make sure exprs is not empty
+    if (aloop->exprs->size == 0) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected Expr, found nothing");
+      typecheck_error(msg, e->start);
+    }
+
+    // Loop through vars, adding to inner scope
+    ctx *aloop_ctx = setup_ctx();
+    aloop_ctx->parent = c;
+    for (int i = 0; i < aloop->vars->size; i++) {
+      expr *e = vector_get_expr(aloop->exprs, i);
+      t *et = typeof_expr(e, c);
+      if (et->type != INT_T) {
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected (IntType), found %s", t_to_str(et));
+        typecheck_error(msg, e->start);
+      }
+      e->t_type = et;
+
+      char *var = vector_get_str(aloop->vars, i);
+      var_info *info = alloc(sizeof(var_info));
+      info->t = et;
+      info->name = var;
+      vector_append(aloop_ctx->vars, info);
+    }
+
+    // Typecheck expr now that we have scope
+    t *aloop_t = typeof_expr(aloop->expr, aloop_ctx);
+    aloop->expr->t_type = aloop_t;
+    free(aloop_ctx);
+
+    // Build up type
+    array_info *aloop_info = alloc(sizeof(array_info));
+    aloop_info->type = aloop_t;
+    aloop_info->rank = aloop->vars->size;
+
+    result->type = ARRAY_T;
+    result->info = aloop_info;
+    break;
   case SUMLOOPEXPR:;
-    char *msg = "EXPR not yet implemented";
-    typecheck_error(msg, e->start);
+    sum_loop_expr *sloop = (sum_loop_expr *)e->node;
+
+    // Make sure exprs is not empty
+    if (sloop->exprs->size == 0) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected Expr, found nothing");
+      typecheck_error(msg, e->start);
+    }
+
+    // Loop through vars, adding to inner scope
+    ctx *sloop_ctx = setup_ctx();
+    sloop_ctx->parent = c;
+    for (int i = 0; i < sloop->vars->size; i++) {
+      expr *e = vector_get_expr(sloop->exprs, i);
+      t *et = typeof_expr(e, c);
+      if (et->type != INT_T) {
+        char *msg = alloc(BUFSIZ);
+        sprintf(msg, "Expected (IntType), found %s", t_to_str(et));
+        typecheck_error(msg, e->start);
+      }
+      e->t_type = et;
+
+      char *var = vector_get_str(sloop->vars, i);
+      var_info *info = alloc(sizeof(var_info));
+      info->t = et;
+      info->name = var;
+      vector_append(sloop_ctx->vars, info);
+    }
+
+    // Typecheck expr now that we have scope
+    t *sloop_t = typeof_expr(sloop->expr, sloop_ctx);
+    free(sloop_ctx);
+    if (sloop_t->type != INT_T && sloop_t->type != FLOAT_T) {
+      char *msg = alloc(BUFSIZ);
+      sprintf(msg, "Expected (IntType) or (FloatType), found %s",
+              t_to_str(sloop_t));
+      typecheck_error(msg, sloop->expr->start);
+    }
+    sloop->expr->t_type = sloop_t;
+
+    result->info = NULL;
+    result->type = sloop_t->type;
+    break;
   }
   return result;
 }

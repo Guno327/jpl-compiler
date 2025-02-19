@@ -20,10 +20,7 @@ void typecheck(vector *program) {
 }
 
 ctx *setup_global_ctx() {
-  ctx *c = alloc(sizeof(ctx));
-  c->structs = alloc(sizeof(vector));
-  c->arrays = alloc(sizeof(vector));
-  c->fns = alloc(sizeof(vector));
+  ctx *c = setup_ctx();
 
   vector_init(c->structs, 8, STRUCTINFOVECTOR);
   vector_init(c->arrays, 8, ARRAYINFOVECTOR);
@@ -49,16 +46,43 @@ ctx *setup_global_ctx() {
   }
   vector_append(c->structs, rgba);
 
-  // One-float built-ins
+  // Types we need for built-ins
+  t *i = alloc(sizeof(t));
+  i->type = INT_T;
+  i->info = NULL;
+
   t *f = alloc(sizeof(t));
   f->type = FLOAT_T;
   f->info = NULL;
 
+  // Built-in vars
+  // argnum
+  var_info *argc = alloc(sizeof(var_info));
+  argc->t = i;
+  argc->name = "argnum";
+  vector_append(c->vars, argc);
+
+  // args
+  array_info *argv = alloc(sizeof(array_info));
+  argv->type = i;
+  argv->rank = 1;
+  argv->name = "args";
+  vector_append(c->arrays, argv);
+
+  // One-float built-ins
   fn_info *f_info = alloc(sizeof(fn_info));
   f_info->ret = f;
   f_info->args = alloc(sizeof(vector));
-  vector_init(f_info->args, 1, TVECTOR);
-  vector_append(f_info->args, f);
+  vector_init(f_info->args, 1, BINDINGVECTOR);
+  binding *a = alloc(sizeof(binding));
+  a->lval = alloc(sizeof(lval));
+  a->lval->type = VARLVALUE;
+  a->lval->node = alloc(sizeof(var_lval));
+  ((var_lval *)a->lval->node)->var = "a";
+  a->type = alloc(sizeof(type));
+  a->type->type = FLOATTYPE;
+  a->type->node = alloc(sizeof(float_type));
+  vector_append(f_info->args, a);
 
   // sqrt
   fn_info *sqrt_info = alloc(sizeof(fn_info));
@@ -77,6 +101,12 @@ ctx *setup_global_ctx() {
   memcpy(sin_info, f_info, sizeof(fn_info));
   sin_info->name = "sin";
   vector_append(c->fns, sin_info);
+
+  // cos
+  fn_info *cos_info = alloc(sizeof(fn_info));
+  memcpy(cos_info, f_info, sizeof(fn_info));
+  cos_info->name = "cos";
+  vector_append(c->fns, cos_info);
 
   // tan
   fn_info *tan_info = alloc(sizeof(fn_info));
@@ -107,15 +137,22 @@ ctx *setup_global_ctx() {
   memcpy(log_info, f_info, sizeof(fn_info));
   log_info->name = "log";
   vector_append(c->fns, log_info);
-  free(f_info);
 
   // Two-float built-ints
   fn_info *ff_info = alloc(sizeof(fn_info));
   ff_info->ret = f;
   ff_info->args = alloc(sizeof(vector));
-  vector_init(ff_info->args, 2, TVECTOR);
-  vector_append(ff_info->args, f);
-  vector_append(ff_info->args, f);
+  vector_init(ff_info->args, 2, BINDINGVECTOR);
+  binding *b = alloc(sizeof(binding));
+  b->lval = alloc(sizeof(lval));
+  b->lval->type = VARLVALUE;
+  b->lval->node = alloc(sizeof(var_lval));
+  ((var_lval *)b->lval->node)->var = "b";
+  b->type = alloc(sizeof(type));
+  b->type->type = FLOATTYPE;
+  b->type->node = alloc(sizeof(float_type));
+  vector_append(ff_info->args, a);
+  vector_append(ff_info->args, b);
 
   // pow
   fn_info *pow_info = alloc(sizeof(fn_info));
@@ -128,20 +165,24 @@ ctx *setup_global_ctx() {
   memcpy(atan2_info, ff_info, sizeof(fn_info));
   atan2_info->name = "atan2";
   vector_append(c->fns, atan2_info);
-  free(ff_info);
 
   // Conversion functions
-  t *i = alloc(sizeof(t));
-  i->type = INT_T;
-  i->info = NULL;
-
   // to_float
   fn_info *to_float_info = alloc(sizeof(fn_info));
   to_float_info->name = "to_float";
   to_float_info->ret = f;
   to_float_info->args = alloc(sizeof(vector));
-  vector_init(to_float_info->args, 1, TVECTOR);
-  vector_append(to_float_info->args, i);
+
+  vector_init(to_float_info->args, 1, BINDINGVECTOR);
+  binding *ia = alloc(sizeof(binding));
+  ia->lval = alloc(sizeof(lval));
+  ia->lval->type = VARLVALUE;
+  ia->lval->node = alloc(sizeof(var_lval));
+  ((var_lval *)ia->lval->node)->var = "a";
+  ia->type = alloc(sizeof(type));
+  ia->type->type = INTTYPE;
+  ia->type->node = alloc(sizeof(INTTYPE));
+  vector_append(to_float_info->args, ia);
   vector_append(c->fns, to_float_info);
 
   // to_int
@@ -149,8 +190,9 @@ ctx *setup_global_ctx() {
   to_int_info->name = "to_int";
   to_int_info->ret = i;
   to_int_info->args = alloc(sizeof(vector));
-  vector_init(to_int_info->args, 1, TVECTOR);
-  vector_append(to_int_info->args, f);
+
+  vector_init(to_int_info->args, 1, BINDINGVECTOR);
+  vector_append(to_int_info->args, a);
   vector_append(c->fns, to_int_info);
 
   return c;

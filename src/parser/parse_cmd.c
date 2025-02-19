@@ -8,7 +8,6 @@
 #include "parse_type.h"
 #include "parser.h"
 #include "vector_get.h"
-#include <stdio.h>
 #include <string.h>
 
 int parse_cmd(vector *tokens, int i, cmd *c) {
@@ -140,9 +139,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     expect_token(tokens, i, LPAREN);
     i += 1;
 
-    fc->binds = NULL;
-    if (peek_token(tokens, i) != RPAREN)
-      i = parse_bindings(tokens, i, fc);
+    i = parse_bindings(tokens, i, fc);
     expect_token(tokens, i, RPAREN);
     i += 1;
 
@@ -156,13 +153,12 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     expect_token(tokens, i + 1, NEWLINE);
     i += 2;
 
-    fc->stmts = NULL;
-    vector *stmts = alloc(sizeof(vector));
-    vector_init(stmts, 8, STMTVECTOR);
+    fc->stmts = alloc(sizeof(vector));
+    vector_init(fc->stmts, 8, STMTVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
       stmt *s = alloc(sizeof(stmt));
       i = parse_stmt(tokens, i, s);
-      vector_append(stmts, s);
+      vector_append(fc->stmts, s);
 
       expect_token(tokens, i, NEWLINE);
       i += 1;
@@ -174,7 +170,6 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
       parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
-    fc->stmts = stmts;
 
     c->type = FNCMD;
     c->node = fc;
@@ -237,10 +232,10 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
 }
 
 int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
-  vector *binds = alloc(sizeof(vector));
-  vector_init(binds, 8, BINDINGVECTOR);
+  fc->binds = alloc(sizeof(vector));
+  vector_init(fc->binds, 8, BINDINGVECTOR);
 
-  while (i < tokens->size) {
+  while (peek_token(tokens, i) != RPAREN) {
     binding *cur_b = alloc(sizeof(binding));
     cur_b->lval = alloc(sizeof(lval));
     cur_b->type = alloc(sizeof(type));
@@ -248,15 +243,13 @@ int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
     expect_token(tokens, i, COLON);
     i += 1;
     i = parse_type(tokens, i, cur_b->type);
-    vector_append(binds, cur_b);
+    vector_append(fc->binds, cur_b);
 
     if (peek_token(tokens, i) != COMMA)
       break;
 
     i += 1;
   }
-
-  fc->binds = binds;
 
   return i;
 }

@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 t *typeof_stmt(stmt *s, ctx *c) {
-  t *result;
+  t *result = NULL;
   switch (s->type) {
   case LETSTMT:;
     let_stmt *ls = (let_stmt *)s->node;

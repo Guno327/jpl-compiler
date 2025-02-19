@@ -12,4 +12,13 @@ typedef struct ctx {
   vector *vars;
 } ctx;
 
+typedef enum { STRUCTINFO, ARRAYINFO, FNINFO, VARINFO } info_type;
+typedef struct {
+  info_type type;
+  void *node;
+} info;
+
+ctx *setup_ctx();
+info *check_ctx(ctx *c, char *name);
+
 #endif

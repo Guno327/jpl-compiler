@@ -24,11 +24,12 @@ typedef struct {
   char *name;
   vector *args;
   t *ret;
+  void *dec;
 } fn_info;
 
 typedef struct {
   char *name;
-  t *type;
+  t *t;
 } var_info;
 
 #endif
