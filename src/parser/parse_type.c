@@ -1,5 +1,5 @@
 #include "parse_type.h"
-#include "alloc.h"
+#include "safe.h"
 #include "ast.h"
 #include "compiler_error.h"
 #include "parser.h"
@@ -7,36 +7,36 @@
 #include <string.h>
 
 int parse_type(vector *tokens, int i, type *t) {
-  t->start = i;
+  t->start = vector_get_token(tokens, i)->start;
   switch (peek_token(tokens, i)) {
   case INT:;
-    int_type *it = alloc(sizeof(int_type));
-    it->start = i;
+    int_type *it = safe_alloc(sizeof(int_type));
+    it->start = vector_get_token(tokens, i)->start;
     t->type = INTTYPE;
     t->node = it;
     i += 1;
     break;
   case FLOAT:;
-    float_type *ft = alloc(sizeof(float_type));
-    ft->start = i;
+    float_type *ft = safe_alloc(sizeof(float_type));
+    ft->start = vector_get_token(tokens, i)->start;
     t->type = FLOATTYPE;
     t->node = ft;
     i += 1;
     break;
   case BOOL:;
-    bool_type *bt = alloc(sizeof(bool_type));
-    bt->start = i;
+    bool_type *bt = safe_alloc(sizeof(bool_type));
+    bt->start = vector_get_token(tokens, i)->start;
     t->type = BOOLTYPE;
     t->node = bt;
     i += 1;
     break;
   case VARIABLE:;
-    struct_type *st = alloc(sizeof(struct_type));
+    struct_type *st = safe_alloc(sizeof(struct_type));
     memset(st, 0, sizeof(struct_type));
-    st->start = i;
+    st->start = vector_get_token(tokens, i)->start;
 
     char *st_str = vector_get_token(tokens, i)->text;
-    char *st_var = alloc(strlen(st_str) + 1);
+    char *st_var = safe_alloc(strlen(st_str) + 1);
     memcpy(st_var, st_str, strlen(st_str));
     st->var = st_var;
 
@@ -45,8 +45,8 @@ int parse_type(vector *tokens, int i, type *t) {
     i += 1;
     break;
   case VOID:;
-    void_type *vt = alloc(sizeof(void_type));
-    vt->start = i;
+    void_type *vt = safe_alloc(sizeof(void_type));
+    vt->start = vector_get_token(tokens, i)->start;
     t->type = VOIDTYPE;
     t->node = vt;
     i += 1;
@@ -65,7 +65,7 @@ int parse_type_arr(vector *tokens, int i, type *t) {
   if (token_t != LSQUARE)
     return i;
 
-  array_type *at = alloc(sizeof(array_type));
+  array_type *at = safe_alloc(sizeof(array_type));
   at->start = t->start;
   at->type = t->node;
   i += 1;
@@ -83,7 +83,7 @@ int parse_type_arr(vector *tokens, int i, type *t) {
     expect_token(tokens, i, RSQUARE);
   }
 
-  type *old_t = alloc(sizeof(type));
+  type *old_t = safe_alloc(sizeof(type));
   old_t->type = t->type;
   old_t->start = t->start;
   old_t->node = t->node;

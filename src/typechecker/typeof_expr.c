@@ -1,6 +1,6 @@
-#include "alloc.h"
 #include "compiler_error.h"
 #include "ctx.h"
+#include "safe.h"
 #include "typecheck.h"
 #include "vector.h"
 #include "vector_get.h"
@@ -8,7 +8,7 @@
 #include <string.h>
 
 t *typeof_expr(expr *e, ctx *c) {
-  t *result = alloc(sizeof(t));
+  t *result = safe_alloc(sizeof(t));
   switch (e->type) {
   case INTEXPR:
     result->type = INT_T;
@@ -43,7 +43,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case DIVOP:
     case MODOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (IntType) or (FloatType) got %s",
                 t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
@@ -56,7 +56,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case GTOP:
     case GEOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (IntType) or (FloatType) got %s",
                 t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
@@ -67,7 +67,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case ANDOP:
     case OROP:
       if (lhs_t->type != BOOL_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(lhs_t));
         typecheck_error(msg, bop_expr->start);
       }
@@ -78,7 +78,7 @@ t *typeof_expr(expr *e, ctx *c) {
     case NEOP:
       if (lhs_t->type != FLOAT_T && lhs_t->type != INT_T &&
           lhs_t->type != BOOL_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg,
                 "Expected type of (BoolType), (FloatType), or (IntType) got %s",
                 t_to_str(lhs_t));
@@ -90,7 +90,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     // We know LHS is valid, make sure rhs_t == lhs_t
     if (lhs_t->type != rhs_t->type) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type of %s got %s", t_to_str(lhs_t),
               t_to_str(rhs_t));
       typecheck_error(msg, bop_expr->start);
@@ -106,7 +106,7 @@ t *typeof_expr(expr *e, ctx *c) {
     switch (uop_expr->op) {
     case NEGOP:
       if (item_t->type != FLOAT_T && item_t->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (FloatType) or (IntType) got %s",
                 t_to_str(item_t));
         typecheck_error(msg, uop_expr->start);
@@ -114,7 +114,7 @@ t *typeof_expr(expr *e, ctx *c) {
       break;
     case NOTOP:
       if (item_t->type != BOOL_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(item_t));
         typecheck_error(msg, uop_expr->start);
       }
@@ -132,12 +132,12 @@ t *typeof_expr(expr *e, ctx *c) {
     // Check exprs again decleration, and update
     info *sle_exist = check_ctx(c, sle->var);
     if (sle_exist == NULL) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Struct '%s' has not been declared yet", sle->var);
       typecheck_error(msg, sle->start);
     }
     if (sle_exist->type != STRUCTINFO) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Symbol '%s' is not a struct", sle->var);
       typecheck_error(msg, sle->start);
     }
@@ -149,7 +149,7 @@ t *typeof_expr(expr *e, ctx *c) {
       t *cur_t = typeof_expr(cur_e, c);
       t *dec_t = vector_get_t(sle_dec->ts, j);
       if (cur_t->type != dec_t->type) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of %s got %s", t_to_str(dec_t),
                 t_to_str(cur_t));
         typecheck_error(msg, cur_e->start);
@@ -172,7 +172,7 @@ t *typeof_expr(expr *e, ctx *c) {
         found_t = cur_t;
       } else {
         if (found_t->type != cur_t->type) {
-          char *msg = alloc(BUFSIZ);
+          char *msg = safe_alloc(BUFSIZ);
           sprintf(msg, "Expected type of %s got %s", t_to_str(found_t),
                   t_to_str(cur_t));
           typecheck_error(msg, cur_e->start);
@@ -182,7 +182,7 @@ t *typeof_expr(expr *e, ctx *c) {
       }
     }
 
-    array_info *a_info = alloc(sizeof(array_info));
+    array_info *a_info = safe_alloc(sizeof(array_info));
     a_info->type = found_t;
     a_info->rank = 1;
 
@@ -202,13 +202,13 @@ t *typeof_expr(expr *e, ctx *c) {
     t *else_t = typeof_expr(if_e->else_expr, c);
 
     if (if_t->type != BOOL_T) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type of (BoolType) got %s", t_to_str(if_t));
       typecheck_error(msg, if_e->if_expr->start);
     }
 
     if (then_t->type != else_t->type) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type of %s got %s", t_to_str(then_t),
               t_to_str(else_t));
       typecheck_error(msg, if_e->else_expr->start);
@@ -225,7 +225,7 @@ t *typeof_expr(expr *e, ctx *c) {
     dot_expr *de = (dot_expr *)e->node;
     t *de_lhs_t = typeof_expr(de->expr, c);
     if (de_lhs_t->type != STRUCT_T) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type of (StructType) got %s", t_to_str(de_lhs_t));
       typecheck_error(msg, de->start);
     }
@@ -240,7 +240,7 @@ t *typeof_expr(expr *e, ctx *c) {
       }
     }
     if (found == NULL) {
-      printf("Compilation Failed [TYPECHECKER]: var '%s' is not a member of "
+      printf("Var '%s' is not a member of "
              "struct '%s'\n",
              de->var, lhs_info->name);
       exit(EXIT_FAILURE);
@@ -252,7 +252,7 @@ t *typeof_expr(expr *e, ctx *c) {
     array_index_expr *aie = (array_index_expr *)e->node;
     t *aie_lhs_t = typeof_expr(aie->expr, c);
     if (aie_lhs_t->type != ARRAY_T) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type of (ArrayType) got %s", t_to_str(aie_lhs_t));
       typecheck_error(msg, aie->start);
     }
@@ -260,17 +260,19 @@ t *typeof_expr(expr *e, ctx *c) {
 
     array_info *aie_info = (array_info *)aie_lhs_t->info;
     if (aie_info->rank != aie->exprs->size) {
-      printf("Compilation Failed [TYPECHECKER]: expected index of rank %d, but "
-             "was of rank %lu at %d\n",
-             aie_info->rank, aie->exprs->size, aie->start);
-      exit(EXIT_FAILURE);
+      char *msg = safe_alloc(BUFSIZ);
+      sprintf(msg,
+              "Expected index of rank %d, but "
+              "was of rank %d at %d\n",
+              aie_info->rank, aie->exprs->size, aie->start);
+      typecheck_error(msg, aie->start);
     }
 
     for (int i = 0; i < aie->exprs->size; i++) {
       expr *cur_e = vector_get_expr(aie->exprs, i);
       t *cur_t = typeof_expr(cur_e, c);
       if (cur_t->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected type of (IntType) got %s", t_to_str(cur_t));
         typecheck_error(msg, cur_e->start);
       }
@@ -284,7 +286,7 @@ t *typeof_expr(expr *e, ctx *c) {
     var_expr *ve = (var_expr *)e->node;
     info *ve_def = check_ctx(c, ve->var);
     if (ve_def == NULL) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Variable '%s' has not been defined yet", ve->var);
       typecheck_error(msg, ve->start);
     }
@@ -315,7 +317,7 @@ t *typeof_expr(expr *e, ctx *c) {
     // Check for function in ctx
     info *ce_exist = check_ctx(c, ce->var);
     if (ce_exist == NULL) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Function '%s' has not been defined yet", ce->var);
       typecheck_error(msg, ce->start);
     }
@@ -326,8 +328,8 @@ t *typeof_expr(expr *e, ctx *c) {
 
     // Make sure we have the right number of args
     if (ce_info->args->size != ce->exprs->size) {
-      char *msg = alloc(BUFSIZ);
-      sprintf(msg, "Function '%s' expects %lu args, found %lu", ce->var,
+      char *msg = safe_alloc(BUFSIZ);
+      sprintf(msg, "Function '%s' expects %d args, found %d", ce->var,
               ce_info->args->size, ce->exprs->size);
       typecheck_error(msg, ce->start);
     }
@@ -340,8 +342,8 @@ t *typeof_expr(expr *e, ctx *c) {
       binding *b = vector_get_binding(ce_info->args, i);
       t *deft = typeof_type(b->type, c);
 
-      if (et->type != deft->type || et->info != deft->info) {
-        char *msg = alloc(BUFSIZ);
+      if (!t_eq(et, deft)) {
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Argument %d should be of type %s, is of type %s", i,
                 t_to_str(deft), t_to_str(et));
         typecheck_error(msg, e->start);
@@ -356,7 +358,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     // Make sure exprs is not empty
     if (aloop->exprs->size == 0) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected Expr, found nothing");
       typecheck_error(msg, e->start);
     }
@@ -368,14 +370,14 @@ t *typeof_expr(expr *e, ctx *c) {
       expr *e = vector_get_expr(aloop->exprs, i);
       t *et = typeof_expr(e, c);
       if (et->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected (IntType), found %s", t_to_str(et));
         typecheck_error(msg, e->start);
       }
       e->t_type = et;
 
       char *var = vector_get_str(aloop->vars, i);
-      var_info *info = alloc(sizeof(var_info));
+      var_info *info = safe_alloc(sizeof(var_info));
       info->t = et;
       info->name = var;
       vector_append(aloop_ctx->vars, info);
@@ -387,7 +389,7 @@ t *typeof_expr(expr *e, ctx *c) {
     free(aloop_ctx);
 
     // Build up type
-    array_info *aloop_info = alloc(sizeof(array_info));
+    array_info *aloop_info = safe_alloc(sizeof(array_info));
     aloop_info->type = aloop_t;
     aloop_info->rank = aloop->vars->size;
 
@@ -399,7 +401,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     // Make sure exprs is not empty
     if (sloop->exprs->size == 0) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected Expr, found nothing");
       typecheck_error(msg, e->start);
     }
@@ -411,14 +413,14 @@ t *typeof_expr(expr *e, ctx *c) {
       expr *e = vector_get_expr(sloop->exprs, i);
       t *et = typeof_expr(e, c);
       if (et->type != INT_T) {
-        char *msg = alloc(BUFSIZ);
+        char *msg = safe_alloc(BUFSIZ);
         sprintf(msg, "Expected (IntType), found %s", t_to_str(et));
         typecheck_error(msg, e->start);
       }
       e->t_type = et;
 
       char *var = vector_get_str(sloop->vars, i);
-      var_info *info = alloc(sizeof(var_info));
+      var_info *info = safe_alloc(sizeof(var_info));
       info->t = et;
       info->name = var;
       vector_append(sloop_ctx->vars, info);
@@ -428,7 +430,7 @@ t *typeof_expr(expr *e, ctx *c) {
     t *sloop_t = typeof_expr(sloop->expr, sloop_ctx);
     free(sloop_ctx);
     if (sloop_t->type != INT_T && sloop_t->type != FLOAT_T) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected (IntType) or (FloatType), found %s",
               t_to_str(sloop_t));
       typecheck_error(msg, sloop->expr->start);

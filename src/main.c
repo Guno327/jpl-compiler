@@ -1,7 +1,7 @@
-#include "alloc.h"
 #include "compiler_error.h"
 #include "lexer.h"
 #include "parser.h"
+#include "safe.h"
 #include "typecheck.h"
 #include "vector.h"
 #include "vector_get.h"
@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
       mode = PARSE;
     else if (!strcmp(argv[i], "-t"))
       mode = TYPECHECK;
+    else if (!strcmp(argv[i], "-v"))
+      set_verbose(true);
     else
       filename = argv[i];
   }
@@ -41,8 +43,8 @@ int main(int argc, char **argv) {
   };
 
   // Read File
-  char *src = alloc(BUFSIZ);
-  char *buf = alloc(BUFSIZ);
+  char *src = safe_alloc(BUFSIZ);
+  char *buf = safe_alloc(BUFSIZ);
 
   int read = 0;
   char *ptr = NULL;
@@ -53,13 +55,13 @@ int main(int argc, char **argv) {
       if (feof(src_file))
         break;
       else {
-        fprintf(stderr, "Compilation failed: Error reading file at %lu\n",
-                strlen(src));
+        fprintf(stderr, "Compilation failed: Error reading file at %d\n",
+                (int)strlen(src));
         exit(EXIT_FAILURE);
       }
     }
     read = strlen(ptr);
-    src = realloc(src, strlen(src) + read + 1);
+    src = safe_realloc_str(src, strlen(src) + read + 1);
 
     if (src == NULL) {
       fprintf(stderr, "Malloc failed\n");
@@ -83,7 +85,6 @@ int main(int argc, char **argv) {
       token *t = vector_get_token(tokens, i);
       char *t_str = print_token(t);
       printf("%s\n", t_str);
-      free(t_str);
     }
 
     printf("Compilation succeeded: lexical analysis complete\n");
@@ -92,7 +93,6 @@ int main(int argc, char **argv) {
 
   // Parse
   vector *program = parse(tokens);
-  free(tokens);
 
   if (mode == TYPECHECK) {
     typecheck(program);
@@ -103,7 +103,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < program->size; i++) {
       printf("%s\n", cmd_to_str(vector_get_cmd(program, i)));
     }
-    free(program);
     printf("Compilation succeeded: parsing complete\n");
 
     exit(EXIT_SUCCESS);

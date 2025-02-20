@@ -20,5 +20,6 @@ typedef struct {
 
 ctx *setup_ctx();
 info *check_ctx(ctx *c, char *name);
+char *ctx_to_str(ctx *c);
 
 #endif

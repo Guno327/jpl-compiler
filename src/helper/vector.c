@@ -1,5 +1,5 @@
 #include "vector.h"
-#include "alloc.h"
+#include "safe.h"
 #include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +49,7 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
     break;
   }
   v->type = type;
-  v->data = alloc(capacity * size);
+  v->data = safe_alloc(capacity * size);
   v->size = 0;
   v->capacity = capacity;
 }

@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "alloc.h"
+#include "safe.h"
 #include "ast.h"
 #include "compiler_error.h"
 #include "parse_cmd.h"
@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 vector *parse(vector *tokens) {
-  vector *program = alloc(sizeof(vector));
+  vector *program = safe_alloc(sizeof(vector));
   vector_init(program, BUFSIZ, CMDVECTOR);
 
   int i = 0;
@@ -18,7 +18,7 @@ vector *parse(vector *tokens) {
     if (peek_token(tokens, i) == END_OF_FILE)
       break;
 
-    cmd *c = alloc(sizeof(cmd));
+    cmd *c = safe_alloc(sizeof(cmd));
     i = parse_cmd(tokens, i, c);
     vector_append(program, c);
     expect_token(tokens, i, NEWLINE);

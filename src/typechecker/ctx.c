@@ -1,14 +1,15 @@
 #include "ctx.h"
-#include "alloc.h"
+#include "safe.h"
 #include "vector_get.h"
+#include <stdio.h>
 #include <string.h>
 
 ctx *setup_ctx() {
-  ctx *c = alloc(sizeof(ctx));
-  c->structs = alloc(sizeof(vector));
-  c->arrays = alloc(sizeof(vector));
-  c->fns = alloc(sizeof(vector));
-  c->vars = alloc(sizeof(vector));
+  ctx *c = safe_alloc(sizeof(ctx));
+  c->structs = safe_alloc(sizeof(vector));
+  c->arrays = safe_alloc(sizeof(vector));
+  c->fns = safe_alloc(sizeof(vector));
+  c->vars = safe_alloc(sizeof(vector));
 
   vector_init(c->structs, 8, STRUCTINFOVECTOR);
   vector_init(c->arrays, 8, ARRAYINFOVECTOR);
@@ -20,7 +21,7 @@ ctx *setup_ctx() {
 
 info *check_ctx(ctx *c, char *name) {
   int i;
-  info *result = alloc(sizeof(info));
+  info *result = safe_alloc(sizeof(info));
 
   // check structs
   struct_info *s_info = NULL;
@@ -87,5 +88,45 @@ info *check_ctx(ctx *c, char *name) {
   result = NULL;
   if (c->parent != NULL)
     result = check_ctx(c->parent, name);
+  return result;
+}
+
+char *ctx_to_str(ctx *c) {
+  char *result = safe_alloc(BUFSIZ);
+  int i = 0;
+  if (c->parent != NULL) {
+    result = safe_realloc_str(result, BUFSIZ * 2);
+    char *parent = ctx_to_str(c->parent);
+    sprintf(result, "PARENT\n%s\n", parent);
+    free(parent);
+  }
+
+  strcat(result, "FNS\n");
+  for (i = 0; i < c->fns->size; i++) {
+    fn_info *cur = vector_get_fn_info(c->fns, i);
+    strcat(result, cur->name);
+    strcat(result, "\n");
+  }
+
+  strcat(result, "ARRAYS\n");
+  for (i = 0; i < c->arrays->size; i++) {
+    array_info *cur = vector_get_array_info(c->arrays, i);
+    strcat(result, cur->name);
+    strcat(result, "\n");
+  }
+
+  strcat(result, "STRUCTS\n");
+  for (i = 0; i < c->structs->size; i++) {
+    struct_info *cur = vector_get_struct_info(c->structs, i);
+    strcat(result, cur->name);
+    strcat(result, "\n");
+  }
+
+  strcat(result, "VARS\n");
+  for (i = 0; i < c->vars->size; i++) {
+    var_info *cur = vector_get_var_info(c->vars, i);
+    strcat(result, cur->name);
+    strcat(result, "\n");
+  }
   return result;
 }

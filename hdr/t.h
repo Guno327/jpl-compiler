@@ -32,4 +32,5 @@ typedef struct {
   t *t;
 } var_info;
 
+bool t_eq(t *lhs, t *rhs);
 #endif

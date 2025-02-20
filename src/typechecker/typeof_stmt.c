@@ -1,6 +1,6 @@
-#include "alloc.h"
 #include "compiler_error.h"
 #include "ctx.h"
+#include "safe.h"
 #include "typecheck.h"
 #include "vector.h"
 #include "vector_get.h"
@@ -20,7 +20,7 @@ t *typeof_stmt(stmt *s, ctx *c) {
     assert_stmt *as = (assert_stmt *)s->node;
     t *as_t = typeof_expr(as->expr, c);
     if (as_t->type != BOOL_T) {
-      char *msg = alloc(BUFSIZ);
+      char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected type (BoolType) got %s", t_to_str(as_t));
       typecheck_error(msg, as->expr->start);
     }

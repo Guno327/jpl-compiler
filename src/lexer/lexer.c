@@ -1,5 +1,5 @@
 #include "lexer.h"
-#include "alloc.h"
+#include "safe.h"
 #include "compiler_error.h"
 #include <ctype.h>
 #include <stdbool.h>
@@ -21,7 +21,7 @@ int lex_str(const char *src, int i, token *t) {
       i += 1;
       t->type = STRING;
       int len = i - t->start;
-      t->text = alloc(len + 1);
+      t->text = safe_alloc(len + 1);
       strncpy(t->text, src + t->start, len);
       return i;
     }
@@ -44,7 +44,7 @@ int lex_wrd(const char *src, int i, token *t) {
       break;
   }
   int len = i - t->start;
-  char *wrd = alloc(len + 1);
+  char *wrd = safe_alloc(len + 1);
   strncpy(wrd, src + t->start, len);
 
   t->type = keyword(wrd);
@@ -81,7 +81,7 @@ int lex_num(const char *src, int i, token *t) {
     t->type = INTVAL;
 
   int len = i - t->start;
-  t->text = alloc(len + 1);
+  t->text = safe_alloc(len + 1);
   strncpy(t->text, src + t->start, len);
   return i;
 }
@@ -124,52 +124,52 @@ int lex_op(const char *src, int i, token *t) {
   switch (src[i]) {
   case '=':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
       t->type = EQUALS;
-      t->text = alloc(2);
+      t->text = safe_alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '<':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = alloc(2);
+      t->text = safe_alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '>':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = alloc(2);
+      t->text = safe_alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '!':
     if (i + 1 < strlen(src) && src[i + 1] == '=') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
-      t->text = alloc(2);
+      t->text = safe_alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
     break;
   case '&':
     if (i + 1 < strlen(src) && src[i + 1] == '&') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
@@ -178,7 +178,7 @@ int lex_op(const char *src, int i, token *t) {
     break;
   case '|':
     if (i + 1 < strlen(src) && src[i + 1] == '|') {
-      t->text = alloc(3);
+      t->text = safe_alloc(3);
       strncpy(t->text, src + i, 2);
       i += 2;
     } else {
@@ -201,7 +201,7 @@ int lex_op(const char *src, int i, token *t) {
       t->type = WS;
     } else {
       t->type = OP;
-      t->text = alloc(2);
+      t->text = safe_alloc(2);
       strncpy(t->text, src + i, 1);
       i += 1;
     }
@@ -210,7 +210,7 @@ int lex_op(const char *src, int i, token *t) {
   case '+':
   case '*':
   case '%':
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
@@ -226,55 +226,55 @@ int lex_pnct(const char *src, int i, token *t) {
     // Check punctuation
   case ':':
     t->type = COLON;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ',':
     t->type = COMMA;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '.':
     t->type = DOT;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '{':
     t->type = LCURLY;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '}':
     t->type = RCURLY;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '(':
     t->type = LPAREN;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ')':
     t->type = RPAREN;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case '[':
     t->type = LSQUARE;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
   case ']':
     t->type = RSQUARE;
-    t->text = alloc(2);
+    t->text = safe_alloc(2);
     strncpy(t->text, src + i, 1);
     i += 1;
     break;
@@ -320,16 +320,17 @@ vector *lex(const char *src) {
   // Validate input
   for (int k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
+      set_verbose(false);
       lex_error('?', k);
     }
   }
 
-  vector *tokens = alloc(sizeof(vector));
+  vector *tokens = safe_alloc(sizeof(vector));
   vector_init(tokens, BUFSIZ, TOKENVECTOR);
 
   int i = 0;
   while (i < strlen(src)) {
-    token *t = alloc(sizeof(token));
+    token *t = safe_alloc(sizeof(token));
     t->start = i;
 
     // Check letter
@@ -361,7 +362,7 @@ vector *lex(const char *src) {
       vector_append(tokens, t);
     }
   };
-  token *last = alloc(sizeof(token));
+  token *last = safe_alloc(sizeof(token));
   last->type = END_OF_FILE;
   last->start = strlen(src) + 1;
   vector_append(tokens, last);
