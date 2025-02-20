@@ -1,5 +1,5 @@
 #include "token.h"
-#include "alloc.h"
+#include "safe.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +8,7 @@
 tokentype keyword(char *text) {
   tokentype ret = 0;
   int len = strlen(text) + 1;
-  char *wrd_upper = alloc(len);
+  char *wrd_upper = safe_alloc(len);
   for (int j = 0; j < strlen(text); j++)
     wrd_upper[j] = toupper(text[j]);
 
@@ -67,7 +67,7 @@ tokentype keyword(char *text) {
 
 char *print_token(token *t) {
   size_t len = BUFSIZ + (sizeof(t->text));
-  char *token_str = alloc(len);
+  char *token_str = safe_alloc(len);
   switch (t->type) {
   case ARRAY:
     sprintf(token_str, "ARRAY '%s'", t->text);

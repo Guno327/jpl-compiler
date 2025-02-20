@@ -1,5 +1,5 @@
 #include "vector.h"
-#include "alloc.h"
+#include "safe.h"
 #include "vector_get.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +35,12 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   case ARRAYINFOVECTOR:
     size = sizeof(array_info);
     break;
+  case FNINFOVECTOR:
+    size = sizeof(fn_info);
+    break;
+  case VARINFOVECTOR:
+    size = sizeof(var_info);
+    break;
   case TVECTOR:
     size = sizeof(t);
     break;
@@ -43,7 +49,7 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
     break;
   }
   v->type = type;
-  v->data = alloc(capacity * size);
+  v->data = safe_alloc(capacity * size);
   v->size = 0;
   v->capacity = capacity;
 }
@@ -78,6 +84,12 @@ void vector_append(vector *v, void *item) {
       break;
     case ARRAYINFOVECTOR:
       size = sizeof(array_info);
+      break;
+    case FNINFOVECTOR:
+      size = sizeof(fn_info);
+      break;
+    case VARINFOVECTOR:
+      size = sizeof(var_info);
       break;
     case TVECTOR:
       size = sizeof(t);
@@ -120,6 +132,12 @@ void vector_append(vector *v, void *item) {
     break;
   case ARRAYINFOVECTOR:
     ((array_info **)v->data)[v->size++] = (array_info *)item;
+    break;
+  case FNINFOVECTOR:
+    ((fn_info **)v->data)[v->size++] = (fn_info *)item;
+    break;
+  case VARINFOVECTOR:
+    ((var_info **)v->data)[v->size++] = (var_info *)item;
     break;
   case TVECTOR:
     ((t **)v->data)[v->size++] = (t *)item;
@@ -200,6 +218,22 @@ array_info *vector_get_array_info(vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((array_info **)v->data)[idx];
+}
+
+fn_info *vector_get_fn_info(vector *v, int idx) {
+  if (v->type != FNINFOVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((fn_info **)v->data)[idx];
+}
+
+var_info *vector_get_var_info(vector *v, int idx) {
+  if (v->type != VARINFOVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((var_info **)v->data)[idx];
 }
 
 t *vector_get_t(vector *v, int idx) {

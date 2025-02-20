@@ -14,14 +14,16 @@ typedef enum {
   BINDINGVECTOR,
   STRUCTINFOVECTOR,
   ARRAYINFOVECTOR,
+  FNINFOVECTOR,
+  VARINFOVECTOR,
   TVECTOR,
 } vector_t;
 
 typedef struct {
   vector_t type;
   void **data;
-  size_t size;
-  size_t capacity;
+  int size;
+  int capacity;
 } vector;
 
 void vector_init(vector *v, size_t capacity, vector_t type);

@@ -24,5 +24,6 @@ in
       zlib
       mlib
       python3
+      tkdiff
     ];
   }

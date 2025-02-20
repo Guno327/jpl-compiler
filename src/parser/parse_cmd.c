@@ -1,5 +1,4 @@
 #include "parse_cmd.h"
-#include "alloc.h"
 #include "ast.h"
 #include "compiler_error.h"
 #include "parse_expr.h"
@@ -7,162 +6,159 @@
 #include "parse_stmt.h"
 #include "parse_type.h"
 #include "parser.h"
+#include "safe.h"
 #include "vector_get.h"
-#include <stdio.h>
 #include <string.h>
 
 int parse_cmd(vector *tokens, int i, cmd *c) {
-  c->start = i;
+  c->start = vector_get_token(tokens, i)->start;
   int token_t = peek_token(tokens, i);
 
   // Build sub-node
   // General form: Setup \n\n [single token step \n\n ...]
   switch (token_t) {
   case READ:;
-    read_cmd *rc = alloc(sizeof(read_cmd));
-    rc->start = i;
+    read_cmd *rc = safe_alloc(sizeof(read_cmd));
+    rc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
     expect_token(tokens, i, IMAGE);
     expect_token(tokens, i + 1, STRING);
     i += 1;
     char *rc_str = vector_get_token(tokens, i)->text;
-    rc->str = alloc(strlen(rc_str) + 1);
+    rc->str = safe_alloc(strlen(rc_str) + 1);
     memcpy(rc->str, rc_str, strlen(rc_str));
     i += 1;
 
     expect_token(tokens, i, TO);
     expect_token(tokens, i + 1, VARIABLE);
     i += 1;
-    rc->lval = alloc(sizeof(var_lval));
+    rc->lval = safe_alloc(sizeof(var_lval));
     i = parse_lvalue(tokens, i, rc->lval);
     c->node = rc;
     c->type = READCMD;
     break;
   case WRITE:;
-    write_cmd *wc = alloc(sizeof(write_cmd));
-    wc->start = i;
+    write_cmd *wc = safe_alloc(sizeof(write_cmd));
+    wc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
     expect_token(tokens, i, IMAGE);
     i += 1;
-    wc->expr = alloc(sizeof(expr));
+    wc->expr = safe_alloc(sizeof(expr));
     i = parse_expr(tokens, i, wc->expr);
 
     expect_token(tokens, i, TO);
     i += 1;
     expect_token(tokens, i, STRING);
     char *wc_str = vector_get_token(tokens, i)->text;
-    wc->str = alloc(strlen(wc_str) + 1);
+    wc->str = safe_alloc(strlen(wc_str) + 1);
     memcpy(wc->str, wc_str, strlen(wc_str));
     i += 1;
     c->node = wc;
     c->type = WRITECMD;
     break;
   case LET:;
-    Letcmd *lc = alloc(sizeof(Letcmd));
-    lc->start = i;
+    let_cmd *lc = safe_alloc(sizeof(let_cmd));
+    lc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
-    lc->lval = alloc(sizeof(var_lval));
+    lc->lval = safe_alloc(sizeof(var_lval));
     i = parse_lvalue(tokens, i, lc->lval);
 
     expect_token(tokens, i, EQUALS);
     i += 1;
 
-    lc->expr = alloc(sizeof(expr));
+    lc->expr = safe_alloc(sizeof(expr));
     i = parse_expr(tokens, i, lc->expr);
     c->node = lc;
     c->type = LETCMD;
     break;
   case ASSERT:;
-    assert_cmd *ac = alloc(sizeof(assert_cmd));
-    ac->start = i;
+    assert_cmd *ac = safe_alloc(sizeof(assert_cmd));
+    ac->start = vector_get_token(tokens, i)->start;
     i += 1;
 
-    ac->expr = alloc(sizeof(expr));
+    ac->expr = safe_alloc(sizeof(expr));
     i = parse_expr(tokens, i, ac->expr);
 
     expect_token(tokens, i, COMMA);
     expect_token(tokens, i + 1, STRING);
     i += 1;
     char *ac_str = vector_get_token(tokens, i)->text;
-    ac->str = alloc(strlen(ac_str) + 1);
+    ac->str = safe_alloc(strlen(ac_str) + 1);
     memcpy(ac->str, ac_str, strlen(ac_str));
     i += 1;
     c->node = ac;
     c->type = ASSERTCMD;
     break;
   case PRINT:;
-    print_cmd *pc = alloc(sizeof(print_cmd));
-    pc->start = i;
+    print_cmd *pc = safe_alloc(sizeof(print_cmd));
+    pc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
     expect_token(tokens, i, STRING);
     char *pc_str = vector_get_token(tokens, i)->text;
-    pc->str = alloc(strlen(pc_str) + 1);
+    pc->str = safe_alloc(strlen(pc_str) + 1);
     memcpy(pc->str, pc_str, strlen(pc_str));
     i += 1;
     c->node = pc;
     c->type = PRINTCMD;
     break;
   case SHOW:;
-    show_cmd *sc = alloc(sizeof(show_cmd));
-    sc->start = i;
+    show_cmd *sc = safe_alloc(sizeof(show_cmd));
+    sc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
-    sc->expr = alloc(sizeof(expr));
+    sc->expr = safe_alloc(sizeof(expr));
     i = parse_expr(tokens, i, sc->expr);
     c->node = sc;
     c->type = SHOWCMD;
     break;
   case TIME:;
-    time_cmd *tc = alloc(sizeof(time_cmd));
-    tc->start = i;
+    time_cmd *tc = safe_alloc(sizeof(time_cmd));
+    tc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
-    tc->cmd = alloc(sizeof(cmd));
+    tc->cmd = safe_alloc(sizeof(cmd));
     i = parse_cmd(tokens, i, tc->cmd);
     c->node = tc;
     c->type = TIMECMD;
     break;
   case FN:;
-    fn_cmd *fc = alloc(sizeof(fn_cmd));
-    fc->start = i;
+    fn_cmd *fc = safe_alloc(sizeof(fn_cmd));
+    fc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
     expect_token(tokens, i, VARIABLE);
     char *fc_str = vector_get_token(tokens, i)->text;
-    fc->var = alloc(strlen(fc_str) + 1);
+    fc->var = safe_alloc(strlen(fc_str) + 1);
     memcpy(fc->var, fc_str, strlen(fc_str));
     i += 1;
 
     expect_token(tokens, i, LPAREN);
     i += 1;
 
-    fc->binds = NULL;
-    if (peek_token(tokens, i) != RPAREN)
-      i = parse_bindings(tokens, i, fc);
+    i = parse_bindings(tokens, i, fc);
     expect_token(tokens, i, RPAREN);
     i += 1;
 
     expect_token(tokens, i, COLON);
     i += 1;
 
-    fc->type = alloc(sizeof(type));
+    fc->type = safe_alloc(sizeof(type));
     i = parse_type(tokens, i, fc->type);
 
     expect_token(tokens, i, LCURLY);
     expect_token(tokens, i + 1, NEWLINE);
     i += 2;
 
-    fc->stmts = NULL;
-    vector *stmts = alloc(sizeof(vector));
-    vector_init(stmts, 8, STMTVECTOR);
+    fc->stmts = safe_alloc(sizeof(vector));
+    vector_init(fc->stmts, 8, STMTVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
-      stmt *s = alloc(sizeof(stmt));
+      stmt *s = safe_alloc(sizeof(stmt));
       i = parse_stmt(tokens, i, s);
-      vector_append(stmts, s);
+      vector_append(fc->stmts, s);
 
       expect_token(tokens, i, NEWLINE);
       i += 1;
@@ -174,20 +170,19 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
       parse_error(vector_get_token(tokens, i));
     }
     expect_token(tokens, i, RCURLY);
-    fc->stmts = stmts;
 
     c->type = FNCMD;
     c->node = fc;
     i += 1;
     break;
   case STRUCT:;
-    struct_cmd *stc = alloc(sizeof(struct_cmd));
-    stc->start = i;
+    struct_cmd *stc = safe_alloc(sizeof(struct_cmd));
+    stc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
     expect_token(tokens, i, VARIABLE);
     char *stc_str = vector_get_token(tokens, i)->text;
-    stc->var = alloc(strlen(stc_str) + 1);
+    stc->var = safe_alloc(strlen(stc_str) + 1);
     memcpy(stc->var, stc_str, strlen(stc_str));
     i += 1;
 
@@ -195,14 +190,14 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
     expect_token(tokens, i + 1, NEWLINE);
     i += 2;
 
-    stc->types = alloc(sizeof(vector));
-    stc->vars = alloc(sizeof(vector));
+    stc->types = safe_alloc(sizeof(vector));
+    stc->vars = safe_alloc(sizeof(vector));
     vector_init(stc->types, 8, TYPEVECTOR);
     vector_init(stc->vars, 8, STRVECTOR);
     while (peek_token(tokens, i) != RCURLY) {
       expect_token(tokens, i, VARIABLE);
       char *str = vector_get_token(tokens, i)->text;
-      char *var = alloc(strlen(str) + 1);
+      char *var = safe_alloc(strlen(str) + 1);
       memcpy(var, str, strlen(str));
       vector_append(stc->vars, var);
       i += 1;
@@ -210,7 +205,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
       expect_token(tokens, i, COLON);
       i += 1;
 
-      type *t = alloc(sizeof(type));
+      type *t = safe_alloc(sizeof(type));
       i = parse_type(tokens, i, t);
       vector_append(stc->types, t);
 
@@ -237,26 +232,24 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
 }
 
 int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
-  vector *binds = alloc(sizeof(vector));
-  vector_init(binds, 8, BINDINGVECTOR);
+  fc->binds = safe_alloc(sizeof(vector));
+  vector_init(fc->binds, 8, BINDINGVECTOR);
 
-  while (i < tokens->size) {
-    binding *cur_b = alloc(sizeof(binding));
-    cur_b->lval = alloc(sizeof(lval));
-    cur_b->type = alloc(sizeof(type));
+  while (peek_token(tokens, i) != RPAREN) {
+    binding *cur_b = safe_alloc(sizeof(binding));
+    cur_b->lval = safe_alloc(sizeof(lval));
+    cur_b->type = safe_alloc(sizeof(type));
     i = parse_lvalue(tokens, i, cur_b->lval);
     expect_token(tokens, i, COLON);
     i += 1;
     i = parse_type(tokens, i, cur_b->type);
-    vector_append(binds, cur_b);
+    vector_append(fc->binds, cur_b);
 
     if (peek_token(tokens, i) != COMMA)
       break;
 
     i += 1;
   }
-
-  fc->binds = binds;
 
   return i;
 }

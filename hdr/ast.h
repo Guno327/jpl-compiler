@@ -173,7 +173,7 @@ typedef struct {
   int start;
   lval *lval;
   expr *expr;
-} Letcmd;
+} let_cmd;
 
 typedef struct {
   int start;
