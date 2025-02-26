@@ -126,12 +126,12 @@ void type_cmd(cmd *c, ctx *global) {
 
     // Get types for args and add to inner scope
     fc_info->args = fc->binds;
-    ctx *inner = setup_ctx();
-    inner->parent = global;
+    fc_info->ctx = setup_ctx();
+    fc_info->ctx->parent = global;
     for (int i = 0; i < fc->binds->size; i++) {
       binding *b = vector_get_binding(fc->binds, i);
       t *bt = typeof_type(b->type, global);
-      type_lval(b->lval, bt, inner);
+      type_lval(b->lval, bt, fc_info->ctx);
     }
 
     // Add fn to scope BEFORE stmt eval to allow for recursion
@@ -141,7 +141,7 @@ void type_cmd(cmd *c, ctx *global) {
     bool found_return = false;
     for (int i = 0; i < fc->stmts->size; i++) {
       stmt *s = vector_get_stmt(fc->stmts, i);
-      t *st = typeof_stmt(s, inner);
+      t *st = typeof_stmt(s, fc_info->ctx);
       if (s->type == RETURNSTMT) {
         if (strcmp(t_to_str(st), t_to_str(fc_ret))) {
           char *msg = safe_alloc(BUFSIZ);
@@ -152,7 +152,6 @@ void type_cmd(cmd *c, ctx *global) {
         found_return = true;
       }
     }
-    free(inner);
 
     if (!found_return && fc_info->ret->type != VOID_T) {
       char *msg = safe_alloc(BUFSIZ);
