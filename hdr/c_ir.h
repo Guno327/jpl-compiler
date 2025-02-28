@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "ctx.h"
 #include "t.h"
 #include "vector.h"
@@ -11,8 +12,8 @@ typedef struct {
   vector *code;
   struct c_prog *parent;
   int name_ctr;
-  char *jpl_names;
-  char *c_names;
+  vector *jpl_names;
+  vector *c_names;
 } c_fn;
 
 typedef struct {
@@ -31,5 +32,9 @@ typedef struct c_prog {
 char *gensym(c_fn *fn);
 c_prog *gen_c_ir(vector *cmds, ctx *global);
 char *c_prog_to_str(c_prog *prog);
+char *expr_gencode(c_prog *prog, c_fn *main, expr *e);
+char *genarray(c_prog *prog, c_fn *main, t *type, int size);
+char *gentype(t *t);
+char *genstruct(c_prog *prog, c_fn *main, char *jpl_name, vector *names);
 
 #endif
