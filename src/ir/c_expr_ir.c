@@ -218,73 +218,144 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
   case BINOPEXPR:;
     binop_expr *bop = (binop_expr *)e->node;
     char *bop_lhs = expr_gencode(prog, fn, bop->lhs);
-    char *bop_rhs = expr_gencode(prog, fn, bop->rhs);
-    char *bop_sym = gensym(fn);
-
+    char *bop_sym = NULL;
     char *bop_code = safe_alloc(1);
+
+    char *bop_type;
     if (bop->op == ADDOP || bop->op == SUBOP || bop->op == DIVOP ||
         bop->op == MULTOP || bop->op == MODOP) {
-      char *bop_type = gent(prog, fn, bop->rhs->t_type);
-      bop_code = safe_strcat(bop_code, bop_type);
-      free(bop_type);
+      bop_type = gent(prog, fn, bop->rhs->t_type);
     } else {
-      bop_code = safe_strcat(bop_code, "bool");
+      bop_type = safe_alloc(5);
+      memcpy(bop_type, "bool", 4);
     }
+
+    char *short_circuit_jmp = NULL;
+    char *bop_rhs = NULL;
+
+    // Short circuit logic
+    if (bop->op == ANDOP || bop->op == OROP) {
+      bop_sym = gensym(fn);
+      bop_code = safe_strcat(bop_code, bop_type);
+      bop_code = safe_strcat(bop_code, " ");
+      bop_code = safe_strcat(bop_code, bop_sym);
+      bop_code = safe_strcat(bop_code, " = ");
+      bop_code = safe_strcat(bop_code, bop_lhs);
+      bop_code = safe_strcat(bop_code, ";\n");
+
+      bop_code = safe_strcat(bop_code, "if (0 == ");
+      bop_code = safe_strcat(bop_code, bop_lhs);
+      bop_code = safe_strcat(bop_code, ")\n");
+
+      short_circuit_jmp = genjmp(prog);
+      bop_code = safe_strcat(bop_code, "goto ");
+      bop_code = safe_strcat(bop_code, short_circuit_jmp);
+      bop_code = safe_strcat(bop_code, ";\n");
+
+      bop_rhs = expr_gencode(prog, fn, bop->rhs);
+    } else {
+      bop_rhs = expr_gencode(prog, fn, bop->rhs);
+      bop_sym = gensym(fn);
+    }
+
+    bop_code = safe_strcat(bop_code, bop_type);
+    free(bop_type);
     bop_code = safe_strcat(bop_code, " ");
     bop_code = safe_strcat(bop_code, bop_sym);
     bop_code = safe_strcat(bop_code, " = ");
     if (bop->op != MODOP || bop->lhs->t_type->type != FLOAT_T) {
-      bop_code = safe_strcat(bop_code, bop_lhs);
       switch (bop->op) {
       case ADDOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " + ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case SUBOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " - ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case MULTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " * ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case DIVOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " / ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case GEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " >= ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case LEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " <= ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case GTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " > ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case LTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " < ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case EQOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " == ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case NEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " != ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case ANDOP:
-        bop_code = safe_strcat(bop_code, " && ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
+
+        bop_code = safe_strcat(bop_code, short_circuit_jmp);
+        free(short_circuit_jmp);
+        bop_code = safe_strcat(bop_code, ":;\n");
         break;
       case OROP:
-        bop_code = safe_strcat(bop_code, " || ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
+
+        bop_code = safe_strcat(bop_code, short_circuit_jmp);
+        free(short_circuit_jmp);
+        bop_code = safe_strcat(bop_code, ":;\n");
         break;
       case MODOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " % ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       }
-      bop_code = safe_strcat(bop_code, bop_rhs);
     } else {
       bop_code = safe_strcat(bop_code, "fmod(");
       bop_code = safe_strcat(bop_code, bop_lhs);
       bop_code = safe_strcat(bop_code, ", ");
       bop_code = safe_strcat(bop_code, bop_rhs);
       bop_code = safe_strcat(bop_code, ")");
+      bop_code = safe_strcat(bop_code, ";\n");
     }
-    bop_code = safe_strcat(bop_code, ";\n");
     vector_append(fn->code, bop_code);
     return bop_sym;
     break;
