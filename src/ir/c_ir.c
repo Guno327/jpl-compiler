@@ -46,7 +46,6 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
       free(sc_type_str);
       sc_code = safe_strcat(sc_code, "\", &");
       sc_code = safe_strcat(sc_code, sc_sym);
-      free(sc_sym);
       sc_code = safe_strcat(sc_code, ");\n");
 
       vector_append(jpl_main->code, sc_code);
@@ -79,9 +78,9 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
     case PRINTCMD:;
       print_cmd *pc = (print_cmd *)c->node;
       char *pc_code = safe_alloc(1);
-      pc_code = safe_strcat(pc_code, "print(\"");
+      pc_code = safe_strcat(pc_code, "print(");
       pc_code = safe_strcat(pc_code, pc->str);
-      pc_code = safe_strcat(pc_code, "\");\n");
+      pc_code = safe_strcat(pc_code, ");\n");
 
       vector_append(jpl_main->code, pc_code);
       break;

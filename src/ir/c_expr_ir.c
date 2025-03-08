@@ -172,7 +172,8 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     vector_init(sle_results, sle->exprs->size, STRVECTOR);
     for (int i = 0; i < sle->exprs->size; i++) {
       expr *cur_e = vector_get_expr(sle->exprs, i);
-      vector_append(sle_results, expr_gencode(prog, fn, cur_e));
+      char *cur_sym = expr_gencode(prog, fn, cur_e);
+      vector_append(sle_results, cur_sym);
     }
     char *sle_sym = gensym(fn);
 
@@ -338,7 +339,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       aie_code = safe_strcat(aie_code, ";\n");
 
       aie_code =
-          safe_strcat(aie_code, "fail_assertion(\"negative array index\");");
+          safe_strcat(aie_code, "fail_assertion(\"negative array index\");\n");
       aie_code = safe_strcat(aie_code, neg_jmp);
       free(neg_jmp);
       aie_code = safe_strcat(aie_code, ":;\n");
@@ -347,7 +348,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       char *up_jmp = genjmp(prog);
       aie_code = safe_strcat(aie_code, "if (");
       aie_code = safe_strcat(aie_code, cur_idx);
-      aie_code = safe_strcat(aie_code, " >= ");
+      aie_code = safe_strcat(aie_code, " < ");
       aie_code = safe_strcat(aie_code, aie_lhs);
       aie_code = safe_strcat(aie_code, ".d");
       char *dIDX = safe_alloc(BUFSIZ);
@@ -360,7 +361,8 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       aie_code = safe_strcat(aie_code, up_jmp);
       aie_code = safe_strcat(aie_code, ";\n");
 
-      aie_code = safe_strcat(aie_code, "fail_assertion(\"index too large\");");
+      aie_code =
+          safe_strcat(aie_code, "fail_assertion(\"index too large\");\n");
       aie_code = safe_strcat(aie_code, up_jmp);
       free(up_jmp);
       aie_code = safe_strcat(aie_code, ":;\n");
@@ -376,7 +378,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       char *cur_idx_sym = vector_get_str(idx_syms, i);
 
       aie_code = safe_strcat(aie_code, idx_sym);
-      aie_code = safe_strcat(aie_code, " += ");
+      aie_code = safe_strcat(aie_code, " *= ");
       aie_code = safe_strcat(aie_code, aie_lhs);
       aie_code = safe_strcat(aie_code, ".d");
       char *dIDX = safe_alloc(BUFSIZ);
@@ -388,13 +390,11 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       aie_code = safe_strcat(aie_code, idx_sym);
       aie_code = safe_strcat(aie_code, " += ");
       aie_code = safe_strcat(aie_code, cur_idx_sym);
-      free(cur_idx_sym);
       aie_code = safe_strcat(aie_code, ";\n");
     }
-    free(idx_syms);
 
     // Index into data
-    char *aie_type = gent(prog, fn, ((array_info *)e->t_type->info)->type);
+    char *aie_type = gent(prog, fn, e->t_type);
     aie_code = safe_strcat(aie_code, aie_type);
     free(aie_type);
     char *aie_sym = gensym(fn);
