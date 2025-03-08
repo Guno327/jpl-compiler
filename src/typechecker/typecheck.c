@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include "c_ir.h"
 #include "compiler_error.h"
 #include "ctx.h"
 #include "safe.h"
@@ -7,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void typecheck(vector *program) {
+ctx *typecheck(vector *program) {
   // Setup global ctx
   ctx *global = setup_global_ctx();
 
@@ -17,6 +18,8 @@ void typecheck(vector *program) {
     cmd *cc = vector_get_cmd(program, i);
     type_cmd(cc, global);
   }
+
+  return global;
 }
 
 ctx *setup_global_ctx() {

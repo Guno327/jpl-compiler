@@ -5,7 +5,7 @@
 #ifndef TYPECHECK_H
 #define TYPECHECK_H
 
-void typecheck(vector *program);
+ctx *typecheck(vector *program);
 ctx *setup_global_ctx();
 void type_cmd(cmd *c, ctx *global);
 void type_lval(lval *lv, t *type, ctx *c);

@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "c_ir.h"
 #include "t.h"
 #include "token.h"
 #include "vector.h"
@@ -18,5 +19,7 @@ array_info *vector_get_array_info(vector *v, int idx);
 fn_info *vector_get_fn_info(vector *v, int idx);
 var_info *vector_get_var_info(vector *v, int idx);
 t *vector_get_t(vector *v, int idx);
+c_fn *vector_get_c_fn(vector *v, int idx);
+c_struct *vector_get_c_struct(vector *v, int idx);
 
 #endif

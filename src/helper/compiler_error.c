@@ -1,6 +1,6 @@
 #include "compiler_error.h"
-#include "safe.h"
 #include "ast.h"
+#include "safe.h"
 #include "t.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,11 @@ void typecheck_error(char *msg, int i) {
   if (verbose)
     print_src_location(i);
   printf("Compilation failed [TYPECHECKER] (%d): %s\n", i, msg);
+  exit(EXIT_FAILURE);
+}
+
+void ir_error(char *msg) {
+  printf("Compilation failed [IR]: %s\n", msg);
   exit(EXIT_FAILURE);
 }
 

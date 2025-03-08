@@ -1,6 +1,7 @@
 #include "vector.h"
 #ifndef T_H
 #define T_H
+struct ctx;
 
 typedef enum { INT_T, FLOAT_T, VOID_T, BOOL_T, ARRAY_T, STRUCT_T, FN_T } t_type;
 typedef struct {
@@ -25,6 +26,7 @@ typedef struct {
   vector *args;
   t *ret;
   void *dec;
+  struct ctx *ctx;
 } fn_info;
 
 typedef struct {
