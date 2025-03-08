@@ -5,7 +5,7 @@ INCLUDES := -Ihdr
 $(CC)= clang
 SRC := $(shell find ./ -wholename "./src/*.c")
 OBJ := $(patsubst ./src/%, ./obj/%, $(patsubst %.c, %.o, $(SRC)))
-DIR := obj obj/parser obj/lexer obj/helper obj/typechecker
+DIR := obj obj/parser obj/lexer obj/helper obj/typechecker obj/ir
 LIBS :=
 
 compile: compiler

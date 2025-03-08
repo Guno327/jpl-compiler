@@ -6,6 +6,9 @@
 #define C_IR_H
 
 struct c_prog;
+#define C_HDR                                                                  \
+  "#include <math.h>\n#include <stdbool.h>\n#include <stdint.h>\n#include "    \
+  "<stdio.h>\n#include \"rt/runtime.h\"\n\ntypedef struct { } void_t;\n\n"
 
 typedef struct {
   char *name;
@@ -30,11 +33,13 @@ typedef struct c_prog {
 } c_prog;
 
 char *gensym(c_fn *fn);
+char *genjmp(c_prog *main);
 c_prog *gen_c_ir(vector *cmds, ctx *global);
 char *c_prog_to_str(c_prog *prog);
 char *expr_gencode(c_prog *prog, c_fn *main, expr *e);
-char *genarray(c_prog *prog, c_fn *main, t *type, int size);
-char *gentype(t *t);
-char *genstruct(c_prog *prog, c_fn *main, char *jpl_name, vector *names);
+char *genarray(c_prog *prog, c_fn *fn, t *type, int size);
+char *gent(c_prog *prog, c_fn *fn, t *t);
+char *genshowt(t *t);
+char *jpl_to_c(c_fn *fn, char *jpl_name);
 
 #endif
