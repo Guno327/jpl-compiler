@@ -129,11 +129,52 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
 
       vector_append(program->structs, s);
       break;
-    // HW9
-    case WRITECMD:
-    case READCMD:
-    case TIMECMD:
-    case FNCMD:
+    case WRITECMD:;
+      write_cmd *wc = (write_cmd *)c->node;
+    case READCMD:;
+      read_cmd *rc = (read_cmd *)c->node;
+      char *rc_sym = gensym(jpl_main);
+      char *rc_code = safe_alloc(1);
+
+      rc_code = safe_strcat(rc_code, "_a2_rgba ");
+      rc_code = safe_strcat(rc_code, rc_sym);
+      rc_code = safe_strcat(rc_code, " = read_image(");
+      rc_code = safe_strcat(rc_code, rc->str);
+      rc_code = safe_strcat(rc_code, ");\n");
+
+      vector_append(jpl_main->c_names, rc_sym);
+      switch (rc->lval->type) {
+      case VARLVALUE:;
+        var_lval *vlv = (var_lval *)rc->lval->node;
+        vector_append(jpl_main->jpl_names, vlv->var);
+        break;
+      case ARRAYLVALUE:;
+        array_lval *alv = (array_lval *)rc->lval->node;
+        vector_append(jpl_main->jpl_names, alv->var);
+
+        for (int i = 0; i < alv->vars->size; i++) {
+          char *cur_var = vector_get_str(alv->vars, i);
+          char *c_name = safe_alloc(BUFSIZ);
+          sprintf(c_name, "%s.d%d", rc_sym, i);
+
+          rc_code = safe_strcat(rc_code, "int64_t ");
+          rc_code = safe_strcat(rc_code, cur_var);
+          rc_code = safe_strcat(rc_code, " = ");
+          rc_code = safe_strcat(rc_code, c_name);
+          rc_code = safe_strcat(rc_code, ";\n");
+
+          vector_append(jpl_main->jpl_names, cur_var);
+          vector_append(jpl_main->c_names, c_name);
+        }
+        break;
+      }
+
+      vector_append(jpl_main->code, rc_code);
+      break;
+    case TIMECMD:;
+      time_cmd *tc = (time_cmd *)c->node;
+    case FNCMD:;
+      fn_cmd *fc = (fn_cmd *)c->node;
     default:;
       char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "cmd not yet implemented");
