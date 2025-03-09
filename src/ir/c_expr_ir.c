@@ -673,10 +673,12 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
 
       sloop_code = safe_strcat(sloop_code, "goto ");
       sloop_code = safe_strcat(sloop_code, sloop_jmp);
-      sloop_code = safe_strcat(sloop_code, "goto ");
+      sloop_code = safe_strcat(sloop_code, ";\n");
 
-      sloop_code = safe_strcat(sloop_code, i_sym);
-      sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      if (i != sloop_bounds->size - 1) {
+        sloop_code = safe_strcat(sloop_code, i_sym);
+        sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      }
       free(i_sym);
     }
     free(sloop_bounds);
@@ -684,6 +686,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     free(sloop_jmp);
 
     vector_append(fn->code, sloop_code);
+    result = sloop_sym;
     break;
   case ARRAYLOOPEXPR:;
     array_loop_expr *aloop = (array_loop_expr *)e->node;
