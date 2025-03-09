@@ -21,7 +21,7 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
   c_fn *jpl_main = safe_alloc(sizeof(c_fn));
   jpl_main->name = safe_alloc(9);
   memcpy(jpl_main->name, "jpl_main", 8);
-  jpl_main->parent = program;
+  jpl_main->parent = NULL;
   jpl_main->name_ctr = 0;
   jpl_main->code = safe_alloc(sizeof(vector));
   jpl_main->c_names = safe_alloc(sizeof(vector));
@@ -292,10 +292,22 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
 
 char *jpl_to_c(c_fn *fn, char *jpl_name) {
   char *result = NULL;
-  for (int i = 0; i < fn->jpl_names->size; i++) {
-    if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i)))
-      result = vector_get_str(fn->c_names, i);
+  while (fn != NULL) {
+    for (int i = 0; i < fn->jpl_names->size; i++) {
+      if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
+        result = vector_get_str(fn->c_names, i);
+        break;
+      }
+    }
+    fn = fn->parent;
   }
+
+  if (result == NULL) {
+    char *msg = safe_alloc(BUFSIZ);
+    sprintf(msg, "Could not map jpl_name '%s' to c_names", jpl_name);
+    ir_error(msg);
+  }
+
   return result;
 }
 

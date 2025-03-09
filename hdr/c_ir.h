@@ -6,14 +6,15 @@
 #define C_IR_H
 
 struct c_prog;
+struct c_fn;
 #define C_HDR                                                                  \
   "#include <math.h>\n#include <stdbool.h>\n#include <stdint.h>\n#include "    \
   "<stdio.h>\n#include \"rt/runtime.h\"\n\ntypedef struct { } void_t;\n\n"
 
-typedef struct {
+typedef struct c_fn {
   char *name;
   vector *code;
-  struct c_prog *parent;
+  struct c_fn *parent;
   int name_ctr;
   vector *jpl_names;
   vector *c_names;

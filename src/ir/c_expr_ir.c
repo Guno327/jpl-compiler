@@ -96,15 +96,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     break;
   case VAREXPR:;
     var_expr *ve = (var_expr *)e->node;
-    char *ve_name = NULL;
-    for (int i = 0; i < fn->jpl_names->size; i++) {
-      char *cur_name = vector_get_str(fn->jpl_names, i);
-      if (!strcmp(ve->var, cur_name)) {
-        ve_name = vector_get_str(fn->c_names, i);
-        break;
-      }
-    }
-    result = ve_name;
+    result = jpl_to_c(fn, ve->var);
     break;
   case EXPR:;
     expr *inner_e = (expr *)e->node;
