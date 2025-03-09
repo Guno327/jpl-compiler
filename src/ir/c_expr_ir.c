@@ -217,8 +217,11 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     break;
   case BINOPEXPR:;
     binop_expr *bop = (binop_expr *)e->node;
-    char *bop_lhs = expr_gencode(prog, fn, bop->lhs);
     char *bop_sym = NULL;
+    if (bop->op == ANDOP || bop->op == OROP)
+      bop_sym = gensym(fn);
+
+    char *bop_lhs = expr_gencode(prog, fn, bop->lhs);
     char *bop_code = safe_alloc(1);
 
     char *bop_type;
@@ -235,15 +238,18 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
 
     // Short circuit logic
     if (bop->op == ANDOP || bop->op == OROP) {
-      bop_sym = gensym(fn);
       bop_code = safe_strcat(bop_code, bop_type);
+      free(bop_type);
       bop_code = safe_strcat(bop_code, " ");
       bop_code = safe_strcat(bop_code, bop_sym);
       bop_code = safe_strcat(bop_code, " = ");
       bop_code = safe_strcat(bop_code, bop_lhs);
       bop_code = safe_strcat(bop_code, ";\n");
 
-      bop_code = safe_strcat(bop_code, "if (0 == ");
+      if (bop->op == ANDOP)
+        bop_code = safe_strcat(bop_code, "if (0 == ");
+      else
+        bop_code = safe_strcat(bop_code, "if (0 != ");
       bop_code = safe_strcat(bop_code, bop_lhs);
       bop_code = safe_strcat(bop_code, ")\n");
 
@@ -252,14 +258,17 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       bop_code = safe_strcat(bop_code, short_circuit_jmp);
       bop_code = safe_strcat(bop_code, ";\n");
 
+      vector_append(fn->code, bop_code);
+      bop_code = safe_alloc(1);
       bop_rhs = expr_gencode(prog, fn, bop->rhs);
     } else {
       bop_rhs = expr_gencode(prog, fn, bop->rhs);
       bop_sym = gensym(fn);
     }
-
-    bop_code = safe_strcat(bop_code, bop_type);
-    free(bop_type);
+    if (bop->op != OROP && bop->op != ANDOP) {
+      bop_code = safe_strcat(bop_code, bop_type);
+      free(bop_type);
+    }
     bop_code = safe_strcat(bop_code, " ");
     bop_code = safe_strcat(bop_code, bop_sym);
     bop_code = safe_strcat(bop_code, " = ");
@@ -574,9 +583,110 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     vector_append(fn->code, ce_code);
     result = ce_sym;
     break;
-  // HW9
-  case ARRAYLOOPEXPR:;
   case SUMLOOPEXPR:;
+    sum_loop_expr *sloop = (sum_loop_expr *)e->node;
+    char *sloop_sym = gensym(fn);
+    char *sloop_type = gent(prog, fn, e->t_type);
+    char *sloop_code = safe_alloc(1);
+
+    // Bind out (and save for ordering)
+    sloop_code = safe_strcat(sloop_code, sloop_type);
+    free(sloop_type);
+    sloop_code = safe_strcat(sloop_code, " ");
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, ";\n");
+    vector_append(fn->code, sloop_code);
+    sloop_code = safe_alloc(1);
+
+    // Generate for each E_i
+    vector *sloop_e_syms = safe_alloc(sizeof(vector));
+    vector_init(sloop_e_syms, sloop->exprs->size, STRVECTOR);
+    for (int i = 0; i < sloop->exprs->size; i++) {
+      expr *cur_expr = vector_get_expr(sloop->exprs, i);
+      char *cur_sym = expr_gencode(prog, fn, cur_expr);
+      vector_append(sloop_e_syms, cur_sym);
+    }
+
+    // Check bounds
+    for (int i = 0; i < sloop_e_syms->size; i++) {
+      char *cur_sym = vector_get_str(sloop_e_syms, i);
+      char *cur_jmp = genjmp(prog);
+
+      sloop_code = safe_strcat(sloop_code, "if (");
+      sloop_code = safe_strcat(sloop_code, cur_sym);
+      sloop_code = safe_strcat(sloop_code, " > 0)\n");
+
+      sloop_code = safe_strcat(sloop_code, "goto ");
+      sloop_code = safe_strcat(sloop_code, cur_jmp);
+      sloop_code = safe_strcat(sloop_code, ";\n");
+
+      sloop_code = safe_strcat(
+          sloop_code, "fail_assertion(\"non-positive loop bound\");\n");
+      sloop_code = safe_strcat(sloop_code, cur_jmp);
+      free(cur_jmp);
+      sloop_code = safe_strcat(sloop_code, ":;\n");
+    }
+
+    // Init out
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, " = 0;\n");
+
+    // Init bounds
+    vector *sloop_bounds = safe_alloc(sizeof(vector));
+    vector_init(sloop_bounds, sloop_e_syms->size, STRVECTOR);
+    for (int i = 0; i < sloop_e_syms->size; i++) {
+      char *i_sym = gensym(fn);
+      sloop_code = safe_strcat(sloop_code, "int64_t ");
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      vector_append(sloop_bounds, i_sym);
+    }
+
+    // Loop jmp
+    char *sloop_jmp = genjmp(prog);
+    sloop_code = safe_strcat(sloop_code, sloop_jmp);
+    sloop_code = safe_strcat(sloop_code, ":;\n");
+    vector_append(fn->code, sloop_code);
+    sloop_code = safe_alloc(1);
+
+    // Loop body
+    char *body_sym = expr_gencode(prog, fn, sloop->expr);
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, " += ");
+    sloop_code = safe_strcat(sloop_code, body_sym);
+    free(body_sym);
+    sloop_code = safe_strcat(sloop_code, ";\n");
+
+    // Increment and check bounds
+    for (int i = 0; i < sloop_bounds->size; i++) {
+      char *i_limit = vector_get_str(sloop_e_syms, i);
+      char *i_sym = vector_get_str(sloop_bounds, i);
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, "++;\n");
+
+      sloop_code = safe_strcat(sloop_code, "if (");
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, " < ");
+      sloop_code = safe_strcat(sloop_code, i_limit);
+      free(i_limit);
+      sloop_code = safe_strcat(sloop_code, ")\n");
+
+      sloop_code = safe_strcat(sloop_code, "goto ");
+      sloop_code = safe_strcat(sloop_code, sloop_jmp);
+      sloop_code = safe_strcat(sloop_code, "goto ");
+
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      free(i_sym);
+    }
+    free(sloop_bounds);
+    free(sloop_e_syms);
+    free(sloop_jmp);
+
+    vector_append(fn->code, sloop_code);
+    break;
+  case ARRAYLOOPEXPR:;
+    array_loop_expr *aloop = (array_loop_expr *)e->node;
   default:;
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "expr not yet implemented");
