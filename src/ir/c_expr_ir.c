@@ -623,6 +623,15 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     sloop_code = safe_strcat(sloop_code, sloop_sym);
     sloop_code = safe_strcat(sloop_code, " = 0;\n");
 
+    // Setup fn call for body
+    c_fn *body_fn = safe_alloc(sizeof(c_fn));
+    body_fn->code = fn->code;
+    body_fn->parent = fn;
+    body_fn->c_names = safe_alloc(sizeof(vector));
+    body_fn->jpl_names = safe_alloc(sizeof(vector));
+    vector_init(body_fn->c_names, sloop->exprs->size, STRVECTOR);
+    vector_init(body_fn->jpl_names, sloop->exprs->size, STRVECTOR);
+
     // Init bounds
     vector *sloop_bounds = safe_alloc(sizeof(vector));
     vector_init(sloop_bounds, sloop_e_syms->size, STRVECTOR);
@@ -632,6 +641,10 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       sloop_code = safe_strcat(sloop_code, i_sym);
       sloop_code = safe_strcat(sloop_code, " = 0;\n");
       vector_append(sloop_bounds, i_sym);
+
+      char *jpl_name = vector_get_str(sloop->vars, i);
+      vector_append(body_fn->jpl_names, jpl_name);
+      vector_append(body_fn->c_names, i_sym);
     }
 
     // Loop jmp
@@ -642,11 +655,13 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     sloop_code = safe_alloc(1);
 
     // Loop body
-    char *body_sym = expr_gencode(prog, fn, sloop->expr);
+    body_fn->name_ctr = fn->name_ctr;
+    char *body_sym = expr_gencode(prog, body_fn, sloop->expr);
+    fn->name_ctr = body_fn->name_ctr;
+
     sloop_code = safe_strcat(sloop_code, sloop_sym);
     sloop_code = safe_strcat(sloop_code, " += ");
     sloop_code = safe_strcat(sloop_code, body_sym);
-    free(body_sym);
     sloop_code = safe_strcat(sloop_code, ";\n");
 
     // Increment and check bounds
@@ -660,7 +675,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       sloop_code = safe_strcat(sloop_code, i_sym);
       sloop_code = safe_strcat(sloop_code, " < ");
       sloop_code = safe_strcat(sloop_code, i_limit);
-      free(i_limit);
       sloop_code = safe_strcat(sloop_code, ")\n");
 
       sloop_code = safe_strcat(sloop_code, "goto ");
@@ -671,11 +685,11 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
         sloop_code = safe_strcat(sloop_code, i_sym);
         sloop_code = safe_strcat(sloop_code, " = 0;\n");
       }
-      free(i_sym);
     }
     free(sloop_bounds);
     free(sloop_e_syms);
     free(sloop_jmp);
+    free(body_fn);
 
     vector_append(fn->code, sloop_code);
     result = sloop_sym;

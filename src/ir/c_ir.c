@@ -291,24 +291,20 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
 }
 
 char *jpl_to_c(c_fn *fn, char *jpl_name) {
-  char *result = NULL;
   while (fn != NULL) {
     for (int i = 0; i < fn->jpl_names->size; i++) {
       if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
-        result = vector_get_str(fn->c_names, i);
-        break;
+        return vector_get_str(fn->c_names, i);
       }
     }
     fn = fn->parent;
   }
 
-  if (result == NULL) {
-    char *msg = safe_alloc(BUFSIZ);
-    sprintf(msg, "Could not map jpl_name '%s' to c_names", jpl_name);
-    ir_error(msg);
-  }
-
-  return result;
+  char *msg = safe_alloc(BUFSIZ);
+  sprintf(msg, "Could not map jpl_name '%s' to c_names", jpl_name);
+  ir_error(msg);
+  // Should not return, but needed for syntax highlightning
+  return NULL;
 }
 
 char *gent(c_prog *prog, c_fn *fn, t *t) {
