@@ -590,24 +590,19 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     vector_append(fn->code, sloop_code);
     sloop_code = safe_alloc(1);
 
-    // Generate for each E_i
+    // Check bounds
     vector *sloop_e_syms = safe_alloc(sizeof(vector));
     vector_init(sloop_e_syms, sloop->exprs->size, STRVECTOR);
     for (int i = 0; i < sloop->exprs->size; i++) {
       expr *cur_expr = vector_get_expr(sloop->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_expr);
       vector_append(sloop_e_syms, cur_sym);
-    }
-
-    // Check bounds
-    for (int i = 0; i < sloop_e_syms->size; i++) {
-      char *cur_sym = vector_get_str(sloop_e_syms, i);
-      char *cur_jmp = genjmp(prog);
 
       sloop_code = safe_strcat(sloop_code, "if (");
       sloop_code = safe_strcat(sloop_code, cur_sym);
       sloop_code = safe_strcat(sloop_code, " > 0)\n");
 
+      char *cur_jmp = genjmp(prog);
       sloop_code = safe_strcat(sloop_code, "goto ");
       sloop_code = safe_strcat(sloop_code, cur_jmp);
       sloop_code = safe_strcat(sloop_code, ";\n");
@@ -617,6 +612,9 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       sloop_code = safe_strcat(sloop_code, cur_jmp);
       free(cur_jmp);
       sloop_code = safe_strcat(sloop_code, ":;\n");
+
+      vector_append(fn->code, sloop_code);
+      sloop_code = safe_alloc(1);
     }
 
     // Init out
@@ -635,7 +633,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Init bounds
     vector *sloop_bounds = safe_alloc(sizeof(vector));
     vector_init(sloop_bounds, sloop_e_syms->size, STRVECTOR);
-    for (int i = 0; i < sloop_e_syms->size; i++) {
+    for (int i = sloop_e_syms->size - 1; i >= 0; i--) {
       char *i_sym = gensym(fn);
       sloop_code = safe_strcat(sloop_code, "int64_t ");
       sloop_code = safe_strcat(sloop_code, i_sym);
@@ -666,7 +664,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
 
     // Increment and check bounds
     for (int i = 0; i < sloop_bounds->size; i++) {
-      char *i_limit = vector_get_str(sloop_e_syms, i);
+      char *i_limit = vector_get_str(sloop_e_syms, sloop_bounds->size - i - 1);
       char *i_sym = vector_get_str(sloop_bounds, i);
       sloop_code = safe_strcat(sloop_code, i_sym);
       sloop_code = safe_strcat(sloop_code, "++;\n");
