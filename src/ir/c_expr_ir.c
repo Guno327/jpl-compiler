@@ -814,7 +814,8 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     aloop_code = safe_strcat(aloop_code, " = 0;\n");
 
     for (int i = 0; i < aloop->exprs->size; i++) {
-      char *cur_bound = vector_get_str(aloop_bounds, i);
+      char *cur_bound =
+          vector_get_str(aloop_bounds, aloop_bounds->size - i - 1);
 
       aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
       aloop_code = safe_strcat(aloop_code, " *= ");
