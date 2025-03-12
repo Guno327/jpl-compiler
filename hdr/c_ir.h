@@ -38,6 +38,7 @@ char *genjmp(c_prog *main);
 c_prog *gen_c_ir(vector *cmds, ctx *global);
 char *c_prog_to_str(c_prog *prog);
 char *expr_gencode(c_prog *prog, c_fn *main, expr *e);
+void cmd_gencode(c_prog *prog, c_fn *main, cmd *c);
 char *genarray(c_prog *prog, c_fn *fn, t *type, int size);
 char *gent(c_prog *prog, c_fn *fn, t *t);
 char *genshowt(t *t);
