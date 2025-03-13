@@ -33,6 +33,23 @@ char *c_prog_to_str(c_prog *prog) {
 
   // Functions (HW9)
   for (int i = 1; i < prog->fns->size; i++) {
+    c_fn *cur_fn = vector_get_c_fn(prog->fns, i);
+
+    // Header
+    result = safe_strcat(result, cur_fn->ret_type);
+    result = safe_strcat(result, " ");
+    result = safe_strcat(result, cur_fn->name);
+    result = safe_strcat(result, "(");
+    result = safe_strcat(result, cur_fn->args_list);
+    result = safe_strcat(result, ")");
+    result = safe_strcat(result, " {\n");
+
+    // Body
+    for (int j = 0; j < cur_fn->code->size; j++) {
+      char *block = vector_get_str(cur_fn->code, j);
+      result = safe_strcat(result, block);
+    }
+    result = safe_strcat(result, "}\n\n");
   }
 
   // Main

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
+char *expr_gencode(c_prog *prog, c_fn *fn, expr *e, bool in_call) {
   char *result = NULL;
   switch (e->type) {
   case INTEXPR:;

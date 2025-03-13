@@ -19,8 +19,11 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
 
   // Setup jpl_main
   c_fn *jpl_main = safe_alloc(sizeof(c_fn));
+  jpl_main->ret_type = safe_alloc(5);
+  memcpy(jpl_main->ret_type, "void", 4);
   jpl_main->name = safe_alloc(9);
   memcpy(jpl_main->name, "jpl_main", 8);
+  jpl_main->args_list = safe_alloc(1);
   jpl_main->parent = NULL;
   jpl_main->name_ctr = 0;
   jpl_main->code = safe_alloc(sizeof(vector));
