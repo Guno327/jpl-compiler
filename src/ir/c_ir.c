@@ -19,6 +19,7 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
 
   // Setup jpl_main
   c_fn *jpl_main = safe_alloc(sizeof(c_fn));
+  jpl_main = safe_alloc(sizeof(c_fn));
   jpl_main->ret_type = safe_alloc(5);
   memcpy(jpl_main->ret_type, "void", 4);
   jpl_main->name = safe_alloc(9);
@@ -152,16 +153,12 @@ char *jpl_to_c(c_fn *fn, char *jpl_name) {
   while (fn != NULL) {
     for (int i = 0; i < fn->jpl_names->size; i++) {
       if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
-        return vector_get_str(fn->c_names, i);
+        char *c_name = vector_get_str(fn->c_names, i);
+        return c_name;
       }
     }
     fn = fn->parent;
   }
-
-  char *msg = safe_alloc(BUFSIZ);
-  sprintf(msg, "Could not map jpl_name '%s' to c_names", jpl_name);
-  ir_error(msg);
-  // Should not return, but needed for syntax highlightning
   return NULL;
 }
 

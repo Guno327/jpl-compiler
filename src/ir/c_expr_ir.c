@@ -97,6 +97,8 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
   case VAREXPR:;
     var_expr *ve = (var_expr *)e->node;
     result = jpl_to_c(fn, ve->var);
+    if (result == NULL)
+      result = ve->var;
     break;
   case EXPR:;
     expr *inner_e = (expr *)e->node;

@@ -179,7 +179,6 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     fn_def->name = safe_alloc(strlen(fc->var) + 1);
     memcpy(fn_def->name, fc->var, strlen(fc->var));
 
-    fn_def->parent = fn;
     fn_def->name_ctr = 0;
     fn_def->c_names = safe_alloc(sizeof(vector));
     fn_def->jpl_names = safe_alloc(sizeof(vector));
@@ -201,6 +200,17 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
       case ARRAYLVALUE:;
         array_lval *alv = (array_lval *)cur_bind->lval->node;
         cur_var = alv->var;
+
+        if (alv->vars->size != 0) {
+          for (int i = 0; i < alv->vars->size; i++) {
+            char *cur_jpl = vector_get_str(alv->vars, i);
+            char *cur_c = safe_alloc(BUFSIZ);
+            sprintf(cur_c, "%s.d%d", alv->var, i);
+
+            vector_append(fn_def->jpl_names, cur_jpl);
+            vector_append(fn_def->c_names, cur_c);
+          }
+        }
         break;
       }
 
@@ -219,6 +229,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
 
     // Because the autograder is silly we have to use jpl_names to refer to
     // global vars :(
+    fn_def->parent = NULL;
 
     // Create code from stmts
     fn_def->ret_type = NULL;
@@ -246,8 +257,6 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
 
       vector_append(fn_def->code, ret_code);
     }
-
-    // ugh
 
     vector_append(prog->fns, fn_def);
     break;
