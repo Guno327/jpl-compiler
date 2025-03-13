@@ -1,3 +1,0 @@
-fn p(q[r] : rgba[]) : rgba[][] {
-  return array[i:10] array[j:10] rgba{0.0, 0.0, 0.0, 0.0}
-}
