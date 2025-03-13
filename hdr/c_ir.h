@@ -13,8 +13,8 @@ struct c_fn;
 
 typedef struct c_fn {
   char *name;
-  char *ret_type;
   char *args_list;
+  char *ret_type;
   vector *code;
   struct c_fn *parent;
   int name_ctr;
@@ -41,7 +41,7 @@ c_prog *gen_c_ir(vector *cmds, ctx *global);
 char *c_prog_to_str(c_prog *prog);
 char *expr_gencode(c_prog *prog, c_fn *main, expr *e);
 void cmd_gencode(c_prog *prog, c_fn *main, cmd *c);
-void stmt_gencode(c_prog *prog, c_fn *main, stmt *s);
+bool stmt_gencode(c_prog *prog, c_fn *main, stmt *s);
 char *genarray(c_prog *prog, c_fn *fn, t *type, int size);
 char *gent(c_prog *prog, c_fn *fn, t *t);
 char *genshowt(t *t);

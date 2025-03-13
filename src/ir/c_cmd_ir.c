@@ -104,6 +104,15 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     break;
   case WRITECMD:;
     write_cmd *wc = (write_cmd *)c->node;
+    char *wc_sym = expr_gencode(prog, fn, wc->expr);
+    char *wc_code = safe_alloc(1);
+    wc_code = safe_strcat(wc_code, "write_image(");
+    wc_code = safe_strcat(wc_code, wc_sym);
+    wc_code = safe_strcat(wc_code, ", ");
+    wc_code = safe_strcat(wc_code, wc->str);
+    wc_code = safe_strcat(wc_code, ");\n");
+    vector_append(fn->code, wc_code);
+    break;
   case READCMD:;
     read_cmd *rc = (read_cmd *)c->node;
     char *rc_sym = gensym(fn);
@@ -147,7 +156,6 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
   case TIMECMD:;
     time_cmd *tc = (time_cmd *)c->node;
     char *start_sym = gensym(fn);
-    char *end_sym = gensym(fn);
     char *tc_code = safe_alloc(1);
 
     tc_code = safe_strcat(tc_code, "double ");
@@ -158,6 +166,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
 
     cmd_gencode(prog, fn, tc->cmd);
 
+    char *end_sym = gensym(fn);
     tc_code = safe_strcat(tc_code, "double ");
     tc_code = safe_strcat(tc_code, end_sym);
     tc_code = safe_strcat(tc_code, " = get_time();\n");
@@ -184,6 +193,10 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     fn_def->jpl_names = safe_alloc(sizeof(vector));
     vector_init(fn_def->c_names, 8, STRVECTOR);
     vector_init(fn_def->jpl_names, 8, STRVECTOR);
+
+    // Figure out return type
+    char *fc_ret = gent(prog, fn, type_to_t(fc->type));
+    fn_def->ret_type = fc_ret;
 
     // Create args list
     char *args_list = safe_alloc(1);
@@ -232,29 +245,28 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     fn_def->parent = NULL;
 
     // Create code from stmts
-    fn_def->ret_type = NULL;
+    bool found_ret = false;
     fn_def->code = safe_alloc(sizeof(vector));
-    vector_init(fn_def->code, fc->stmts->size, STRVECTOR);
+    size_t stmts = fc->stmts->size == 0 ? 1 : fc->stmts->size;
+    vector_init(fn_def->code, stmts, STRVECTOR);
     for (int i = 0; i < fc->stmts->size; i++) {
       stmt *cur_stmt = vector_get_stmt(fc->stmts, i);
-      stmt_gencode(prog, fn_def, cur_stmt);
+      bool is_ret = stmt_gencode(prog, fn_def, cur_stmt);
+      if (!found_ret && is_ret)
+        found_ret = true;
     }
-    if (fn_def->ret_type == NULL) {
+    // Implicit return (is void thanks to typecheck)
+    if (!found_ret) {
       char *void_ret = safe_alloc(7);
       memcpy(void_ret, "void_t", 6);
-      fn_def->ret_type = void_ret;
-
       char *ret_sym = gensym(fn_def);
       char *ret_code = safe_alloc(1);
       ret_code = safe_strcat(ret_code, "void_t ");
       ret_code = safe_strcat(ret_code, ret_sym);
       ret_code = safe_strcat(ret_code, " = {};\n");
-
       ret_code = safe_strcat(ret_code, "return ");
       ret_code = safe_strcat(ret_code, ret_sym);
-      free(ret_sym);
       ret_code = safe_strcat(ret_code, ";\n");
-
       vector_append(fn_def->code, ret_code);
     }
 

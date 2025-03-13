@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void stmt_gencode(c_prog *prog, c_fn *fn, stmt *s) {
+bool stmt_gencode(c_prog *prog, c_fn *fn, stmt *s) {
   switch (s->type) {
   case LETSTMT:;
     let_stmt *ls = (let_stmt *)s->node;
@@ -42,7 +42,6 @@ void stmt_gencode(c_prog *prog, c_fn *fn, stmt *s) {
     char *as_code = safe_alloc(1);
     as_code = safe_strcat(as_code, "if (0 != ");
     as_code = safe_strcat(as_code, as_sym);
-    free(as_sym);
     as_code = safe_strcat(as_code, ")\n");
 
     char *pass_jmp = genjmp(prog);
@@ -68,10 +67,8 @@ void stmt_gencode(c_prog *prog, c_fn *fn, stmt *s) {
     rs_code = safe_strcat(rs_code, rs_sym);
     rs_code = safe_strcat(rs_code, ";\n");
     vector_append(fn->code, rs_code);
-
-    // First ret stmt of fn
-    if (fn->ret_type == NULL)
-      fn->ret_type = gent(prog, fn, rs->expr->t_type);
     break;
   }
+  bool ret = (s->type == RETURNSTMT);
+  return ret;
 }

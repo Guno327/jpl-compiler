@@ -501,7 +501,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     char *else_jmp = genjmp(prog);
     ife_code = safe_strcat(ife_code, "if (!");
     ife_code = safe_strcat(ife_code, if_sym);
-    free(if_sym);
     ife_code = safe_strcat(ife_code, ")\n");
 
     ife_code = safe_strcat(ife_code, "goto ");
@@ -516,7 +515,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ife_code = safe_strcat(ife_code, ife_sym);
     ife_code = safe_strcat(ife_code, " = ");
     ife_code = safe_strcat(ife_code, then_sym);
-    free(then_sym);
     ife_code = safe_strcat(ife_code, ";\n");
 
     char *end_jmp = genjmp(prog);
@@ -536,7 +534,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ife_code = safe_strcat(ife_code, ife_sym);
     ife_code = safe_strcat(ife_code, " = ");
     ife_code = safe_strcat(ife_code, else_sym);
-    free(else_sym);
     ife_code = safe_strcat(ife_code, ";\n");
 
     ife_code = safe_strcat(ife_code, end_jmp);

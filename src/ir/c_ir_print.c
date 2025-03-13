@@ -4,6 +4,7 @@
 #include "typecheck.h"
 #include "vector.h"
 #include "vector_get.h"
+#include <string.h>
 
 char *c_prog_to_str(c_prog *prog) {
   char *result = safe_alloc(1);
@@ -14,6 +15,9 @@ char *c_prog_to_str(c_prog *prog) {
   // Structs
   for (int i = 0; i < prog->structs->size; i++) {
     c_struct *cur = vector_get_c_struct(prog->structs, i);
+    if (!strcmp(cur->name, "_a2_rgba"))
+      continue;
+
     result = safe_strcat(result, "typedef struct {\n");
 
     // Binds

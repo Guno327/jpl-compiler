@@ -20,8 +20,6 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
   // Setup jpl_main
   c_fn *jpl_main = safe_alloc(sizeof(c_fn));
   jpl_main = safe_alloc(sizeof(c_fn));
-  jpl_main->ret_type = safe_alloc(5);
-  memcpy(jpl_main->ret_type, "void", 4);
   jpl_main->name = safe_alloc(9);
   memcpy(jpl_main->name, "jpl_main", 8);
   jpl_main->args_list = safe_alloc(1);
@@ -96,7 +94,7 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
     break;
   case ARRAY_T:;
     array_info *a_info = (array_info *)type->info;
-    char *inner = genarray(prog, fn, a_info->type, rank);
+    char *inner = genarray(prog, fn, a_info->type, a_info->rank);
     result = safe_strcat(result, inner);
     break;
   case STRUCT_T:;
@@ -150,6 +148,13 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
 }
 
 char *jpl_to_c(c_fn *fn, char *jpl_name) {
+  // Built-ins
+  if (!strcmp(jpl_name, "args")) {
+    return "args";
+  } else if (!strcmp(jpl_name, "argnum")) {
+    return "args.d0";
+  }
+
   while (fn != NULL) {
     for (int i = 0; i < fn->jpl_names->size; i++) {
       if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
