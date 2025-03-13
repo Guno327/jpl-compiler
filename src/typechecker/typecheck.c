@@ -200,3 +200,47 @@ ctx *setup_global_ctx() {
 
   return c;
 }
+
+t *type_to_t(type *type) {
+  t *result = safe_alloc(sizeof(t));
+  switch (type->type) {
+  case INTTYPE:
+    result->type = INT_T;
+    result->info = NULL;
+    break;
+  case FLOATTYPE:
+    result->type = FLOAT_T;
+    result->info = NULL;
+    break;
+  case BOOLTYPE:
+    result->type = BOOL_T;
+    result->info = NULL;
+    break;
+  case VOIDTYPE:
+    result->type = VOID_T;
+    result->info = NULL;
+    break;
+  case ARRAYTYPE:
+    result->type = ARRAY_T;
+
+    array_type *at = (array_type *)type->node;
+    array_info *at_info = safe_alloc(sizeof(array_info));
+    at_info->type = type_to_t(at->type);
+    at_info->rank = at->rank;
+    result->info = at_info;
+    break;
+  case STRUCTTYPE:
+    result->type = STRUCT_T;
+
+    struct_type *st = (struct_type *)type->node;
+    struct_info *st_info = safe_alloc(sizeof(struct_info));
+    st_info->ts = safe_alloc(sizeof(vector));
+    st_info->vars = safe_alloc(sizeof(vector));
+    vector_init(st_info->ts, 1, TVECTOR);
+    vector_init(st_info->vars, 1, STRVECTOR);
+    st_info->name = st->var;
+    result->info = st_info;
+    break;
+  }
+  return result;
+}

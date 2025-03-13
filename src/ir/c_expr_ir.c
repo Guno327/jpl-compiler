@@ -96,15 +96,9 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     break;
   case VAREXPR:;
     var_expr *ve = (var_expr *)e->node;
-    char *ve_name = NULL;
-    for (int i = 0; i < fn->jpl_names->size; i++) {
-      char *cur_name = vector_get_str(fn->jpl_names, i);
-      if (!strcmp(ve->var, cur_name)) {
-        ve_name = vector_get_str(fn->c_names, i);
-        break;
-      }
-    }
-    result = ve_name;
+    result = jpl_to_c(fn, ve->var);
+    if (result == NULL)
+      result = ve->var;
     break;
   case EXPR:;
     expr *inner_e = (expr *)e->node;
@@ -217,74 +211,154 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     break;
   case BINOPEXPR:;
     binop_expr *bop = (binop_expr *)e->node;
-    char *bop_lhs = expr_gencode(prog, fn, bop->lhs);
-    char *bop_rhs = expr_gencode(prog, fn, bop->rhs);
-    char *bop_sym = gensym(fn);
+    char *bop_sym = NULL;
+    if (bop->op == ANDOP || bop->op == OROP)
+      bop_sym = gensym(fn);
 
+    char *bop_lhs = expr_gencode(prog, fn, bop->lhs);
     char *bop_code = safe_alloc(1);
+
+    char *bop_type;
     if (bop->op == ADDOP || bop->op == SUBOP || bop->op == DIVOP ||
         bop->op == MULTOP || bop->op == MODOP) {
-      char *bop_type = gent(prog, fn, bop->rhs->t_type);
+      bop_type = gent(prog, fn, bop->rhs->t_type);
+    } else {
+      bop_type = safe_alloc(5);
+      memcpy(bop_type, "bool", 4);
+    }
+
+    char *short_circuit_jmp = NULL;
+    char *bop_rhs = NULL;
+
+    // Short circuit logic
+    if (bop->op == ANDOP || bop->op == OROP) {
       bop_code = safe_strcat(bop_code, bop_type);
       free(bop_type);
+      bop_code = safe_strcat(bop_code, " ");
+      bop_code = safe_strcat(bop_code, bop_sym);
+      bop_code = safe_strcat(bop_code, " = ");
+      bop_code = safe_strcat(bop_code, bop_lhs);
+      bop_code = safe_strcat(bop_code, ";\n");
+
+      if (bop->op == ANDOP)
+        bop_code = safe_strcat(bop_code, "if (0 == ");
+      else
+        bop_code = safe_strcat(bop_code, "if (0 != ");
+      bop_code = safe_strcat(bop_code, bop_lhs);
+      bop_code = safe_strcat(bop_code, ")\n");
+
+      short_circuit_jmp = genjmp(prog);
+      bop_code = safe_strcat(bop_code, "goto ");
+      bop_code = safe_strcat(bop_code, short_circuit_jmp);
+      bop_code = safe_strcat(bop_code, ";\n");
+
+      vector_append(fn->code, bop_code);
+      bop_code = safe_alloc(1);
+      bop_rhs = expr_gencode(prog, fn, bop->rhs);
     } else {
-      bop_code = safe_strcat(bop_code, "bool");
+      bop_rhs = expr_gencode(prog, fn, bop->rhs);
+      bop_sym = gensym(fn);
+    }
+    if (bop->op != OROP && bop->op != ANDOP) {
+      bop_code = safe_strcat(bop_code, bop_type);
+      free(bop_type);
     }
     bop_code = safe_strcat(bop_code, " ");
     bop_code = safe_strcat(bop_code, bop_sym);
     bop_code = safe_strcat(bop_code, " = ");
     if (bop->op != MODOP || bop->lhs->t_type->type != FLOAT_T) {
-      bop_code = safe_strcat(bop_code, bop_lhs);
       switch (bop->op) {
       case ADDOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " + ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case SUBOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " - ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case MULTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " * ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case DIVOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " / ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case GEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " >= ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case LEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " <= ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case GTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " > ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case LTOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " < ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case EQOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " == ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case NEOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " != ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       case ANDOP:
-        bop_code = safe_strcat(bop_code, " && ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
+
+        bop_code = safe_strcat(bop_code, short_circuit_jmp);
+        free(short_circuit_jmp);
+        bop_code = safe_strcat(bop_code, ":;\n");
         break;
       case OROP:
-        bop_code = safe_strcat(bop_code, " || ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
+
+        bop_code = safe_strcat(bop_code, short_circuit_jmp);
+        free(short_circuit_jmp);
+        bop_code = safe_strcat(bop_code, ":;\n");
         break;
       case MODOP:
+        bop_code = safe_strcat(bop_code, bop_lhs);
         bop_code = safe_strcat(bop_code, " % ");
+        bop_code = safe_strcat(bop_code, bop_rhs);
+        bop_code = safe_strcat(bop_code, ";\n");
         break;
       }
-      bop_code = safe_strcat(bop_code, bop_rhs);
     } else {
       bop_code = safe_strcat(bop_code, "fmod(");
       bop_code = safe_strcat(bop_code, bop_lhs);
       bop_code = safe_strcat(bop_code, ", ");
       bop_code = safe_strcat(bop_code, bop_rhs);
       bop_code = safe_strcat(bop_code, ")");
+      bop_code = safe_strcat(bop_code, ";\n");
     }
-    bop_code = safe_strcat(bop_code, ";\n");
     vector_append(fn->code, bop_code);
     return bop_sym;
     break;
@@ -427,7 +501,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     char *else_jmp = genjmp(prog);
     ife_code = safe_strcat(ife_code, "if (!");
     ife_code = safe_strcat(ife_code, if_sym);
-    free(if_sym);
     ife_code = safe_strcat(ife_code, ")\n");
 
     ife_code = safe_strcat(ife_code, "goto ");
@@ -442,7 +515,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ife_code = safe_strcat(ife_code, ife_sym);
     ife_code = safe_strcat(ife_code, " = ");
     ife_code = safe_strcat(ife_code, then_sym);
-    free(then_sym);
     ife_code = safe_strcat(ife_code, ";\n");
 
     char *end_jmp = genjmp(prog);
@@ -462,7 +534,6 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ife_code = safe_strcat(ife_code, ife_sym);
     ife_code = safe_strcat(ife_code, " = ");
     ife_code = safe_strcat(ife_code, else_sym);
-    free(else_sym);
     ife_code = safe_strcat(ife_code, ";\n");
 
     ife_code = safe_strcat(ife_code, end_jmp);
@@ -503,9 +574,302 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     vector_append(fn->code, ce_code);
     result = ce_sym;
     break;
-  // HW9
-  case ARRAYLOOPEXPR:;
   case SUMLOOPEXPR:;
+    sum_loop_expr *sloop = (sum_loop_expr *)e->node;
+    char *sloop_sym = gensym(fn);
+    char *sloop_type = gent(prog, fn, e->t_type);
+    char *sloop_code = safe_alloc(1);
+
+    // Bind out (and save for ordering)
+    sloop_code = safe_strcat(sloop_code, sloop_type);
+    free(sloop_type);
+    sloop_code = safe_strcat(sloop_code, " ");
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, ";\n");
+    vector_append(fn->code, sloop_code);
+    sloop_code = safe_alloc(1);
+
+    // Check bounds
+    vector *sloop_e_syms = safe_alloc(sizeof(vector));
+    vector_init(sloop_e_syms, sloop->exprs->size, STRVECTOR);
+    for (int i = 0; i < sloop->exprs->size; i++) {
+      expr *cur_expr = vector_get_expr(sloop->exprs, i);
+      char *cur_sym = expr_gencode(prog, fn, cur_expr);
+      vector_append(sloop_e_syms, cur_sym);
+
+      sloop_code = safe_strcat(sloop_code, "if (");
+      sloop_code = safe_strcat(sloop_code, cur_sym);
+      sloop_code = safe_strcat(sloop_code, " > 0)\n");
+
+      char *cur_jmp = genjmp(prog);
+      sloop_code = safe_strcat(sloop_code, "goto ");
+      sloop_code = safe_strcat(sloop_code, cur_jmp);
+      sloop_code = safe_strcat(sloop_code, ";\n");
+
+      sloop_code = safe_strcat(
+          sloop_code, "fail_assertion(\"non-positive loop bound\");\n");
+      sloop_code = safe_strcat(sloop_code, cur_jmp);
+      free(cur_jmp);
+      sloop_code = safe_strcat(sloop_code, ":;\n");
+
+      vector_append(fn->code, sloop_code);
+      sloop_code = safe_alloc(1);
+    }
+
+    // Init out
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, " = 0;\n");
+
+    // Setup fn call for body
+    c_fn *sloop_body_fn = safe_alloc(sizeof(c_fn));
+    sloop_body_fn->code = fn->code;
+    sloop_body_fn->parent = fn;
+    sloop_body_fn->c_names = safe_alloc(sizeof(vector));
+    sloop_body_fn->jpl_names = safe_alloc(sizeof(vector));
+    vector_init(sloop_body_fn->c_names, sloop->exprs->size, STRVECTOR);
+    vector_init(sloop_body_fn->jpl_names, sloop->exprs->size, STRVECTOR);
+
+    // Init bounds
+    vector *sloop_bounds = safe_alloc(sizeof(vector));
+    vector_init(sloop_bounds, sloop_e_syms->size, STRVECTOR);
+    for (int i = sloop_e_syms->size - 1; i >= 0; i--) {
+      char *i_sym = gensym(fn);
+      sloop_code = safe_strcat(sloop_code, "int64_t ");
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      vector_append(sloop_bounds, i_sym);
+
+      char *jpl_name = vector_get_str(sloop->vars, i);
+      vector_append(sloop_body_fn->jpl_names, jpl_name);
+      vector_append(sloop_body_fn->c_names, i_sym);
+    }
+
+    // Loop jmp
+    char *sloop_jmp = genjmp(prog);
+    sloop_code = safe_strcat(sloop_code, sloop_jmp);
+    sloop_code = safe_strcat(sloop_code, ":;\n");
+    vector_append(fn->code, sloop_code);
+    sloop_code = safe_alloc(1);
+
+    // Loop body
+    sloop_body_fn->name_ctr = fn->name_ctr;
+    char *sloop_body_sym = expr_gencode(prog, sloop_body_fn, sloop->expr);
+    fn->name_ctr = sloop_body_fn->name_ctr;
+
+    sloop_code = safe_strcat(sloop_code, sloop_sym);
+    sloop_code = safe_strcat(sloop_code, " += ");
+    sloop_code = safe_strcat(sloop_code, sloop_body_sym);
+    sloop_code = safe_strcat(sloop_code, ";\n");
+
+    // Increment and check bounds
+    for (int i = 0; i < sloop_bounds->size; i++) {
+      char *i_limit = vector_get_str(sloop_e_syms, sloop_bounds->size - i - 1);
+      char *i_sym = vector_get_str(sloop_bounds, i);
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, "++;\n");
+
+      sloop_code = safe_strcat(sloop_code, "if (");
+      sloop_code = safe_strcat(sloop_code, i_sym);
+      sloop_code = safe_strcat(sloop_code, " < ");
+      sloop_code = safe_strcat(sloop_code, i_limit);
+      sloop_code = safe_strcat(sloop_code, ")\n");
+
+      sloop_code = safe_strcat(sloop_code, "goto ");
+      sloop_code = safe_strcat(sloop_code, sloop_jmp);
+      sloop_code = safe_strcat(sloop_code, ";\n");
+
+      if (i != sloop_bounds->size - 1) {
+        sloop_code = safe_strcat(sloop_code, i_sym);
+        sloop_code = safe_strcat(sloop_code, " = 0;\n");
+      }
+    }
+    free(sloop_bounds);
+    free(sloop_e_syms);
+    free(sloop_jmp);
+    free(sloop_body_fn);
+
+    vector_append(fn->code, sloop_code);
+    result = sloop_sym;
+    break;
+  case ARRAYLOOPEXPR:;
+    array_loop_expr *aloop = (array_loop_expr *)e->node;
+    char *aloop_sym = gensym(fn);
+    char *aloop_type = gent(prog, fn, e->t_type);
+    char *aloop_code = safe_alloc(1);
+
+    // Bind out (and save for ordering)
+    aloop_code = safe_strcat(aloop_code, aloop_type);
+    free(aloop_type);
+    aloop_code = safe_strcat(aloop_code, " ");
+    aloop_code = safe_strcat(aloop_code, aloop_sym);
+    aloop_code = safe_strcat(aloop_code, ";\n");
+    vector_append(fn->code, aloop_code);
+    aloop_code = safe_alloc(1);
+
+    // Check bounds
+    vector *aloop_e_syms = safe_alloc(sizeof(vector));
+    vector_init(aloop_e_syms, aloop->exprs->size, STRVECTOR);
+    for (int i = 0; i < aloop->exprs->size; i++) {
+      // Gen bound expr
+      expr *cur_expr = vector_get_expr(aloop->exprs, i);
+      char *cur_sym = expr_gencode(prog, fn, cur_expr);
+      vector_append(aloop_e_syms, cur_sym);
+
+      // Bind dim
+      char *bind_dim = safe_alloc(BUFSIZ);
+      sprintf(bind_dim, "%s.d%d", aloop_sym, i);
+      aloop_code = safe_strcat(aloop_code, bind_dim);
+      free(bind_dim);
+      aloop_code = safe_strcat(aloop_code, " = ");
+      aloop_code = safe_strcat(aloop_code, cur_sym);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+
+      // Check bound
+      aloop_code = safe_strcat(aloop_code, "if (");
+      aloop_code = safe_strcat(aloop_code, cur_sym);
+      aloop_code = safe_strcat(aloop_code, " > 0)\n");
+
+      char *cur_jmp = genjmp(prog);
+      aloop_code = safe_strcat(aloop_code, "goto ");
+      aloop_code = safe_strcat(aloop_code, cur_jmp);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+
+      aloop_code = safe_strcat(
+          aloop_code, "fail_assertion(\"non-positive loop bound\");\n");
+      aloop_code = safe_strcat(aloop_code, cur_jmp);
+      free(cur_jmp);
+      aloop_code = safe_strcat(aloop_code, ":;\n");
+
+      vector_append(fn->code, aloop_code);
+      aloop_code = safe_alloc(1);
+    }
+
+    // Init out
+    char *dim_size_sym = gensym(fn);
+    aloop_code = safe_strcat(aloop_code, "int64_t ");
+    aloop_code = safe_strcat(aloop_code, dim_size_sym);
+    aloop_code = safe_strcat(aloop_code, " = 1;\n");
+
+    for (int i = 0; i < aloop->exprs->size; i++) {
+      char *cur_dim = vector_get_str(aloop_e_syms, i);
+      aloop_code = safe_strcat(aloop_code, dim_size_sym);
+      aloop_code = safe_strcat(aloop_code, " *= ");
+      aloop_code = safe_strcat(aloop_code, cur_dim);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+    }
+
+    char *inner_type = gent(prog, fn, aloop->expr->t_type);
+    aloop_code = safe_strcat(aloop_code, dim_size_sym);
+    aloop_code = safe_strcat(aloop_code, " *= ");
+    aloop_code = safe_strcat(aloop_code, "sizeof(");
+    aloop_code = safe_strcat(aloop_code, inner_type);
+    free(inner_type);
+    aloop_code = safe_strcat(aloop_code, ");\n");
+
+    aloop_code = safe_strcat(aloop_code, aloop_sym);
+    aloop_code = safe_strcat(aloop_code, ".data = jpl_alloc(");
+    aloop_code = safe_strcat(aloop_code, dim_size_sym);
+    aloop_code = safe_strcat(aloop_code, ");\n");
+
+    // Setup fn call for body
+    c_fn *aloop_body_fn = safe_alloc(sizeof(c_fn));
+    aloop_body_fn->code = fn->code;
+    aloop_body_fn->parent = fn;
+    aloop_body_fn->c_names = safe_alloc(sizeof(vector));
+    aloop_body_fn->jpl_names = safe_alloc(sizeof(vector));
+    vector_init(aloop_body_fn->c_names, aloop->exprs->size, STRVECTOR);
+    vector_init(aloop_body_fn->jpl_names, aloop->exprs->size, STRVECTOR);
+
+    // Init bounds
+    vector *aloop_bounds = safe_alloc(sizeof(vector));
+    vector_init(aloop_bounds, aloop_e_syms->size, STRVECTOR);
+    for (int i = aloop_e_syms->size - 1; i >= 0; i--) {
+      char *i_sym = gensym(fn);
+      aloop_code = safe_strcat(aloop_code, "int64_t ");
+      aloop_code = safe_strcat(aloop_code, i_sym);
+      aloop_code = safe_strcat(aloop_code, " = 0;\n");
+      vector_append(aloop_bounds, i_sym);
+
+      char *jpl_name = vector_get_str(aloop->vars, i);
+      vector_append(aloop_body_fn->jpl_names, jpl_name);
+      vector_append(aloop_body_fn->c_names, i_sym);
+    }
+
+    // Loop jmp
+    char *aloop_jmp = genjmp(prog);
+    aloop_code = safe_strcat(aloop_code, aloop_jmp);
+    aloop_code = safe_strcat(aloop_code, ":;\n");
+    vector_append(fn->code, aloop_code);
+    aloop_code = safe_alloc(1);
+
+    // Loop body
+    aloop_body_fn->name_ctr = fn->name_ctr;
+    char *aloop_body_sym = expr_gencode(prog, aloop_body_fn, aloop->expr);
+    fn->name_ctr = aloop_body_fn->name_ctr;
+
+    aloop_code = safe_strcat(aloop_code, "int64_t ");
+    char *aloop_idx_sym = gensym(fn);
+    aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
+    aloop_code = safe_strcat(aloop_code, " = 0;\n");
+
+    for (int i = 0; i < aloop->exprs->size; i++) {
+      char *cur_bound =
+          vector_get_str(aloop_bounds, aloop_bounds->size - i - 1);
+
+      aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
+      aloop_code = safe_strcat(aloop_code, " *= ");
+      aloop_code = safe_strcat(aloop_code, aloop_sym);
+
+      aloop_code = safe_strcat(aloop_code, ".d");
+      char *dIDX = safe_alloc(BUFSIZ);
+      sprintf(dIDX, "%d", i);
+      aloop_code = safe_strcat(aloop_code, dIDX);
+      free(dIDX);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+
+      aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
+      aloop_code = safe_strcat(aloop_code, " += ");
+      aloop_code = safe_strcat(aloop_code, cur_bound);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+    }
+
+    aloop_code = safe_strcat(aloop_code, aloop_sym);
+    aloop_code = safe_strcat(aloop_code, ".data[");
+    aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
+    aloop_code = safe_strcat(aloop_code, "] = ");
+    aloop_code = safe_strcat(aloop_code, aloop_body_sym);
+    aloop_code = safe_strcat(aloop_code, ";\n");
+
+    // Increment and check bounds
+    for (int i = 0; i < aloop_bounds->size; i++) {
+      char *i_limit = vector_get_str(aloop_e_syms, aloop_bounds->size - i - 1);
+      char *i_sym = vector_get_str(aloop_bounds, i);
+      aloop_code = safe_strcat(aloop_code, i_sym);
+      aloop_code = safe_strcat(aloop_code, "++;\n");
+
+      aloop_code = safe_strcat(aloop_code, "if (");
+      aloop_code = safe_strcat(aloop_code, i_sym);
+      aloop_code = safe_strcat(aloop_code, " < ");
+      aloop_code = safe_strcat(aloop_code, i_limit);
+      aloop_code = safe_strcat(aloop_code, ")\n");
+
+      aloop_code = safe_strcat(aloop_code, "goto ");
+      aloop_code = safe_strcat(aloop_code, aloop_jmp);
+      aloop_code = safe_strcat(aloop_code, ";\n");
+
+      if (i != aloop_bounds->size - 1) {
+        aloop_code = safe_strcat(aloop_code, i_sym);
+        aloop_code = safe_strcat(aloop_code, " = 0;\n");
+      }
+    }
+    free(aloop_bounds);
+    free(aloop_e_syms);
+    free(aloop_jmp);
+    free(aloop_body_fn);
+
+    vector_append(fn->code, aloop_code);
+    result = aloop_sym;
+    break;
   default:;
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "expr not yet implemented");

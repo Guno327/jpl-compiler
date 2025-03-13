@@ -19,9 +19,11 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
 
   // Setup jpl_main
   c_fn *jpl_main = safe_alloc(sizeof(c_fn));
+  jpl_main = safe_alloc(sizeof(c_fn));
   jpl_main->name = safe_alloc(9);
   memcpy(jpl_main->name, "jpl_main", 8);
-  jpl_main->parent = program;
+  jpl_main->args_list = safe_alloc(1);
+  jpl_main->parent = NULL;
   jpl_main->name_ctr = 0;
   jpl_main->code = safe_alloc(sizeof(vector));
   jpl_main->c_names = safe_alloc(sizeof(vector));
@@ -33,112 +35,8 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
 
   // Handle cmds
   for (int i = 0; i < cmds->size; i++) {
-    cmd *c = vector_get_cmd(cmds, i);
-    switch (c->type) {
-    case SHOWCMD:;
-      show_cmd *sc = (show_cmd *)c->node;
-      char *sc_sym = expr_gencode(program, jpl_main, sc->expr);
-
-      char *sc_code = safe_alloc(1);
-      sc_code = safe_strcat(sc_code, "show(\"");
-      char *sc_type_str = genshowt(sc->expr->t_type);
-      sc_code = safe_strcat(sc_code, sc_type_str);
-      free(sc_type_str);
-      sc_code = safe_strcat(sc_code, "\", &");
-      sc_code = safe_strcat(sc_code, sc_sym);
-      sc_code = safe_strcat(sc_code, ");\n");
-
-      vector_append(jpl_main->code, sc_code);
-      break;
-    case LETCMD:;
-      let_cmd *lc = (let_cmd *)c->node;
-      char *lc_sym = expr_gencode(program, jpl_main, lc->expr);
-      char *lc_var = NULL;
-      switch (lc->lval->type) {
-      case VARLVALUE:
-        lc_var = ((var_lval *)lc->lval->node)->var;
-        break;
-      case ARRAYLVALUE:
-        lc_var = ((array_lval *)lc->lval->node)->var;
-        break;
-      }
-      vector_append(jpl_main->jpl_names, lc_var);
-      vector_append(jpl_main->c_names, lc_sym);
-
-      if (lc->lval->type == ARRAYLVALUE) {
-        array_lval *alv = (array_lval *)lc->lval->node;
-        for (int i = 0; i < alv->vars->size; i++) {
-          vector_append(jpl_main->jpl_names, vector_get_str(alv->vars, i));
-          char *c_name = safe_alloc(BUFSIZ);
-          sprintf(c_name, "%s.d%d", lc_sym, i);
-          vector_append(jpl_main->c_names, c_name);
-        }
-      }
-      break;
-    case PRINTCMD:;
-      print_cmd *pc = (print_cmd *)c->node;
-      char *pc_code = safe_alloc(1);
-      pc_code = safe_strcat(pc_code, "print(");
-      pc_code = safe_strcat(pc_code, pc->str);
-      pc_code = safe_strcat(pc_code, ");\n");
-
-      vector_append(jpl_main->code, pc_code);
-      break;
-    case ASSERTCMD:;
-      assert_cmd *ac = (assert_cmd *)c->node;
-      char *ac_sym = expr_gencode(program, jpl_main, ac->expr);
-
-      char *ac_code = safe_alloc(1);
-      ac_code = safe_strcat(ac_code, "if (0 != ");
-      ac_code = safe_strcat(ac_code, ac_sym);
-      free(ac_sym);
-      ac_code = safe_strcat(ac_code, ")\n");
-
-      char *pass_jmp = genjmp(program);
-      ac_code = safe_strcat(ac_code, "goto ");
-      ac_code = safe_strcat(ac_code, pass_jmp);
-      ac_code = safe_strcat(ac_code, ";\n");
-
-      ac_code = safe_strcat(ac_code, "fail_assertion(");
-      ac_code = safe_strcat(ac_code, ac->str);
-      ac_code = safe_strcat(ac_code, ");\n");
-      ac_code = safe_strcat(ac_code, pass_jmp);
-      free(pass_jmp);
-      ac_code = safe_strcat(ac_code, ":;\n");
-
-      vector_append(jpl_main->code, ac_code);
-      break;
-    case STRUCTCMD:;
-      struct_cmd *stc = (struct_cmd *)c->node;
-      c_struct *s = safe_alloc(sizeof(c_struct));
-      s->name = stc->var;
-      s->types = safe_alloc(sizeof(vector));
-      s->fields = safe_alloc(sizeof(vector));
-      vector_init(s->types, stc->types->size, STRVECTOR);
-      vector_init(s->fields, stc->vars->size, STRVECTOR);
-
-      for (int i = 0; i < stc->vars->size; i++) {
-        char *cur_field = vector_get_str(stc->vars, i);
-        type *cur_type = vector_get_type(stc->types, i);
-        char *cur_type_str =
-            gent(program, jpl_main, typeof_type(cur_type, program->ctx));
-
-        vector_append(s->fields, cur_field);
-        vector_append(s->types, cur_type_str);
-      }
-
-      vector_append(program->structs, s);
-      break;
-    // HW9
-    case WRITECMD:
-    case READCMD:
-    case TIMECMD:
-    case FNCMD:
-    default:;
-      char *msg = safe_alloc(BUFSIZ);
-      sprintf(msg, "cmd not yet implemented");
-      ir_error(msg);
-    }
+    cmd *cur_cmd = vector_get_cmd(cmds, i);
+    cmd_gencode(program, jpl_main, cur_cmd);
   }
 
   return program;
@@ -196,7 +94,7 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
     break;
   case ARRAY_T:;
     array_info *a_info = (array_info *)type->info;
-    char *inner = genarray(prog, fn, a_info->type, rank);
+    char *inner = genarray(prog, fn, a_info->type, a_info->rank);
     result = safe_strcat(result, inner);
     break;
   case STRUCT_T:;
@@ -250,12 +148,23 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
 }
 
 char *jpl_to_c(c_fn *fn, char *jpl_name) {
-  char *result = NULL;
-  for (int i = 0; i < fn->jpl_names->size; i++) {
-    if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i)))
-      result = vector_get_str(fn->c_names, i);
+  // Built-ins
+  if (!strcmp(jpl_name, "args")) {
+    return "args";
+  } else if (!strcmp(jpl_name, "argnum")) {
+    return "args.d0";
   }
-  return result;
+
+  while (fn != NULL) {
+    for (int i = 0; i < fn->jpl_names->size; i++) {
+      if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
+        char *c_name = vector_get_str(fn->c_names, i);
+        return c_name;
+      }
+    }
+    fn = fn->parent;
+  }
+  return NULL;
 }
 
 char *gent(c_prog *prog, c_fn *fn, t *t) {
