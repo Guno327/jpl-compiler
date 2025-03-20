@@ -11,12 +11,13 @@ struct stack;
 
 typedef struct stack {
   struct asm_fn *fn;
-  int size;
-  vector *names;
-  vector *vals;
-  struct stack *padding;
-  struct stack *shadow;
+  size_t size;
+  vector *shadow;
 } stack;
+
+typedef struct padding {
+  size_t size;
+} padding;
 
 typedef struct asm_fn {
   char *name;
@@ -42,5 +43,13 @@ typedef struct asm_prog {
 
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
+char *expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
+
+void stack_push(asm_fn *fn, char *reg, t *type);
+t *stack_pop(asm_fn *fn);
+void stack_align(asm_fn *fn, size_t amount);
+void stack_unalign(asm_fn *fn, size_t amount);
+
+char *genconst(asm_prog *prog, char *val);
 
 #endif
