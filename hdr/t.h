@@ -11,6 +11,7 @@ typedef enum {
   ARRAY_T,
   STRUCT_T,
   FN_T,
+  PAD_T,
 } t_type;
 typedef struct {
   t_type type;

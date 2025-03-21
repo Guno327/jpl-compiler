@@ -26,7 +26,6 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     char *ie_val = safe_alloc(BUFSIZ);
     sprintf(ie_val, "dq %lu", ie->val);
     char *ie_const = genconst(prog, ie_val);
-    free(ie_val);
 
     char *ie_code = safe_alloc(1);
     ie_code = safe_strcat(ie_code, "mov rax, [rel ");

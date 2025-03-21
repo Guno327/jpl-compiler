@@ -34,6 +34,7 @@ bool t_eq(t *lhs, t *rhs) {
     if (!strcmp(lhs_fn->name, rhs_fn->name))
       return true;
     break;
+  case PAD_T:;
   }
   return false;
 }
@@ -61,6 +62,7 @@ size_t sizeof_t(t *type) {
     return 8 + ainfo->rank * 8;
   case FN_T:
     return 0;
+  case PAD_T:;
   }
   return 0;
 }

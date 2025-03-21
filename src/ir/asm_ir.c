@@ -1,4 +1,5 @@
 #include "asm_ir.h"
+#include "compiler_error.h"
 #include "safe.h"
 #include "vector.h"
 #include "vector_get.h"
@@ -41,8 +42,8 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
 
   jpl_main->code = safe_alloc(sizeof(vector));
   vector_init(jpl_main->code, 8, STRVECTOR);
-  vector_append(jpl_main->code, "push rbp ; mov rbp ; rsp ;\n");
-  vector_append(jpl_main->code, "push r12 ; move r12, rsp\n");
+  vector_append(jpl_main->code, "push rbp\nmov rbp, rsp\n");
+  vector_append(jpl_main->code, "push r12\nmov r12, rbp\n");
   vector_append(prog->fns, jpl_main);
 
   // Process cmds
@@ -56,6 +57,11 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
     sprintf(line, "add rsp, (%lu - 8)\n", jpl_main->stk->size);
     vector_append(jpl_main->code, line);
   }
+
+  if (jpl_main->stk->size > 8) {
+    vector_append(jpl_main->code, "add rsp, (size-8)\n");
+  }
+  vector_append(jpl_main->code, "pop r12\npop rbp\nret\n");
 
   return prog;
 }
@@ -108,22 +114,39 @@ char *genconst(asm_prog *prog, char *val) {
   return result;
 }
 
-void stack_align(asm_fn *fn, size_t amount) {
-  if (amount == 0)
-    return;
+void stack_align(asm_fn *fn, size_t size) {
+  size = (fn->stk->size + size) % 16;
+  padding *pad = safe_alloc(sizeof(padding));
+  pad->size = size;
 
-  char *code = safe_alloc(BUFSIZ);
-  sprintf(code, "sub rsp, %lu\n", amount);
-  vector_append(fn->code, code);
+  t *padding = safe_alloc(sizeof(t));
+  padding->type = PAD_T;
+  padding->info = pad;
+
+  vector_append(fn->stk->shadow, padding);
+  fn->stk->size += size;
+
+  if (size > 0) {
+    char *cmd = safe_alloc(BUFSIZ);
+    sprintf(cmd, "add rsp, %lu", size);
+    vector_append(fn->code, cmd);
+  }
 }
 
-void stack_unalign(asm_fn *fn, size_t amount) {
-  if (amount == 0)
-    return;
+void stack_unalign(asm_fn *fn) {
+  t *pad = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+  if (pad == NULL)
+    ir_error("Tried to unalign empty stack");
+  if (pad->type != PAD_T)
+    ir_error("Stack unalign error: not padding");
 
-  char *code = safe_alloc(BUFSIZ);
-  sprintf(code, "add rsp, %lu\n", amount);
-  vector_append(fn->code, code);
+  size_t size = ((padding *)pad->info)->size;
+  fn->stk->size -= size;
+  if (size > 0) {
+    char *cmd = safe_alloc(BUFSIZ);
+    sprintf(cmd, "add rsp, %lu\n", size);
+    vector_append(fn->code, cmd);
+  }
 }
 
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
@@ -138,7 +161,7 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
   vector_append(fn->code, assert_code);
   assert_code = safe_alloc(1);
 
-  stack_align(fn, fn->stk->size % 16);
+  stack_align(fn, 0);
 
   char *assert_var = safe_alloc(BUFSIZ + strlen(msg));
   sprintf(assert_var, "db `%s`, 0", msg);
@@ -149,7 +172,7 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
   assert_code = safe_strcat(assert_code, "]\n");
 
   assert_code = safe_strcat(assert_code, "call _fail_assertion\n");
-  stack_unalign(fn, fn->stk->size % 16);
+  stack_unalign(fn);
 
   assert_code = safe_strcat(assert_code, jmp);
   assert_code = safe_strcat(assert_code, ":\n");

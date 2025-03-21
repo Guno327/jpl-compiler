@@ -5,7 +5,7 @@
 #ifndef ASM_IR_H
 #define ASM_IR_H
 
-#define ASM_GLOBALS "global jpl_main\nglobal _jpl_main"
+#define ASM_GLOBALS "global jpl_main\nglobal _jpl_main\n"
 #define ASM_EXTERNS                                                            \
   "extern _fail_assertion\nextern _jpl_alloc\nextern _get_time\nextern "       \
   "_show\nextern _print\nextern _print_time\nextern _read_image\nextern "      \
@@ -57,7 +57,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 void stack_push(asm_fn *fn, char *reg, t *type);
 t *stack_pop(asm_fn *fn, char *reg);
 void stack_align(asm_fn *fn, size_t amount);
-void stack_unalign(asm_fn *fn, size_t amount);
+void stack_unalign(asm_fn *fn);
 
 char *genconst(asm_prog *prog, char *val);
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg);
