@@ -70,14 +70,19 @@ void stack_push(asm_fn *fn, char *reg, t *type) {
   vector_append(fn->code, code);
 }
 
-t *stack_pop(asm_fn *fn) {
+t *stack_pop(asm_fn *fn, char *reg) {
+  t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
   fn->stk->shadow->size -= 1;
-  t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size);
   size_t t_size = sizeof_t(item);
   fn->stk->fn->stk->size -= t_size;
 
   char *code = safe_alloc(BUFSIZ);
-  sprintf(code, "add rsp, %lu\n", t_size);
+  if (reg == NULL)
+    sprintf(code, "add rsp, %lu\n", t_size);
+  else if (item->type == FLOAT_T)
+    sprintf(code, "movsd %s, [rsp]\nadd rsp, 8\n", reg);
+  else
+    sprintf(code, "pop %s\n", reg);
   vector_append(fn->code, code);
 
   return item;
@@ -119,4 +124,35 @@ void stack_unalign(asm_fn *fn, size_t amount) {
   char *code = safe_alloc(BUFSIZ);
   sprintf(code, "add rsp, %lu\n", amount);
   vector_append(fn->code, code);
+}
+
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
+  char *jmp = safe_alloc(BUFSIZ);
+  sprintf(jmp, ".jump%d", prog->jmp_ctr);
+  prog->jmp_ctr += 1;
+
+  char *assert_code = safe_alloc(1);
+  assert_code = safe_strcat(assert_code, "jne ");
+  assert_code = safe_strcat(assert_code, jmp);
+  assert_code = safe_strcat(assert_code, "\n");
+  vector_append(fn->code, assert_code);
+  assert_code = safe_alloc(1);
+
+  stack_align(fn, fn->stk->size % 16);
+
+  char *assert_var = safe_alloc(BUFSIZ + strlen(msg));
+  sprintf(assert_var, "db `%s`, 0", msg);
+  char *assert_const = genconst(prog, assert_var);
+
+  assert_code = safe_strcat(assert_code, "lea rdi, [rel ");
+  assert_code = safe_strcat(assert_code, assert_const);
+  assert_code = safe_strcat(assert_code, "]\n");
+
+  assert_code = safe_strcat(assert_code, "call _fail_assertion\n");
+  stack_unalign(fn, fn->stk->size % 16);
+
+  assert_code = safe_strcat(assert_code, jmp);
+  assert_code = safe_strcat(assert_code, ":\n");
+
+  vector_append(fn->code, assert_code);
 }

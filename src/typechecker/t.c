@@ -62,4 +62,5 @@ size_t sizeof_t(t *type) {
   case FN_T:
     return 0;
   }
+  return 0;
 }

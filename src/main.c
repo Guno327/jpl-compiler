@@ -1,3 +1,4 @@
+#include "asm_ir.h"
 #include "c_ir.h"
 #include "compiler_error.h"
 #include "lexer.h"
@@ -10,10 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum { LEX, PARSE, TYPECHECK, C_IR, ALL } RunMode;
+typedef enum { LEX, PARSE, TYPECHECK, C_IR, ASM_IR, ALL } RunMode;
 
 int main(int argc, char **argv) {
-  RunMode mode = TYPECHECK;
+  RunMode mode = ASM_IR;
 
   // Handle args
   if (argc < 2) {
@@ -31,6 +32,8 @@ int main(int argc, char **argv) {
       mode = TYPECHECK;
     else if (!strcmp(argv[i], "-i"))
       mode = C_IR;
+    else if (!strcmp(argv[i], "-s"))
+      mode = ASM_IR;
     else if (!strcmp(argv[i], "-v"))
       set_verbose(true);
     else
@@ -107,6 +110,15 @@ int main(int argc, char **argv) {
       char *c_program_str = c_prog_to_str(c_program);
       printf("%s\n", c_program_str);
       printf("Compilation succeeded: Conversion to C IR complete\n");
+      exit(EXIT_SUCCESS);
+    }
+
+    // ASM IR
+    if (mode == ASM_IR) {
+      asm_prog *asm_program = gen_asm_ir(program, global);
+      char *asm_program_str = asm_prog_to_str(asm_program);
+      printf("%s\n", asm_program_str);
+      printf("Compilation succeeded: Conversion to ASM IR complete\n");
       exit(EXIT_SUCCESS);
     }
   }
