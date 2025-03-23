@@ -1,8 +1,8 @@
 #include "parse_expr.h"
-#include "safe.h"
 #include "ast.h"
 #include "compiler_error.h"
 #include "parser.h"
+#include "safe.h"
 #include "token.h"
 #include "vector_get.h"
 #include <errno.h>
@@ -60,6 +60,7 @@ int parse_base_level(vector *tokens, int i, expr *e) {
 
     char *fe_str = vector_get_token(tokens, i)->text;
     fe->val = strtod(fe_str, NULL);
+    fe->val_str = fe_str;
     if (errno == ERANGE) {
       printf("Compilation Failed: Int '%s' at %d out of range", fe_str, i);
       exit(EXIT_FAILURE);

@@ -9,9 +9,8 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
   case FLOATEXPR:;
     float_expr *fe = (float_expr *)e->node;
     char *fe_val = safe_alloc(BUFSIZ);
-    sprintf(fe_val, "dq %f", fe->val);
+    sprintf(fe_val, "dq %s", fe->val_str);
     char *fe_const = genconst(prog, fe_val);
-    free(fe_val);
 
     char *fe_code = safe_alloc(1);
     fe_code = safe_strcat(fe_code, "mov rax, [rel ");
@@ -41,7 +40,6 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     int be_num = e->type == TRUEEXPR ? 1 : 0;
     sprintf(be_val, "dq %d", be_num);
     char *be_const = genconst(prog, be_val);
-    free(be_val);
 
     char *be_code = safe_alloc(1);
     be_code = safe_strcat(be_code, "mov rax, [rel ");
@@ -55,32 +53,31 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     unop_expr *ue = (unop_expr *)e->node;
     expr_asmgen(prog, fn, ue->rhs);
 
-    char *ue_code = safe_alloc(1);
     switch (ue->rhs->t_type->type) {
     case FLOAT_T:
       stack_pop(fn, "xmm1");
-      ue_code = safe_strcat(ue_code, "pxor xmm0, xmm1\n");
-      ue_code = safe_strcat(ue_code, "subsd xmm0, xmm1\n");
-      ue_code = safe_strcat(ue_code, "pxor xmm0, xmm1\n");
+      vector_append(fn->code, "pxor xmm0, xmm0\n");
+      vector_append(fn->code, "subsd xmm0, xmm1\n");
       stack_push(fn, "xmm0", ue->rhs->t_type);
       break;
     case INT_T:
       stack_pop(fn, "rax");
-      ue_code = safe_strcat(ue_code, "neg rax\n");
+      vector_append(fn->code, "neg rax\n");
       stack_push(fn, "rax", ue->rhs->t_type);
       break;
     case BOOL_T:
       stack_pop(fn, "rax");
-      ue_code = safe_strcat(ue_code, "xor rax, 1\n");
+      vector_append(fn->code, "xor rax, 1\n");
       stack_push(fn, "rax", ue->rhs->t_type);
       break;
     default:
       ir_error("Invalid type in UNOP");
     }
-    vector_append(fn->code, ue_code);
     break;
   case BINOPEXPR:;
     binop_expr *boe = (binop_expr *)e->node;
+    if (boe->op == MODOP && boe->lhs->t_type->type == FLOAT_T)
+      stack_align(fn, 0);
     expr_asmgen(prog, fn, boe->rhs);
     expr_asmgen(prog, fn, boe->lhs);
 
@@ -123,20 +120,20 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
         vector_append(fn->code, boe_code);
         boe_code = safe_alloc(1);
-        assert_asmgen(prog, fn, "divide by 0");
+        assert_asmgen(prog, fn, "divide by zero");
 
         boe_code = safe_strcat(boe_code, "cqo\nidiv r10\n");
       }
       break;
     case MODOP:
-      if (float_mode)
+      if (float_mode) {
         boe_code = safe_strcat(boe_code, "call _fmod\n");
-      else {
+      } else {
         boe_code = safe_strcat(boe_code, "cmp r10, 0\n");
 
         vector_append(fn->code, boe_code);
         boe_code = safe_alloc(1);
-        assert_asmgen(prog, fn, "divide by 0");
+        assert_asmgen(prog, fn, "mod by zero");
 
         boe_code = safe_strcat(boe_code, "cqo\nidiv r10\nmov rax, rdx\n");
       }
@@ -191,6 +188,9 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       ir_error("BINOPEXPR not yet implemented");
     }
     vector_append(fn->code, boe_code);
+
+    if (boe->op == MODOP && boe->lhs->t_type->type == FLOAT_T)
+      stack_unalign(fn);
 
     if (float_mode)
       stack_push(fn, "xmm0", e->t_type);
