@@ -3,7 +3,16 @@
 #define T_H
 struct ctx;
 
-typedef enum { INT_T, FLOAT_T, VOID_T, BOOL_T, ARRAY_T, STRUCT_T, FN_T } t_type;
+typedef enum {
+  INT_T,
+  FLOAT_T,
+  VOID_T,
+  BOOL_T,
+  ARRAY_T,
+  STRUCT_T,
+  FN_T,
+  PAD_T,
+} t_type;
 typedef struct {
   t_type type;
   void *info;
@@ -35,4 +44,5 @@ typedef struct {
 } var_info;
 
 bool t_eq(t *lhs, t *rhs);
+size_t sizeof_t(t *type);
 #endif

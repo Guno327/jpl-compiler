@@ -225,6 +225,7 @@ typedef struct {
 typedef struct {
   int start;
   double val;
+  char *val_str;
 } float_expr;
 
 typedef struct {

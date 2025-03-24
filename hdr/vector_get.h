@@ -1,3 +1,4 @@
+#include "asm_ir.h"
 #include "ast.h"
 #include "c_ir.h"
 #include "t.h"
@@ -21,5 +22,6 @@ var_info *vector_get_var_info(vector *v, int idx);
 t *vector_get_t(vector *v, int idx);
 c_fn *vector_get_c_fn(vector *v, int idx);
 c_struct *vector_get_c_struct(vector *v, int idx);
+asm_fn *vector_get_asm_fn(vector *v, int idx);
 
 #endif

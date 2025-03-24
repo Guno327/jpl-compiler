@@ -105,6 +105,7 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "functions are not first class");
     ir_error(msg);
+  case PAD_T:;
   }
 
   // Check if we need to add struct decleration
@@ -195,6 +196,7 @@ char *gent(c_prog *prog, c_fn *fn, t *t) {
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "functions are not first class");
     ir_error(msg);
+  case PAD_T:;
   }
   return result;
 }

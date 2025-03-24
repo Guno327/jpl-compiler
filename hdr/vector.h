@@ -19,6 +19,7 @@ typedef enum {
   TVECTOR,
   CFNVECTOR,
   CSTRUCTVECTOR,
+  ASMFNVECTOR,
 } vector_t;
 
 typedef struct {

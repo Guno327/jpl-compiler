@@ -53,6 +53,9 @@ void vector_init(vector *v, size_t capacity, vector_t type) {
   case STRVECTOR:
     size = sizeof(char *);
     break;
+  case ASMFNVECTOR:
+    size = sizeof(asm_fn);
+    break;
   }
   v->type = type;
   v->data = safe_alloc(capacity * size);
@@ -105,6 +108,9 @@ void vector_append(vector *v, void *item) {
       break;
     case CSTRUCTVECTOR:
       size = sizeof(c_struct);
+      break;
+    case ASMFNVECTOR:
+      size = sizeof(asm_fn);
       break;
     case STRVECTOR:
       size = sizeof(char *);
@@ -159,6 +165,9 @@ void vector_append(vector *v, void *item) {
     break;
   case CSTRUCTVECTOR:
     ((c_struct **)v->data)[v->size++] = (c_struct *)item;
+    break;
+  case ASMFNVECTOR:
+    ((asm_fn **)v->data)[v->size++] = (asm_fn *)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -284,4 +293,12 @@ char *vector_get_str(vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((char **)v->data)[idx];
+}
+
+asm_fn *vector_get_asm_fn(vector *v, int idx) {
+  if (v->type != ASMFNVECTOR)
+    return NULL;
+  if (idx < 0 || idx > v->size - 1)
+    return NULL;
+  return ((asm_fn **)v->data)[idx];
 }
