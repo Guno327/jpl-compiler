@@ -6,6 +6,9 @@
 
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
   switch (e->type) {
+  case EXPR:
+    expr_asmgen(prog, fn, e->node);
+    break;
   case FLOATEXPR:;
     float_expr *fe = (float_expr *)e->node;
     char *fe_val = safe_alloc(BUFSIZ);
@@ -18,7 +21,8 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     fe_code = safe_strcat(fe_code, "]\n");
     vector_append(fn->code, fe_code);
 
-    stack_push(fn, "rax", e->t_type);
+    stack_push(fn, "rax");
+    stack_rechar(fn, e->t_type, 1);
     break;
   case INTEXPR:;
     int_expr *ie = (int_expr *)e->node;
@@ -32,7 +36,8 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     ie_code = safe_strcat(ie_code, "]\n");
     vector_append(fn->code, ie_code);
 
-    stack_push(fn, "rax", e->t_type);
+    stack_push(fn, "rax");
+    stack_rechar(fn, e->t_type, 1);
     break;
   case TRUEEXPR:
   case FALSEEXPR:;
@@ -47,7 +52,8 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     be_code = safe_strcat(be_code, "]\n");
     vector_append(fn->code, be_code);
 
-    stack_push(fn, "rax", e->t_type);
+    stack_push(fn, "rax");
+    stack_rechar(fn, e->t_type, 1);
     break;
   case UNOPEXPR:;
     unop_expr *ue = (unop_expr *)e->node;
@@ -58,17 +64,20 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       stack_pop(fn, "xmm1");
       vector_append(fn->code, "pxor xmm0, xmm0\n");
       vector_append(fn->code, "subsd xmm0, xmm1\n");
-      stack_push(fn, "xmm0", ue->rhs->t_type);
+      stack_push(fn, "xmm0");
+      stack_rechar(fn, ue->rhs->t_type, 1);
       break;
     case INT_T:
       stack_pop(fn, "rax");
       vector_append(fn->code, "neg rax\n");
-      stack_push(fn, "rax", ue->rhs->t_type);
+      stack_push(fn, "rax");
+      stack_rechar(fn, ue->rhs->t_type, 1);
       break;
     case BOOL_T:
       stack_pop(fn, "rax");
       vector_append(fn->code, "xor rax, 1\n");
-      stack_push(fn, "rax", ue->rhs->t_type);
+      stack_push(fn, "rax");
+      stack_rechar(fn, ue->rhs->t_type, 1);
       break;
     default:
       ir_error("Invalid type in UNOP");
@@ -126,7 +135,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       }
       break;
     case MODOP:
-      if (float_mode) {
+      if (e->t_type->type == FLOAT_T) {
         boe_code = safe_strcat(boe_code, "call _fmod\n");
       } else {
         boe_code = safe_strcat(boe_code, "cmp r10, 0\n");
@@ -178,7 +187,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     case NEOP:
       if (float_mode)
         boe_code = safe_strcat(
-            boe_code, "cmpnesd xmm0, xmm1\nmovq rax, xmm0\nand rax, 1\n");
+            boe_code, "cmpneqsd xmm0, xmm1\nmovq rax, xmm0\nand rax, 1\n");
       else
         boe_code =
             safe_strcat(boe_code, "cmp rax, r10\nsetne al\nand rax, 1\n");
@@ -192,12 +201,59 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     if (boe->op == MODOP && boe->lhs->t_type->type == FLOAT_T)
       stack_unalign(fn);
 
-    if (float_mode)
-      stack_push(fn, "xmm0", e->t_type);
-    else
-      stack_push(fn, "rax", e->t_type);
+    if (e->t_type->type == FLOAT_T) {
+      stack_push(fn, "xmm0");
+      stack_rechar(fn, e->t_type, 1);
+    } else {
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
     break;
-  case ARRAYLITERALEXPR:
+  case ARRAYLITERALEXPR:;
+    array_literal_expr *ale = (array_literal_expr *)e->node;
+    for (int i = ale->exprs->size - 1; i >= 0; i--) {
+      expr *cur_expr = vector_get_expr(ale->exprs, i);
+      expr_asmgen(prog, fn, cur_expr);
+    }
+
+    array_info *ale_info = (array_info *)e->t_type->info;
+    size_t ale_size = ale->exprs->size * sizeof_t(ale_info->type);
+    char *ale_code = safe_alloc(BUFSIZ);
+    sprintf(ale_code, "mov rdi, %lu\n", ale_size);
+    vector_append(fn->code, ale_code);
+    ale_code = safe_alloc(1);
+
+    stack_align(fn, 0);
+    vector_append(fn->code, "call _jpl_alloc\n");
+    stack_unalign(fn);
+
+    for (long i = ale_size - 8; i >= 0; i -= 8) {
+      char *cur_offset = safe_alloc(BUFSIZ);
+      sprintf(cur_offset, "%lu", i);
+
+      ale_code = safe_strcat(ale_code, "mov r10, [rsp + ");
+      ale_code = safe_strcat(ale_code, cur_offset);
+      ale_code = safe_strcat(ale_code, "]\n");
+
+      ale_code = safe_strcat(ale_code, "mov [rax + ");
+      ale_code = safe_strcat(ale_code, cur_offset);
+      ale_code = safe_strcat(ale_code, "], r10\n");
+    }
+    vector_append(fn->code, ale_code);
+    fn->stk->shadow->size -= ale->exprs->size;
+    fn->stk->size -= ale_size;
+    ale_code = safe_alloc(BUFSIZ);
+    sprintf(ale_code, "add rsp, %lu\n", ale_size);
+    vector_append(fn->code, ale_code);
+    stack_push(fn, "rax");
+
+    ale_code = safe_alloc(BUFSIZ);
+    sprintf(ale_code, "mov rax, %d\n", ale->exprs->size);
+    vector_append(fn->code, ale_code);
+    stack_push(fn, "rax");
+
+    stack_rechar(fn, e->t_type, 2);
+    break;
   default:
     ir_error("EXPR is not implemented yet");
   }

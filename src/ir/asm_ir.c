@@ -65,10 +65,11 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   return prog;
 }
 
-void stack_push(asm_fn *fn, char *reg, t *type) {
-  size_t t_size = sizeof_t(type);
-  fn->stk->size += t_size;
-  vector_append(fn->stk->shadow, type);
+void stack_push(asm_fn *fn, char *reg) {
+  t *placeholder = safe_alloc(sizeof(t));
+  placeholder->type = INT_T;
+  placeholder->info = NULL;
+  vector_append(fn->stk->shadow, placeholder);
 
   char *code = safe_alloc(BUFSIZ);
   if (!strncmp(reg, "xmm", 3))
@@ -76,6 +77,17 @@ void stack_push(asm_fn *fn, char *reg, t *type) {
   else
     sprintf(code, "push %s\n", reg);
   vector_append(fn->code, code);
+}
+
+void stack_rechar(asm_fn *fn, t *type, size_t size) {
+  for (int i = 0; i < size; i++) {
+    t *cur = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - i - 1);
+    free(cur);
+  }
+  fn->stk->shadow->size -= size;
+
+  fn->stk->size += sizeof_t(type);
+  vector_append(fn->stk->shadow, type);
 }
 
 t *stack_pop(asm_fn *fn, char *reg) {
