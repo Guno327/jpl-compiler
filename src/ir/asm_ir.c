@@ -56,13 +56,9 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   }
 
   if (jpl_main->stk->size > 8) {
-    char *line = safe_alloc(BUFSIZ);
-    sprintf(line, "add rsp, (%lu - 8)\n", jpl_main->stk->size);
-    vector_append(jpl_main->code, line);
-  }
-
-  if (jpl_main->stk->size > 8) {
-    vector_append(jpl_main->code, "add rsp, (size-8)\n");
+    char *code = safe_alloc(BUFSIZ);
+    sprintf(code, "add rsp, %lu\n", jpl_main->stk->size - 8);
+    vector_append(jpl_main->code, code);
   }
   vector_append(jpl_main->code, "pop r12\npop rbp\nret\n");
 
@@ -210,6 +206,7 @@ void push_lval(asm_fn *fn, lval *lval, size_t base) {
     var_lval *vlv = (var_lval *)lval->node;
     vector_append(fn->stk->names, vlv->var);
     vector_append(fn->stk->positions, (void *)base);
+    break;
   case ARRAYLVALUE:;
     array_lval *alv = (array_lval *)lval->node;
     vector_append(fn->stk->names, alv->var);
@@ -254,11 +251,24 @@ void stack_alloc(asm_fn *fn, t *type) {
   vector_append(fn->code, code);
 }
 
-void stack_copy(asm_fn *fn, size_t size, size_t start, size_t end) {
+void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
+  size_t size = sizeof_t(type);
   for (long offset = size - 8; offset >= 0; offset -= 8) {
     char *code = safe_alloc(BUFSIZ);
-    sprintf(code, "mov r10, [%lu, %lu]\nmov [%lu - %lu], r10\n", start, offset,
+    sprintf(code, "mov r10, [%s + %lu]\nmov [%s + %lu], r10\n", start, offset,
             end, offset);
     vector_append(fn->code, code);
   }
+}
+
+size_t stack_lookup(stack *stk, char *var) {
+  size_t result = -1;
+  for (int i = 0; i < stk->names->size; i++) {
+    char *cur = vector_get_str(stk->names, i);
+    if (!strcmp(cur, var)) {
+      result = vector_get_num(stk->positions, i);
+      break;
+    }
+  }
+  return result;
 }

@@ -254,6 +254,28 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     stack_rechar(fn, e->t_type, 2);
     break;
+  case VAREXPR:;
+    var_expr *ve = (var_expr *)e->node;
+    size_t ve_pos = stack_lookup(fn->stk, ve->var);
+
+    if (ve_pos != (size_t)-1) {
+      stack_alloc(fn, e->t_type);
+      char *ve_start = safe_alloc(BUFSIZ);
+      sprintf(ve_start, "rbp - %lu", ve_pos);
+      stack_copy(fn, e->t_type, ve_start, "rsp");
+      free(ve_start);
+    } else if ((ve_pos = stack_lookup(prog->stk, ve->var)) != (size_t)-1) {
+      stack_alloc(fn, e->t_type);
+      char *ve_start = safe_alloc(BUFSIZ);
+      sprintf(ve_start, "r12 - %lu", ve_pos);
+      stack_copy(fn, e->t_type, ve_start, "rsp");
+      free(ve_start);
+    } else {
+      char *msg = safe_alloc(BUFSIZ);
+      sprintf(msg, "Could not find var '%s' on stack", ve->var);
+      ir_error(msg);
+    }
+    break;
   default:
     ir_error("EXPR is not implemented yet");
   }

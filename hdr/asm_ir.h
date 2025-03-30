@@ -53,6 +53,12 @@ typedef struct asm_prog {
   stack *stk;
 } asm_prog;
 
+#define int_registers [ "rdi", "rsi", "rdx", "rcx", "r8", "r9" ]
+#define float_registers                                                        \
+  [ "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "xmm8" ]
+typedef struct {
+} call_conv;
+
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
@@ -70,5 +76,6 @@ char *asm_prog_to_str(asm_prog *prog);
 void push_lval(asm_fn *fn, lval *lval, size_t base);
 void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
 void stack_alloc(asm_fn *fn, t *type);
-void stack_copy(asm_fn *fn, size_t size, size_t start, size_t end);
+void stack_copy(asm_fn *fn, t *type, char *start, char *end);
+size_t stack_lookup(stack *stk, char *var);
 #endif

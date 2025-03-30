@@ -312,7 +312,7 @@ asm_fn *vector_get_asm_fn(vector *v, int idx) {
   return ((asm_fn **)v->data)[idx];
 }
 
-size_t vector_get_size_t(vector *v, int idx) {
+size_t vector_get_num(vector *v, int idx) {
   if (v->type != NUMVECTOR)
     return 0;
   if (idx < 0 || idx > v->size - 1)

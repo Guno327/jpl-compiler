@@ -38,6 +38,13 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     let_asmgen(prog, fn, lc, false);
     break;
   case FNCMD:;
+    fn_cmd *fc = (fn_cmd *)c->node;
+    asm_fn *fc_fn = safe_alloc(sizeof(asm_fn));
+    fc_fn->stk = safe_alloc(sizeof(stack));
+    fc_fn->code = safe_alloc(sizeof(vector));
+    fc_fn->name = fc->var;
+    vector_init(fc_fn->code, 8, STRVECTOR);
+
   default:;
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "CMD of type %d not implemented yet", c->type);
