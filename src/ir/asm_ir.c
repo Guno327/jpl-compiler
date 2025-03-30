@@ -79,7 +79,7 @@ void stack_push(asm_fn *fn, char *reg) {
   vector_append(fn->code, code);
 }
 
-void stack_rechar(asm_fn *fn, t *type, size_t size) {
+void stack_rechar(asm_fn *fn, t *type, long size) {
   for (int i = 0; i < size; i++) {
     t *cur = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - i - 1);
     free(cur);
@@ -93,7 +93,7 @@ void stack_rechar(asm_fn *fn, t *type, size_t size) {
 t *stack_pop(asm_fn *fn, char *reg) {
   t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
   fn->stk->shadow->size -= 1;
-  size_t t_size = sizeof_t(item);
+  long t_size = sizeof_t(item);
   fn->stk->fn->stk->size -= t_size;
 
   char *code = safe_alloc(BUFSIZ);
@@ -128,8 +128,8 @@ char *genconst(asm_prog *prog, char *val) {
   return result;
 }
 
-void stack_align(asm_fn *fn, size_t size) {
-  size_t leftovers = (fn->stk->size + size) % 16;
+void stack_align(asm_fn *fn, long size) {
+  long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
     leftovers = 16 - leftovers;
   padding *pad = safe_alloc(sizeof(padding));
@@ -158,7 +158,7 @@ void stack_unalign(asm_fn *fn) {
     ir_error("Stack unalign error: not padding");
 
   padding *info = (padding *)pad->info;
-  size_t size = info->size;
+  long size = info->size;
   fn->stk->size -= size;
   if (size > 0) {
     char *cmd = safe_alloc(BUFSIZ);
@@ -200,7 +200,7 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
   vector_append(fn->code, assert_code);
 }
 
-void push_lval(asm_fn *fn, lval *lval, size_t base) {
+void push_lval(asm_fn *fn, lval *lval, long base) {
   switch (lval->type) {
   case VARLVALUE:;
     var_lval *vlv = (var_lval *)lval->node;
@@ -241,7 +241,7 @@ void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt) {
 }
 
 void stack_alloc(asm_fn *fn, t *type) {
-  size_t type_size = sizeof_t(type);
+  long type_size = sizeof_t(type);
 
   vector_append(fn->stk->shadow, type);
   fn->stk->size += type_size;
@@ -252,7 +252,7 @@ void stack_alloc(asm_fn *fn, t *type) {
 }
 
 void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
-  size_t size = sizeof_t(type);
+  long size = sizeof_t(type);
   for (long offset = size - 8; offset >= 0; offset -= 8) {
     char *code = safe_alloc(BUFSIZ);
     sprintf(code, "mov r10, [%s + %lu]\nmov [%s + %lu], r10\n", start, offset,
@@ -261,8 +261,8 @@ void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
   }
 }
 
-size_t stack_lookup(stack *stk, char *var) {
-  size_t result = -1;
+long stack_lookup(stack *stk, char *var) {
+  long result = -1;
   for (int i = 0; i < stk->names->size; i++) {
     char *cur = vector_get_str(stk->names, i);
     if (!strcmp(cur, var)) {

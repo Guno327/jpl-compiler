@@ -217,7 +217,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     }
 
     array_info *ale_info = (array_info *)e->t_type->info;
-    size_t ale_size = ale->exprs->size * sizeof_t(ale_info->type);
+    long ale_size = ale->exprs->size * sizeof_t(ale_info->type);
     char *ale_code = safe_alloc(BUFSIZ);
     sprintf(ale_code, "mov rdi, %lu\n", ale_size);
     vector_append(fn->code, ale_code);
@@ -256,15 +256,15 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     break;
   case VAREXPR:;
     var_expr *ve = (var_expr *)e->node;
-    size_t ve_pos = stack_lookup(fn->stk, ve->var);
+    long ve_pos = stack_lookup(fn->stk, ve->var);
 
-    if (ve_pos != (size_t)-1) {
+    if (ve_pos != (long)-1) {
       stack_alloc(fn, e->t_type);
       char *ve_start = safe_alloc(BUFSIZ);
       sprintf(ve_start, "rbp - %lu", ve_pos);
       stack_copy(fn, e->t_type, ve_start, "rsp");
       free(ve_start);
-    } else if ((ve_pos = stack_lookup(prog->stk, ve->var)) != (size_t)-1) {
+    } else if ((ve_pos = stack_lookup(prog->stk, ve->var)) != (long)-1) {
       stack_alloc(fn, e->t_type);
       char *ve_start = safe_alloc(BUFSIZ);
       sprintf(ve_start, "r12 - %lu", ve_pos);

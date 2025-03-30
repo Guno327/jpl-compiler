@@ -18,9 +18,17 @@ struct asm_prog;
 struct asm_fn;
 struct stack;
 
+typedef struct {
+  vector *lvals;
+  vector *args;
+  vector *types;
+  char *ret;
+  long stk_size;
+} call_conv;
+
 typedef struct stack {
   struct asm_fn *fn;
-  size_t size;
+  long size;
   vector *shadow;
 
   vector *names;
@@ -28,13 +36,14 @@ typedef struct stack {
 } stack;
 
 typedef struct padding {
-  size_t size;
+  long size;
 } padding;
 
 typedef struct asm_fn {
   char *name;
   vector *code;
   stack *stk;
+  call_conv *call;
 } asm_fn;
 
 typedef struct {
@@ -53,29 +62,23 @@ typedef struct asm_prog {
   stack *stk;
 } asm_prog;
 
-#define int_registers [ "rdi", "rsi", "rdx", "rcx", "r8", "r9" ]
-#define float_registers                                                        \
-  [ "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "xmm8" ]
-typedef struct {
-} call_conv;
-
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 
 void stack_push(asm_fn *fn, char *reg);
 t *stack_pop(asm_fn *fn, char *reg);
-void stack_align(asm_fn *fn, size_t amount);
+void stack_align(asm_fn *fn, long amount);
 void stack_unalign(asm_fn *fn);
-void stack_rechar(asm_fn *fn, t *type, size_t size);
+void stack_rechar(asm_fn *fn, t *type, long size);
 
 char *genconst(asm_prog *prog, char *val);
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg);
 char *asm_prog_to_str(asm_prog *prog);
 
-void push_lval(asm_fn *fn, lval *lval, size_t base);
+void push_lval(asm_fn *fn, lval *lval, long base);
 void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
 void stack_alloc(asm_fn *fn, t *type);
 void stack_copy(asm_fn *fn, t *type, char *start, char *end);
-size_t stack_lookup(stack *stk, char *var);
+long stack_lookup(stack *stk, char *var);
 #endif
