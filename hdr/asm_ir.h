@@ -22,6 +22,9 @@ typedef struct stack {
   struct asm_fn *fn;
   size_t size;
   vector *shadow;
+
+  vector *names;
+  vector *positions;
 } stack;
 
 typedef struct padding {
@@ -64,4 +67,8 @@ char *genconst(asm_prog *prog, char *val);
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg);
 char *asm_prog_to_str(asm_prog *prog);
 
+void push_lval(asm_fn *fn, lval *lval, size_t base);
+void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
+void stack_alloc(asm_fn *fn, t *type);
+void stack_copy(asm_fn *fn, size_t size, size_t start, size_t end);
 #endif

@@ -5,59 +5,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-void vector_init(vector *v, size_t capacity, vector_t type) {
+void vector_init(vector *v, size_t capacity, vector_t v_type) {
   int size = 0;
-  switch (type) {
+  switch (v_type) {
   case CMDVECTOR:
-    size = sizeof(cmd);
+    size = sizeof(cmd *);
     break;
   case TOKENVECTOR:
-    size = sizeof(token);
+    size = sizeof(token *);
     break;
   case EXPRVECTOR:
-    size = sizeof(expr);
+    size = sizeof(expr *);
     break;
   case LVALUEVECTOR:
-    size = sizeof(lval);
+    size = sizeof(lval *);
     break;
   case TYPEVECTOR:
-    size = sizeof(type);
+    size = sizeof(type *);
     break;
   case STMTVECTOR:
-    size = sizeof(stmt);
+    size = sizeof(stmt *);
     break;
   case BINDINGVECTOR:
-    size = sizeof(binding);
+    size = sizeof(binding *);
     break;
   case STRUCTINFOVECTOR:
-    size = sizeof(struct_info);
+    size = sizeof(struct_info *);
     break;
   case ARRAYINFOVECTOR:
-    size = sizeof(array_info);
+    size = sizeof(array_info *);
     break;
   case FNINFOVECTOR:
-    size = sizeof(fn_info);
+    size = sizeof(fn_info *);
     break;
   case VARINFOVECTOR:
-    size = sizeof(var_info);
+    size = sizeof(var_info *);
     break;
   case TVECTOR:
-    size = sizeof(t);
+    size = sizeof(t *);
     break;
   case CFNVECTOR:
-    size = sizeof(c_fn);
+    size = sizeof(c_fn *);
     break;
   case CSTRUCTVECTOR:
-    size = sizeof(c_struct);
+    size = sizeof(c_struct *);
+    break;
+  case ASMFNVECTOR:
+    size = sizeof(asm_fn *);
+    break;
+  case NUMVECTOR:
+    size = sizeof(size_t);
     break;
   case STRVECTOR:
     size = sizeof(char *);
     break;
-  case ASMFNVECTOR:
-    size = sizeof(asm_fn);
-    break;
   }
-  v->type = type;
+  v->type = v_type;
   v->data = safe_alloc(capacity * size);
   v->size = 0;
   v->capacity = capacity;
@@ -68,52 +71,55 @@ void vector_append(vector *v, void *item) {
     int size = 0;
     switch (v->type) {
     case CMDVECTOR:
-      size = sizeof(cmd);
+      size = sizeof(cmd *);
       break;
     case TOKENVECTOR:
-      size = sizeof(token);
+      size = sizeof(token *);
       break;
     case EXPRVECTOR:
-      size = sizeof(expr);
+      size = sizeof(expr *);
       break;
     case LVALUEVECTOR:
-      size = sizeof(lval);
+      size = sizeof(lval *);
       break;
     case TYPEVECTOR:
-      size = sizeof(type);
+      size = sizeof(type *);
       break;
     case STMTVECTOR:
-      size = sizeof(stmt);
+      size = sizeof(stmt *);
       break;
     case BINDINGVECTOR:
-      size = sizeof(binding);
+      size = sizeof(binding *);
       break;
     case STRUCTINFOVECTOR:
-      size = sizeof(struct_info);
+      size = sizeof(struct_info *);
       break;
     case ARRAYINFOVECTOR:
-      size = sizeof(array_info);
+      size = sizeof(array_info *);
       break;
     case FNINFOVECTOR:
-      size = sizeof(fn_info);
+      size = sizeof(fn_info *);
       break;
     case VARINFOVECTOR:
-      size = sizeof(var_info);
+      size = sizeof(var_info *);
       break;
     case TVECTOR:
-      size = sizeof(t);
+      size = sizeof(t *);
       break;
     case CFNVECTOR:
-      size = sizeof(c_fn);
+      size = sizeof(c_fn *);
       break;
     case CSTRUCTVECTOR:
-      size = sizeof(c_struct);
+      size = sizeof(c_struct *);
       break;
     case ASMFNVECTOR:
-      size = sizeof(asm_fn);
+      size = sizeof(asm_fn *);
+      break;
+    case NUMVECTOR:
+      size = sizeof(size_t *);
       break;
     case STRVECTOR:
-      size = sizeof(char *);
+      size = sizeof(char **);
       break;
     }
     v->capacity *= 2;
@@ -168,6 +174,9 @@ void vector_append(vector *v, void *item) {
     break;
   case ASMFNVECTOR:
     ((asm_fn **)v->data)[v->size++] = (asm_fn *)item;
+    break;
+  case NUMVECTOR:
+    ((size_t *)v->data)[v->size++] = (size_t)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -301,4 +310,12 @@ asm_fn *vector_get_asm_fn(vector *v, int idx) {
   if (idx < 0 || idx > v->size - 1)
     return NULL;
   return ((asm_fn **)v->data)[idx];
+}
+
+size_t vector_get_size_t(vector *v, int idx) {
+  if (v->type != NUMVECTOR)
+    return 0;
+  if (idx < 0 || idx > v->size - 1)
+    return 0;
+  return ((size_t *)v->data)[idx];
 }

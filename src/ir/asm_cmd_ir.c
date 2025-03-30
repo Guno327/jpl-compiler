@@ -33,6 +33,11 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       ir_error("Stack Error in SHOWCMD");
     stack_unalign(fn);
     break;
+  case LETCMD:;
+    let_cmd *lc = (let_cmd *)c->node;
+    let_asmgen(prog, fn, lc, false);
+    break;
+  case FNCMD:;
   default:;
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "CMD of type %d not implemented yet", c->type);

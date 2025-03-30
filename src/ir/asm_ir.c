@@ -31,7 +31,11 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   jpl_main->stk = prog->stk;
   jpl_main->stk->fn = jpl_main;
   jpl_main->stk->shadow = safe_alloc(sizeof(vector));
+  jpl_main->stk->names = safe_alloc(sizeof(vector));
+  jpl_main->stk->positions = safe_alloc(sizeof(vector));
   vector_init(jpl_main->stk->shadow, 8, TVECTOR);
+  vector_init(jpl_main->stk->names, 8, STRVECTOR);
+  vector_init(jpl_main->stk->positions, 8, NUMVECTOR);
 
   t *int_t = safe_alloc(sizeof(t));
   int_t->type = INT_T;
@@ -198,4 +202,63 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
   assert_code = safe_strcat(assert_code, jmp);
   assert_code = safe_strcat(assert_code, ":\n");
   vector_append(fn->code, assert_code);
+}
+
+void push_lval(asm_fn *fn, lval *lval, size_t base) {
+  switch (lval->type) {
+  case VARLVALUE:;
+    var_lval *vlv = (var_lval *)lval->node;
+    vector_append(fn->stk->names, vlv->var);
+    vector_append(fn->stk->positions, (void *)base);
+  case ARRAYLVALUE:;
+    array_lval *alv = (array_lval *)lval->node;
+    vector_append(fn->stk->names, alv->var);
+    vector_append(fn->stk->positions, (void *)base);
+
+    for (int i = 0; i < alv->vars->size; i++) {
+      char *cur_name = vector_get_str(alv->vars, i);
+      vector_append(fn->stk->names, cur_name);
+      vector_append(fn->stk->positions, (void *)base);
+      base -= 8;
+    }
+    break;
+  }
+}
+
+void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt) {
+  lval *lv = NULL;
+  expr *e = NULL;
+
+  if (is_stmt) {
+    let_stmt *ls = (let_stmt *)let;
+    lv = ls->lval;
+    e = ls->expr;
+  } else {
+    let_cmd *lc = (let_cmd *)let;
+    lv = lc->lval;
+    e = lc->expr;
+  }
+
+  expr_asmgen(prog, fn, e);
+  push_lval(fn, lv, fn->stk->size);
+}
+
+void stack_alloc(asm_fn *fn, t *type) {
+  size_t type_size = sizeof_t(type);
+
+  vector_append(fn->stk->shadow, type);
+  fn->stk->size += type_size;
+
+  char *code = safe_alloc(BUFSIZ);
+  sprintf(code, "sub rsp, %lu\n", type_size);
+  vector_append(fn->code, code);
+}
+
+void stack_copy(asm_fn *fn, size_t size, size_t start, size_t end) {
+  for (long offset = size - 8; offset >= 0; offset -= 8) {
+    char *code = safe_alloc(BUFSIZ);
+    sprintf(code, "mov r10, [%lu, %lu]\nmov [%lu - %lu], r10\n", start, offset,
+            end, offset);
+    vector_append(fn->code, code);
+  }
 }
