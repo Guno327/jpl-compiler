@@ -142,13 +142,13 @@ char *expr_to_str(expr *expr) {
     int_expr *ie = (int_expr *)expr->node;
     result = safe_realloc_str(result, BUFSIZ + 1 + strlen(result) +
                                           strlen(type_str) + 24);
-    sprintf(result, "(IntExpr%s %lu)", type_str, ie->val);
+    sprintf(result, "(IntExpr%s %ld)", type_str, ie->val);
     break;
   case FLOATEXPR:;
     float_expr *fe = (float_expr *)expr->node;
     result = safe_realloc_str(result, BUFSIZ + 1 + strlen(result) +
                                           strlen(type_str) + 24);
-    sprintf(result, "(FloatExpr%s %lu)", type_str, (long)fe->val);
+    sprintf(result, "(FloatExpr%s %ld)", type_str, (long)fe->val);
     break;
   case TRUEEXPR:
     result = safe_realloc_str(result,
@@ -470,7 +470,7 @@ char *type_to_str(type *type) {
 
 char *vector_to_str(vector *v) {
   char *result = NULL;
-  size_t len = 0;
+  long len = 0;
 
   for (int i = 0; i < v->size; i++) {
     char *cur = NULL;

@@ -14,7 +14,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     int_expr *ie = (int_expr *)e->node;
     char *ie_sym = gensym(fn);
     char *ie_val = safe_alloc(BUFSIZ);
-    sprintf(ie_val, "%lu", ie->val);
+    sprintf(ie_val, "%ld", ie->val);
 
     char *ie_code = safe_alloc(1);
     ie_code = safe_strcat(ie_code, "int64_t ");
@@ -33,7 +33,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     float_expr *fe = (float_expr *)e->node;
     char *fe_sym = gensym(fn);
     char *fe_val = safe_alloc(BUFSIZ);
-    sprintf(fe_val, "%lu", (long unsigned)fe->val);
+    sprintf(fe_val, "%ld", (long unsigned)fe->val);
     fe_val = safe_strcat(fe_val, ".0");
 
     char *fe_code = safe_alloc(1);

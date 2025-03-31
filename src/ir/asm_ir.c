@@ -29,21 +29,37 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   memcpy(jpl_main->name, "jpl_main", 8);
 
   jpl_main->stk = prog->stk;
+  jpl_main->stk->size = 0;
   jpl_main->stk->fn = jpl_main;
   jpl_main->stk->shadow = safe_alloc(sizeof(vector));
+  jpl_main->stk->names = safe_alloc(sizeof(vector));
+  jpl_main->stk->positions = safe_alloc(sizeof(vector));
   vector_init(jpl_main->stk->shadow, 8, TVECTOR);
+  vector_init(jpl_main->stk->names, 8, STRVECTOR);
+  vector_init(jpl_main->stk->positions, 8, NUMVECTOR);
 
-  t *int_t = safe_alloc(sizeof(t));
-  int_t->type = INT_T;
-  int_t->info = NULL;
-  vector_append(jpl_main->stk->shadow, int_t);
-  jpl_main->stk->size = 8;
+  array_lval *alv = safe_alloc(sizeof(array_lval));
+  alv->var = "args";
+  alv->vars = safe_alloc(sizeof(vector));
+  vector_init(alv->vars, 1, STRVECTOR);
+  vector_append(alv->vars, "argnum");
+
+  lval *args = safe_alloc(sizeof(lval));
+  args->node = alv;
+  args->type = ARRAYLVALUE;
+  push_lval(jpl_main, args, -16);
 
   jpl_main->code = safe_alloc(sizeof(vector));
   vector_init(jpl_main->code, 8, STRVECTOR);
   vector_append(jpl_main->code, "push rbp\nmov rbp, rsp\n");
   vector_append(jpl_main->code, "push r12\nmov r12, rbp\n");
   vector_append(prog->fns, jpl_main);
+
+  t *int_t = safe_alloc(sizeof(t));
+  int_t->type = INT_T;
+  int_t->info = NULL;
+  vector_append(jpl_main->stk->shadow, int_t);
+  jpl_main->stk->size += 8;
 
   // Process cmds
   for (int i = 0; i < cmds->size; i++) {
@@ -52,13 +68,9 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   }
 
   if (jpl_main->stk->size > 8) {
-    char *line = safe_alloc(BUFSIZ);
-    sprintf(line, "add rsp, (%lu - 8)\n", jpl_main->stk->size);
-    vector_append(jpl_main->code, line);
-  }
-
-  if (jpl_main->stk->size > 8) {
-    vector_append(jpl_main->code, "add rsp, (size-8)\n");
+    char *code = safe_alloc(BUFSIZ);
+    sprintf(code, "add rsp, %ld\n", jpl_main->stk->size - 8);
+    vector_append(jpl_main->code, code);
   }
   vector_append(jpl_main->code, "pop r12\npop rbp\nret\n");
 
@@ -79,7 +91,7 @@ void stack_push(asm_fn *fn, char *reg) {
   vector_append(fn->code, code);
 }
 
-void stack_rechar(asm_fn *fn, t *type, size_t size) {
+void stack_rechar(asm_fn *fn, t *type, long size) {
   for (int i = 0; i < size; i++) {
     t *cur = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - i - 1);
     free(cur);
@@ -93,12 +105,12 @@ void stack_rechar(asm_fn *fn, t *type, size_t size) {
 t *stack_pop(asm_fn *fn, char *reg) {
   t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
   fn->stk->shadow->size -= 1;
-  size_t t_size = sizeof_t(item);
+  long t_size = sizeof_t(item);
   fn->stk->fn->stk->size -= t_size;
 
   char *code = safe_alloc(BUFSIZ);
   if (reg == NULL)
-    sprintf(code, "add rsp, %lu\n", t_size);
+    sprintf(code, "add rsp, %ld\n", t_size);
   else if (item->type == FLOAT_T)
     sprintf(code, "movsd %s, [rsp]\nadd rsp, 8\n", reg);
   else
@@ -128,8 +140,8 @@ char *genconst(asm_prog *prog, char *val) {
   return result;
 }
 
-void stack_align(asm_fn *fn, size_t size) {
-  size_t leftovers = (fn->stk->size + size) % 16;
+void stack_align(asm_fn *fn, long size) {
+  long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
     leftovers = 16 - leftovers;
   padding *pad = safe_alloc(sizeof(padding));
@@ -144,7 +156,7 @@ void stack_align(asm_fn *fn, size_t size) {
 
   if (leftovers > 0) {
     char *cmd = safe_alloc(BUFSIZ);
-    sprintf(cmd, "sub rsp, %lu\n", leftovers);
+    sprintf(cmd, "sub rsp, %ld\n", leftovers);
     vector_append(fn->code, cmd);
   }
 }
@@ -158,11 +170,11 @@ void stack_unalign(asm_fn *fn) {
     ir_error("Stack unalign error: not padding");
 
   padding *info = (padding *)pad->info;
-  size_t size = info->size;
+  long size = info->size;
   fn->stk->size -= size;
   if (size > 0) {
     char *cmd = safe_alloc(BUFSIZ);
-    sprintf(cmd, "add rsp, %lu\n", size);
+    sprintf(cmd, "add rsp, %ld\n", size);
 
     vector_append(fn->code, cmd);
   }
@@ -198,4 +210,77 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
   assert_code = safe_strcat(assert_code, jmp);
   assert_code = safe_strcat(assert_code, ":\n");
   vector_append(fn->code, assert_code);
+}
+
+void push_lval(asm_fn *fn, lval *lval, long base) {
+  switch (lval->type) {
+  case VARLVALUE:;
+    var_lval *vlv = (var_lval *)lval->node;
+    vector_append(fn->stk->names, vlv->var);
+    vector_append(fn->stk->positions, (void *)base);
+    break;
+  case ARRAYLVALUE:;
+    array_lval *alv = (array_lval *)lval->node;
+    vector_append(fn->stk->names, alv->var);
+    vector_append(fn->stk->positions, (void *)base);
+
+    for (int i = 0; i < alv->vars->size; i++) {
+      char *cur_name = vector_get_str(alv->vars, i);
+      vector_append(fn->stk->names, cur_name);
+      vector_append(fn->stk->positions, (void *)base);
+      base -= 8;
+    }
+    break;
+  }
+}
+
+void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt) {
+  lval *lv = NULL;
+  expr *e = NULL;
+
+  if (is_stmt) {
+    let_stmt *ls = (let_stmt *)let;
+    lv = ls->lval;
+    e = ls->expr;
+  } else {
+    let_cmd *lc = (let_cmd *)let;
+    lv = lc->lval;
+    e = lc->expr;
+  }
+
+  expr_asmgen(prog, fn, e);
+  push_lval(fn, lv, fn->stk->size);
+}
+
+void stack_alloc(asm_fn *fn, t *type) {
+  long type_size = sizeof_t(type);
+
+  vector_append(fn->stk->shadow, type);
+  fn->stk->size += type_size;
+
+  char *code = safe_alloc(BUFSIZ);
+  sprintf(code, "sub rsp, %ld\n", type_size);
+  vector_append(fn->code, code);
+}
+
+void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
+  long size = sizeof_t(type);
+  for (long offset = size - 8; offset >= 0; offset -= 8) {
+    char *code = safe_alloc(BUFSIZ);
+    sprintf(code, "mov r10, [%s + %ld]\nmov [%s + %ld], r10\n", start, offset,
+            end, offset);
+    vector_append(fn->code, code);
+  }
+}
+
+long stack_lookup(stack *stk, char *var) {
+  long result = -1;
+  for (int i = 0; i < stk->names->size; i++) {
+    char *cur = vector_get_str(stk->names, i);
+    if (!strcmp(cur, var)) {
+      result = vector_get_num(stk->positions, i);
+      break;
+    }
+  }
+  return result;
 }

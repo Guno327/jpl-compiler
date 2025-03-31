@@ -39,7 +39,7 @@ bool t_eq(t *lhs, t *rhs) {
   return false;
 }
 
-size_t sizeof_t(t *type) {
+long sizeof_t(t *type) {
   switch (type->type) {
   case INT_T:
     return 8;
@@ -51,7 +51,7 @@ size_t sizeof_t(t *type) {
     return 8;
   case STRUCT_T:;
     struct_info *sinfo = (struct_info *)type->info;
-    size_t s_size = 0;
+    long s_size = 0;
     for (int i = 0; i < sinfo->ts->size; i++) {
       t *cur_t = vector_get_t(sinfo->ts, i);
       s_size += sizeof_t(cur_t);

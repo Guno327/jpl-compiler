@@ -66,7 +66,7 @@ tokentype keyword(char *text) {
 }
 
 char *print_token(token *t) {
-  size_t len = BUFSIZ + (sizeof(t->text));
+  long len = BUFSIZ + (sizeof(t->text));
   char *token_str = safe_alloc(len);
   switch (t->type) {
   case ARRAY:
