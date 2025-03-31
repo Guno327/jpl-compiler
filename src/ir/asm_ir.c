@@ -57,7 +57,7 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
 
   if (jpl_main->stk->size > 8) {
     char *code = safe_alloc(BUFSIZ);
-    sprintf(code, "add rsp, %lu\n", jpl_main->stk->size - 8);
+    sprintf(code, "add rsp, %ld\n", jpl_main->stk->size - 8);
     vector_append(jpl_main->code, code);
   }
   vector_append(jpl_main->code, "pop r12\npop rbp\nret\n");
@@ -98,7 +98,7 @@ t *stack_pop(asm_fn *fn, char *reg) {
 
   char *code = safe_alloc(BUFSIZ);
   if (reg == NULL)
-    sprintf(code, "add rsp, %lu\n", t_size);
+    sprintf(code, "add rsp, %ld\n", t_size);
   else if (item->type == FLOAT_T)
     sprintf(code, "movsd %s, [rsp]\nadd rsp, 8\n", reg);
   else
@@ -144,7 +144,7 @@ void stack_align(asm_fn *fn, long size) {
 
   if (leftovers > 0) {
     char *cmd = safe_alloc(BUFSIZ);
-    sprintf(cmd, "sub rsp, %lu\n", leftovers);
+    sprintf(cmd, "sub rsp, %ld\n", leftovers);
     vector_append(fn->code, cmd);
   }
 }
@@ -162,7 +162,7 @@ void stack_unalign(asm_fn *fn) {
   fn->stk->size -= size;
   if (size > 0) {
     char *cmd = safe_alloc(BUFSIZ);
-    sprintf(cmd, "add rsp, %lu\n", size);
+    sprintf(cmd, "add rsp, %ld\n", size);
 
     vector_append(fn->code, cmd);
   }
@@ -247,7 +247,7 @@ void stack_alloc(asm_fn *fn, t *type) {
   fn->stk->size += type_size;
 
   char *code = safe_alloc(BUFSIZ);
-  sprintf(code, "sub rsp, %lu\n", type_size);
+  sprintf(code, "sub rsp, %ld\n", type_size);
   vector_append(fn->code, code);
 }
 
@@ -255,7 +255,7 @@ void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
   long size = sizeof_t(type);
   for (long offset = size - 8; offset >= 0; offset -= 8) {
     char *code = safe_alloc(BUFSIZ);
-    sprintf(code, "mov r10, [%s + %lu]\nmov [%s + %lu], r10\n", start, offset,
+    sprintf(code, "mov r10, [%s + %ld]\nmov [%s + %ld], r10\n", start, offset,
             end, offset);
     vector_append(fn->code, code);
   }

@@ -23,5 +23,5 @@ t *vector_get_t(vector *v, int idx);
 c_fn *vector_get_c_fn(vector *v, int idx);
 c_struct *vector_get_c_struct(vector *v, int idx);
 asm_fn *vector_get_asm_fn(vector *v, int idx);
-size_t vector_get_num(vector *v, int idx);
+long vector_get_num(vector *v, int idx);
 #endif

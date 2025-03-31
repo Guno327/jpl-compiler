@@ -247,7 +247,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     // Create code from stmts
     bool found_ret = false;
     fn_def->code = safe_alloc(sizeof(vector));
-    size_t stmts = fc->stmts->size == 0 ? 1 : fc->stmts->size;
+    long stmts = fc->stmts->size == 0 ? 1 : fc->stmts->size;
     vector_init(fn_def->code, stmts, STRVECTOR);
     for (int i = 0; i < fc->stmts->size; i++) {
       stmt *cur_stmt = vector_get_stmt(fc->stmts, i);

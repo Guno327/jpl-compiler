@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void vector_init(vector *v, size_t capacity, vector_t v_type) {
+void vector_init(vector *v, long capacity, vector_t v_type) {
   int size = 0;
   switch (v_type) {
   case CMDVECTOR:
@@ -54,7 +54,7 @@ void vector_init(vector *v, size_t capacity, vector_t v_type) {
     size = sizeof(asm_fn *);
     break;
   case NUMVECTOR:
-    size = sizeof(size_t);
+    size = sizeof(long);
     break;
   case STRVECTOR:
     size = sizeof(char *);
@@ -116,7 +116,7 @@ void vector_append(vector *v, void *item) {
       size = sizeof(asm_fn *);
       break;
     case NUMVECTOR:
-      size = sizeof(size_t *);
+      size = sizeof(long *);
       break;
     case STRVECTOR:
       size = sizeof(char **);
@@ -176,7 +176,7 @@ void vector_append(vector *v, void *item) {
     ((asm_fn **)v->data)[v->size++] = (asm_fn *)item;
     break;
   case NUMVECTOR:
-    ((size_t *)v->data)[v->size++] = (size_t)item;
+    ((long *)v->data)[v->size++] = (long)item;
     break;
   case STRVECTOR:
     ((char **)v->data)[v->size++] = (char *)item;
@@ -312,10 +312,10 @@ asm_fn *vector_get_asm_fn(vector *v, int idx) {
   return ((asm_fn **)v->data)[idx];
 }
 
-size_t vector_get_num(vector *v, int idx) {
+long vector_get_num(vector *v, int idx) {
   if (v->type != NUMVECTOR)
     return 0;
   if (idx < 0 || idx > v->size - 1)
     return 0;
-  return ((size_t *)v->data)[idx];
+  return ((long *)v->data)[idx];
 }

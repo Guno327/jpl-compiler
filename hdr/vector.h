@@ -30,7 +30,7 @@ typedef struct {
   int capacity;
 } vector;
 
-void vector_init(vector *v, size_t capacity, vector_t type);
+void vector_init(vector *v, long capacity, vector_t type);
 void vector_append(vector *v, void *item);
 
 #endif

@@ -50,8 +50,12 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     vector_append(fn->code, sc_code);
 
     t *sc_pop = stack_pop(fn, NULL);
-    if (!t_eq(sc_pop, sc->expr->t_type))
-      ir_error("Stack Error in SHOWCMD");
+    if (!t_eq(sc_pop, sc->expr->t_type)) {
+      char *msg = safe_alloc(BUFSIZ);
+      sprintf(msg, "Expected stack '%s' got '%s'", t_to_str(sc->expr->t_type),
+              t_to_str(sc_pop));
+      ir_error(msg);
+    }
     stack_unalign(fn);
     break;
   case LETCMD:;
@@ -66,6 +70,15 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     fc_fn->name = fc->var;
     vector_init(fc_fn->code, 8, STRVECTOR);
 
+    fc_fn->stk->fn = fc_fn;
+    fc_fn->stk->size = 0;
+    fc_fn->stk->names = safe_alloc(sizeof(vector));
+    fc_fn->stk->shadow = safe_alloc(sizeof(vector));
+    fc_fn->stk->positions = safe_alloc(sizeof(vector));
+    vector_init(fc_fn->stk->names, 8, STRVECTOR);
+    vector_init(fc_fn->stk->shadow, 8, TVECTOR);
+    vector_init(fc_fn->stk->positions, 8, NUMVECTOR);
+
     fc_fn->call = safe_alloc(sizeof(call_conv));
     fc_fn->call->ret = safe_alloc(BUFSIZ);
     fc_fn->call->args = safe_alloc(sizeof(vector));
@@ -76,9 +89,22 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     vector_init(fc_fn->call->types, fc->binds->size, TYPEVECTOR);
     vector_init(fc_fn->call->lvals, fc->binds->size, LVALUEVECTOR);
 
+    // Prelude
+    vector_append(fc_fn->code, "push rbp\nmov rbp, rsp\n");
+
+    // If stack ret
+    if (fc->type->type == ARRAYTYPE) {
+      stack_push(fc_fn, "rdi");
+      t int_t = {INT_T, NULL};
+      stack_rechar(fc_fn, &int_t, 1);
+      fc_fn->call->ret_pos = fc_fn->stk->size;
+    }
+    fc_fn->call->ret_t = type_to_t(fc->type);
+
     // Build calling convention
     int int_cnt = 0;
     int float_cnt = 0;
+    long stk_offset = 8;
     for (int i = 0; i < fc->binds->size; i++) {
       binding *cur_bind = vector_get_binding(fc->binds, i);
       vector_append(fc_fn->call->types, cur_bind->type);
@@ -100,9 +126,10 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
         }
       case ARRAYTYPE:;
         // Fall through if int_cnt/float_cnt exceeds regs
-        size_t arg_size = sizeof_t(type_to_t(cur_bind->type));
+        long arg_size = sizeof_t(type_to_t(cur_bind->type));
         char *arg_offset = safe_alloc(BUFSIZ);
-        sprintf(arg_offset, "%lu", arg_size + fc_fn->call->stk_size);
+        sprintf(arg_offset, "%ld", stk_offset);
+        stk_offset += arg_size;
         vector_append(fc_fn->call->args, arg_offset);
         fc_fn->call->stk_size += arg_size;
         break;
@@ -127,24 +154,48 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       ir_error("Type not implemented");
     }
 
-    // Prelude
-    vector_append(fc_fn->code, "push rbp\nmov rbp, rsp\n");
-
     // Args
-    for (int i = fc_fn->call->args->size - 1; i >= 0; i--) {
-      type *cur_type = vector_get_type(fc_fn->call->types, i);
+    for (int i = 0; i < fc_fn->call->args->size; i++) {
       lval *cur_lval = vector_get_lvalue(fc_fn->call->lvals, i);
       char *cur = vector_get_str(fc_fn->call->args, i);
 
-      if (is_int_reg(cur) || is_float_reg(cur)) {
+      if (is_int_reg(cur)) {
         stack_push(fc_fn, cur);
+        t int_t = {INT_T, NULL};
+        stack_rechar(fc_fn, &int_t, 1);
         push_lval(fc_fn, cur_lval, fc_fn->stk->size);
+      } else if (is_float_reg(cur)) {
+        stack_push(fc_fn, cur);
+        t float_t = {FLOAT_T, NULL};
+        stack_rechar(fc_fn, &float_t, 1);
+        push_lval(fc_fn, cur_lval, fc_fn->stk->size);
+
       } else {
-        long offset = fc_fn->call->stk_size - strtol(cur, NULL, 10) - 16;
-        push_lval(fc_fn, cur_lval, -offset);
+        long offset = strtol(cur, NULL, 10);
+        push_lval(fc_fn, cur_lval, offset);
       }
     }
 
+    // Stmts
+    bool found_ret = false;
+    for (int i = 0; i < fc->stmts->size; i++) {
+      stmt *cur_stmt = vector_get_stmt(fc->stmts, i);
+      stmt_asmgen(prog, fc_fn, cur_stmt);
+
+      if (cur_stmt->type == RETURNSTMT)
+        found_ret = true;
+    }
+
+    // Implicit return
+    if (!found_ret && fc_fn->stk->size > 0) {
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "add rsp, %ld\npop rbp\nret\n", fc_fn->stk->size);
+      vector_append(fc_fn->code, code);
+    }
+
+    // Add to list
+    vector_append(prog->fns, fc_fn);
+    break;
   default:;
     char *msg = safe_alloc(BUFSIZ);
     sprintf(msg, "CMD of type %d not implemented yet", c->type);

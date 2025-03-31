@@ -23,6 +23,8 @@ typedef struct {
   vector *args;
   vector *types;
   char *ret;
+  t *ret_t;
+  long ret_pos;
   long stk_size;
 } call_conv;
 
@@ -65,6 +67,7 @@ typedef struct asm_prog {
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
+void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
 
 void stack_push(asm_fn *fn, char *reg);
 t *stack_pop(asm_fn *fn, char *reg);
@@ -81,4 +84,7 @@ void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
 void stack_alloc(asm_fn *fn, t *type);
 void stack_copy(asm_fn *fn, t *type, char *start, char *end);
 long stack_lookup(stack *stk, char *var);
+
+bool is_int_reg(char *reg);
+bool is_float_reg(char *reg);
 #endif

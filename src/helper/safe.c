@@ -5,7 +5,7 @@
 #include <string.h>
 
 char *safe_strcat(char *lhs, const char *rhs) {
-  size_t new_len = strlen(lhs) + strlen(rhs) + 1;
+  long new_len = strlen(lhs) + strlen(rhs) + 1;
   lhs = safe_realloc_str(lhs, new_len);
   return strcat(lhs, rhs);
 }
