@@ -282,18 +282,22 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     // Find asm_fn
     asm_fn *ce_fn = NULL;
-    for (int i = 0; i < prog->fns->size; i++) {
-      asm_fn *cur = vector_get_asm_fn(prog->fns, i);
-      if (!strcmp(ce->var, cur->name)) {
-        ce_fn = cur;
-        break;
+    if (!strcmp(fn->name, ce->var)) {
+      ce_fn = fn;
+    } else {
+      for (int i = 0; i < prog->fns->size; i++) {
+        asm_fn *cur = vector_get_asm_fn(prog->fns, i);
+        if (!strcmp(ce->var, cur->name)) {
+          ce_fn = cur;
+          break;
+        }
       }
-    }
 
-    if (ce_fn == NULL) {
-      char *msg = safe_alloc(BUFSIZ);
-      sprintf(msg, "Could not find function '%s'", ce->var);
-      ir_error(msg);
+      if (ce_fn == NULL) {
+        char *msg = safe_alloc(BUFSIZ);
+        sprintf(msg, "Could not find function '%s'", ce->var);
+        ir_error(msg);
+      }
     }
     call_conv *call = ce_fn->call;
 
@@ -301,13 +305,12 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     bool stack_ret = strcmp(call->ret, "rax") && strcmp(call->ret, "xmm0");
 
     // Prepare stack
-    long ret_size = sizeof_t(call->ret_t);
+    long ret_pos = 0;
     if (stack_ret) {
       stack_alloc(fn, call->ret_t);
-      stack_align(fn, fn->stk->size - ret_size);
-    } else {
-      stack_align(fn, fn->stk->size - ret_size);
+      ret_pos = fn->stk->size;
     }
+    stack_align(fn, 0);
 
     // generate code for args
     // stack args
@@ -335,8 +338,18 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     // do call
     char *ce_code = safe_alloc(BUFSIZ);
     if (stack_ret) {
-      long offset = fn->stk->size - ce_fn->call->ret_pos;
-      sprintf(ce_code, "lea rdi, [rsp]\n");
+      long offset = fn->stk->size - ret_pos;
+
+      for (int i = fn->stk->shadow->size - 1; i >= 0; i--) {
+        t *cur = vector_get_t(fn->stk->shadow, i);
+        if (cur->type == PAD_T) {
+          padding *p = (padding *)cur->info;
+          offset += p->size;
+          break;
+        }
+      }
+
+      sprintf(ce_code, "lea rdi, [rsp + %ld]\n", offset);
     }
 
     ce_code = safe_strcat(ce_code, "call _");

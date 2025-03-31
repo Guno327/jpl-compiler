@@ -97,14 +97,14 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       stack_push(fc_fn, "rdi");
       t int_t = {INT_T, NULL};
       stack_rechar(fc_fn, &int_t, 1);
-      fc_fn->call->ret_pos = fc_fn->stk->size;
+      fc_fn->call->ret_pos = 8;
     }
     fc_fn->call->ret_t = type_to_t(fc->type);
 
     // Build calling convention
     int int_cnt = 0;
     int float_cnt = 0;
-    long stk_offset = 8;
+    long stk_offset = fc_fn->stk->size;
     for (int i = 0; i < fc->binds->size; i++) {
       binding *cur_bind = vector_get_binding(fc->binds, i);
       vector_append(fc_fn->call->types, cur_bind->type);
@@ -129,7 +129,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
         long arg_size = sizeof_t(type_to_t(cur_bind->type));
         char *arg_offset = safe_alloc(BUFSIZ);
         sprintf(arg_offset, "%ld", stk_offset);
-        stk_offset += arg_size;
+        stk_offset -= arg_size;
         vector_append(fc_fn->call->args, arg_offset);
         fc_fn->call->stk_size += arg_size;
         break;
@@ -169,9 +169,8 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
         t float_t = {FLOAT_T, NULL};
         stack_rechar(fc_fn, &float_t, 1);
         push_lval(fc_fn, cur_lval, fc_fn->stk->size);
-
       } else {
-        long offset = strtol(cur, NULL, 10);
+        long offset = -1 * (fc_fn->stk->size - strtol(cur, NULL, 10) + 16);
         push_lval(fc_fn, cur_lval, offset);
       }
     }
@@ -193,7 +192,6 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       vector_append(fc_fn->code, code);
     }
 
-    // Add to list
     vector_append(prog->fns, fc_fn);
     break;
   default:;

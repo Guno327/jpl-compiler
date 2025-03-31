@@ -29,6 +29,7 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   memcpy(jpl_main->name, "jpl_main", 8);
 
   jpl_main->stk = prog->stk;
+  jpl_main->stk->size = 0;
   jpl_main->stk->fn = jpl_main;
   jpl_main->stk->shadow = safe_alloc(sizeof(vector));
   jpl_main->stk->names = safe_alloc(sizeof(vector));
@@ -37,17 +38,28 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   vector_init(jpl_main->stk->names, 8, STRVECTOR);
   vector_init(jpl_main->stk->positions, 8, NUMVECTOR);
 
-  t *int_t = safe_alloc(sizeof(t));
-  int_t->type = INT_T;
-  int_t->info = NULL;
-  vector_append(jpl_main->stk->shadow, int_t);
-  jpl_main->stk->size = 8;
+  array_lval *alv = safe_alloc(sizeof(array_lval));
+  alv->var = "args";
+  alv->vars = safe_alloc(sizeof(vector));
+  vector_init(alv->vars, 1, STRVECTOR);
+  vector_append(alv->vars, "argnum");
+
+  lval *args = safe_alloc(sizeof(lval));
+  args->node = alv;
+  args->type = ARRAYLVALUE;
+  push_lval(jpl_main, args, -16);
 
   jpl_main->code = safe_alloc(sizeof(vector));
   vector_init(jpl_main->code, 8, STRVECTOR);
   vector_append(jpl_main->code, "push rbp\nmov rbp, rsp\n");
   vector_append(jpl_main->code, "push r12\nmov r12, rbp\n");
   vector_append(prog->fns, jpl_main);
+
+  t *int_t = safe_alloc(sizeof(t));
+  int_t->type = INT_T;
+  int_t->info = NULL;
+  vector_append(jpl_main->stk->shadow, int_t);
+  jpl_main->stk->size += 8;
 
   // Process cmds
   for (int i = 0; i < cmds->size; i++) {
