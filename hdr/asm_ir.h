@@ -68,6 +68,8 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
+void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, expr *e,
+                  int offset);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
 
 void stack_push(asm_fn *fn, char *reg);
@@ -77,7 +79,7 @@ void stack_unalign(asm_fn *fn);
 void stack_rechar(asm_fn *fn, t *type, long size);
 
 char *genconst(asm_prog *prog, char *val);
-void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg);
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
 char *asm_prog_to_str(asm_prog *prog);
 
 void push_lval(asm_fn *fn, lval *lval, long base);

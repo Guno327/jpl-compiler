@@ -180,11 +180,12 @@ void stack_unalign(asm_fn *fn) {
   }
 }
 
-void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg) {
   char *jmp = jmp_asmgen(prog);
 
   char *assert_code = safe_alloc(1);
-  assert_code = safe_strcat(assert_code, "jne ");
+  assert_code = safe_strcat(assert_code, cond);
+  assert_code = safe_strcat(assert_code, " ");
   assert_code = safe_strcat(assert_code, jmp);
   assert_code = safe_strcat(assert_code, "\n");
   vector_append(fn->code, assert_code);

@@ -130,7 +130,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
         vector_append(fn->code, boe_code);
         boe_code = safe_alloc(1);
-        assert_asmgen(prog, fn, "divide by zero");
+        assert_asmgen(prog, fn, "jne", "divide by zero");
 
         boe_code = safe_strcat(boe_code, "cqo\nidiv r10\n");
       }
@@ -143,7 +143,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
         vector_append(fn->code, boe_code);
         boe_code = safe_alloc(1);
-        assert_asmgen(prog, fn, "mod by zero");
+        assert_asmgen(prog, fn, "jne", "mod by zero");
 
         boe_code = safe_strcat(boe_code, "cqo\nidiv r10\nmov rax, rdx\n");
       }
@@ -417,6 +417,62 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     ife_code = safe_strcat(ife_code, end_jmp);
     ife_code = safe_strcat(ife_code, ":\n");
     vector_append(fn->code, ife_code);
+    break;
+  case ARRAYINDEXEXPR:;
+    array_index_expr *aie = (array_index_expr *)e->node;
+    expr_asmgen(prog, fn, aie->expr);
+
+    array_info *aie_info = (array_info *)aie->expr->t_type->info;
+    for (int i = aie->exprs->size - 1; i >= 0; i--) {
+      expr *cur_expr = vector_get_expr(aie->exprs, i);
+      expr_asmgen(prog, fn, cur_expr);
+    }
+
+    for (int i = 0; i < aie->exprs->size; i++) {
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "mov rax, [rsp + %d]\n", i * 8);
+      code = safe_strcat(code, "cmp rax, 0\n");
+      vector_append(fn->code, code);
+      code = safe_alloc(BUFSIZ);
+      assert_asmgen(prog, fn, "jge", "negative array index");
+
+      sprintf(code, "cmp rax, [rsp + %d]\n", (i + aie_info->rank) * 8);
+      vector_append(fn->code, code);
+      assert_asmgen(prog, fn, "jl", "index too large");
+    }
+
+    vector_append(fn->code, "mov rax, 0\n");
+    for (int i = 0; i < aie->exprs->size; i++) {
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "imul rax, [rsp + %d]\n", i * 8 + aie_info->rank * 8);
+      vector_append(fn->code, code);
+
+      code = safe_alloc(BUFSIZ);
+      sprintf(code, "add rax, [rsp + %d]\n", i * 8);
+      vector_append(fn->code, code);
+    }
+
+    char *code = safe_alloc(BUFSIZ);
+    sprintf(code, "imul rax, %ld\n", sizeof_t(aie_info->type));
+    vector_append(fn->code, code);
+
+    code = safe_alloc(BUFSIZ);
+    sprintf(code, "add rax, [rsp + %d]\n",
+            aie->exprs->size * 8 + aie_info->rank * 8);
+    vector_append(fn->code, code);
+
+    for (int i = 0; i < aie->exprs->size; i++) {
+      expr *cur = vector_get_expr(aie->exprs, i);
+      t *type = stack_pop(fn, NULL);
+      if (!t_eq(cur->t_type, type))
+        ir_error("Stack error in INDEXEXPR");
+    }
+    t *aie_e_t = stack_pop(fn, NULL);
+    if (!t_eq(aie_e_t, aie->expr->t_type))
+      ir_error("Stack error in INDEXEXPR");
+
+    stack_alloc(fn, aie_info->type);
+    stack_copy(fn, aie_info->type, "rax", "rsp");
     break;
   default:
     ir_error("EXPR is not implemented yet");
