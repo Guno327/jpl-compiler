@@ -181,9 +181,7 @@ void stack_unalign(asm_fn *fn) {
 }
 
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
-  char *jmp = safe_alloc(BUFSIZ);
-  sprintf(jmp, ".jump%d", prog->jmp_ctr);
-  prog->jmp_ctr += 1;
+  char *jmp = jmp_asmgen(prog);
 
   char *assert_code = safe_alloc(1);
   assert_code = safe_strcat(assert_code, "jne ");
@@ -283,4 +281,11 @@ long stack_lookup(stack *stk, char *var) {
     }
   }
   return result;
+}
+
+char *jmp_asmgen(asm_prog *prog) {
+  char *jmp = safe_alloc(BUFSIZ);
+  sprintf(jmp, ".jump%d", prog->jmp_ctr);
+  prog->jmp_ctr += 1;
+  return jmp;
 }

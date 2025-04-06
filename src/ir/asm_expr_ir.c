@@ -383,6 +383,41 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       stack_rechar(fn, call->ret_t, 1);
     }
     break;
+  case IFEXPR:;
+    if_expr *ife = (if_expr *)e->node;
+
+    expr_asmgen(prog, fn, ife->if_expr);
+    stack_pop(fn, "rax");
+    vector_append(fn->code, "cmp rax, 0\n");
+
+    char *else_jmp = jmp_asmgen(prog);
+    char *end_jmp = jmp_asmgen(prog);
+    char *ife_code = safe_alloc(1);
+
+    ife_code = safe_strcat(ife_code, "je ");
+    ife_code = safe_strcat(ife_code, else_jmp);
+    ife_code = safe_strcat(ife_code, "\n");
+    vector_append(fn->code, ife_code);
+    ife_code = safe_alloc(1);
+
+    expr_asmgen(prog, fn, ife->then_expr);
+    fn->stk->size -= sizeof_t(e->t_type);
+    fn->stk->shadow->size -= 1;
+
+    ife_code = safe_strcat(ife_code, "jmp ");
+    ife_code = safe_strcat(ife_code, end_jmp);
+    ife_code = safe_strcat(ife_code, "\n");
+
+    ife_code = safe_strcat(ife_code, else_jmp);
+    ife_code = safe_strcat(ife_code, ":\n");
+    vector_append(fn->code, ife_code);
+    ife_code = safe_alloc(1);
+
+    expr_asmgen(prog, fn, ife->else_expr);
+    ife_code = safe_strcat(ife_code, end_jmp);
+    ife_code = safe_strcat(ife_code, ":\n");
+    vector_append(fn->code, ife_code);
+    break;
   default:
     ir_error("EXPR is not implemented yet");
   }

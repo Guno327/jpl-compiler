@@ -65,6 +65,7 @@ typedef struct asm_prog {
 } asm_prog;
 
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
+char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
