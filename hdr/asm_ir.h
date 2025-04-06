@@ -77,6 +77,7 @@ t *stack_pop(asm_fn *fn, char *reg);
 void stack_align(asm_fn *fn, long amount);
 void stack_unalign(asm_fn *fn);
 void stack_rechar(asm_fn *fn, t *type, long size);
+void stack_free(asm_fn *fn, size_t bytes);
 
 char *genconst(asm_prog *prog, char *val);
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);

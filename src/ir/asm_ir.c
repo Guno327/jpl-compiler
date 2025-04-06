@@ -290,3 +290,24 @@ char *jmp_asmgen(asm_prog *prog) {
   prog->jmp_ctr += 1;
   return jmp;
 }
+
+void stack_free(asm_fn *fn, size_t bytes) {
+  size_t freed = 0;
+  while (freed < bytes && fn->stk->shadow->size != 0) {
+    t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+    fn->stk->shadow->size -= 1;
+    long t_size = sizeof_t(item);
+    fn->stk->fn->stk->size -= t_size;
+    freed += t_size;
+  }
+
+  if (freed != bytes) {
+    char *msg = safe_alloc(BUFSIZ);
+    sprintf(msg, "Stack tried to free %lu, could only free %lu", bytes, freed);
+    ir_error(msg);
+  }
+
+  char *code = safe_alloc(BUFSIZ);
+  sprintf(code, "add rsp, %ld\n", bytes);
+  vector_append(fn->code, code);
+}

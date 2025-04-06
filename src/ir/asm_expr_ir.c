@@ -474,6 +474,88 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     stack_alloc(fn, aie_info->type);
     stack_copy(fn, aie_info->type, "rax", "rsp");
     break;
+  case SUMLOOPEXPR:;
+    sum_loop_expr *sle = (sum_loop_expr *)e->node;
+    stack_alloc(fn, e->t_type);
+
+    // Bounds
+    for (int i = sle->exprs->size - 1; i >= 0; i--) {
+      expr *cur = vector_get_expr(sle->exprs, i);
+      expr_asmgen(prog, fn, cur);
+
+      vector_append(fn->code, "mov rax, [rsp]\ncmp rax, 0\n");
+      assert_asmgen(prog, fn, "jg", "non-positive loop bound");
+    }
+
+    char *sle_code = safe_alloc(BUFSIZ);
+    sprintf(sle_code, "mov rax, 0\nmov [rsp + %d], rax\n",
+            sle->exprs->size * 8);
+    vector_append(fn->code, sle_code);
+
+    for (int i = sle->exprs->size - 1; i >= 0; i--) {
+      vector_append(fn->code, "mov rax, 0\n");
+      stack_push(fn, "rax");
+      t *int_t = safe_alloc(sizeof(t));
+      int_t->type = INT_T;
+      int_t->info = NULL;
+      stack_rechar(fn, int_t, 1);
+
+      lval *lv = safe_alloc(sizeof(lval));
+      lv->type = VARLVALUE;
+      lv->node = safe_alloc(sizeof(var_lval));
+
+      var_lval *vlv = (var_lval *)lv->node;
+      vlv->var = vector_get_str(sle->vars, i);
+      push_lval(fn, lv, fn->stk->size);
+    }
+
+    // Body
+    char *sle_body = jmp_asmgen(prog);
+    sle_code = safe_alloc(strlen(sle_body) + 3);
+    sprintf(sle_code, "%s:\n", sle_body);
+    vector_append(fn->code, sle_code);
+    expr_asmgen(prog, fn, sle->expr);
+
+    sle_code = safe_alloc(BUFSIZ);
+    int target = 2 * sle->exprs->size * 8;
+    switch (sle->expr->t_type->type) {
+    case INT_T:
+      stack_pop(fn, "rax");
+      sprintf(sle_code, "add [rsp + %d], rax\n", target);
+      break;
+    case FLOAT_T:
+      stack_pop(fn, "xmm0");
+      sprintf(sle_code, "addsd xmm0, [rsp + %d]\nmovsd [rsp + %d], xmm0\n",
+              target, target);
+      break;
+    default:
+      ir_error("Unexpected EXPR type in SUMLOOPEXPR");
+    }
+    vector_append(fn->code, sle_code);
+
+    long last_offset = (sle->exprs->size - 1) * 8;
+    sle_code = safe_alloc(BUFSIZ);
+    sprintf(sle_code, "add qword [rsp + %ld], 1\n", last_offset);
+    vector_append(fn->code, sle_code);
+
+    for (int i = sle->vars->size - 1; i >= 0; i--) {
+      sle_code = safe_alloc(BUFSIZ);
+      sprintf(sle_code, "mov rax, [rsp + %d]\ncmp rax, [rsp + %d]\njl %s\n",
+              i * 8, (i + sle->exprs->size) * 8, sle_body);
+      vector_append(fn->code, sle_code);
+
+      if (i != 0) {
+        sle_code = safe_alloc(BUFSIZ);
+        sprintf(sle_code, "mov qword [rsp + %d], 0\nadd qword [rsp + %d], 1\n",
+                i * 8, (i - 1) * 8);
+        vector_append(fn->code, sle_code);
+      }
+    }
+
+    int free = sle->exprs->size * 8;
+    stack_free(fn, free);
+    stack_free(fn, free);
+    break;
   default:
     ir_error("EXPR is not implemented yet");
   }
