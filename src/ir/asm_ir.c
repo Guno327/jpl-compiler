@@ -150,7 +150,7 @@ char *genconst(asm_prog *prog, char *val) {
 void stack_align(asm_fn *fn, long size) {
   long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
-    leftovers = 8;
+    leftovers = 16 - ((fn->stk->size + size) % 16);
   padding *pad = safe_alloc(sizeof(padding));
   pad->size = leftovers;
 

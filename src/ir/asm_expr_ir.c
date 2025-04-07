@@ -350,8 +350,9 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     // free stack
     for (long i = ce->exprs->size - 1; i >= 0; i--) {
       char *cur = vector_get_str(call->args, i);
+      expr *cur_expr = vector_get_expr(ce->exprs, i);
       if (!is_int_reg(cur) && !is_float_reg(cur)) {
-        stack_pop(fn, NULL);
+        stack_free(fn, sizeof_t(cur_expr->t_type));
       }
     }
     stack_unalign(fn);

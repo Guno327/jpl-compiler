@@ -31,7 +31,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
   switch (c->type) {
   case SHOWCMD:;
     show_cmd *sc = (show_cmd *)c->node;
-    stack_align(fn, 16 - sizeof_t(sc->expr->t_type));
+    stack_align(fn, 16 + sizeof_t(sc->expr->t_type));
     expr_asmgen(prog, fn, sc->expr);
 
     char *sc_type = t_to_str(sc->expr->t_type);
@@ -93,8 +93,10 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     vector_append(fc_fn->code, "push rbp\nmov rbp, rsp\n");
 
     // If stack ret
+    long int_cnt = 0;
     if (fc->type->type == ARRAYTYPE) {
       stack_push(fc_fn, "rdi");
+      int_cnt += 1;
       t int_t = {INT_T, NULL};
       stack_rechar(fc_fn, &int_t, 1);
       fc_fn->call->ret_pos = 8;
@@ -102,7 +104,6 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     fc_fn->call->ret_t = type_to_t(fc->type);
 
     // Build calling convention
-    long int_cnt = 0;
     long float_cnt = 0;
     long stk_offset = fc_fn->stk->size;
     for (long i = 0; i < fc->binds->size; i++) {
