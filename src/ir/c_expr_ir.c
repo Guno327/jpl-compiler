@@ -108,7 +108,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     array_literal_expr *ale = (array_literal_expr *)e->node;
     vector *ale_results = safe_alloc(sizeof(vector));
     vector_init(ale_results, ale->exprs->size, STRVECTOR);
-    for (int i = 0; i < ale->exprs->size; i++) {
+    for (long i = 0; i < ale->exprs->size; i++) {
       expr *cur_e = vector_get_expr(ale->exprs, i);
       vector_append(ale_results, expr_gencode(prog, fn, cur_e));
     }
@@ -129,7 +129,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ale_code = safe_strcat(ale_code, ".d0 = ");
 
     char *ale_size = safe_alloc(BUFSIZ);
-    sprintf(ale_size, "%d", ale->exprs->size);
+    sprintf(ale_size, "%ld", ale->exprs->size);
     ale_code = safe_strcat(ale_code, ale_size);
     ale_code = safe_strcat(ale_code, ";\n");
 
@@ -145,11 +145,11 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ale_code = safe_strcat(ale_code, ");\n");
 
     // init data
-    for (int i = 0; i < ale->exprs->size; i++) {
+    for (long i = 0; i < ale->exprs->size; i++) {
       char *cur_result = vector_get_str(ale_results, i);
       ale_code = safe_strcat(ale_code, ale_sym);
       char *elem = safe_alloc(BUFSIZ);
-      sprintf(elem, ".data[%d] = ", i);
+      sprintf(elem, ".data[%ld] = ", i);
       ale_code = safe_strcat(ale_code, elem);
       free(elem);
       ale_code = safe_strcat(ale_code, cur_result);
@@ -164,7 +164,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     struct_literal_expr *sle = (struct_literal_expr *)e->node;
     vector *sle_results = safe_alloc(sizeof(vector));
     vector_init(sle_results, sle->exprs->size, STRVECTOR);
-    for (int i = 0; i < sle->exprs->size; i++) {
+    for (long i = 0; i < sle->exprs->size; i++) {
       expr *cur_e = vector_get_expr(sle->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_e);
       vector_append(sle_results, cur_sym);
@@ -178,7 +178,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     sle_code = safe_strcat(sle_code, " ");
     sle_code = safe_strcat(sle_code, sle_sym);
     sle_code = safe_strcat(sle_code, " = { ");
-    for (int i = 0; i < sle_results->size; i++) {
+    for (long i = 0; i < sle_results->size; i++) {
       char *cur_name = vector_get_str(sle_results, i);
       sle_code = safe_strcat(sle_code, cur_name);
       if (i != sle_results->size - 1)
@@ -388,7 +388,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Index gencode
     vector *idxs = safe_alloc(sizeof(vector));
     vector_init(idxs, aie->exprs->size, STRVECTOR);
-    for (int i = 0; i < aie->exprs->size; i++) {
+    for (long i = 0; i < aie->exprs->size; i++) {
       expr *cur_expr = vector_get_expr(aie->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_expr);
       vector_append(idxs, cur_sym);
@@ -398,7 +398,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     vector *idx_syms = safe_alloc(sizeof(vector));
     vector_init(idx_syms, idxs->size, STRVECTOR);
     char *aie_code = safe_alloc(1);
-    for (int i = 0; i < idxs->size; i++) {
+    for (long i = 0; i < idxs->size; i++) {
       char *cur_idx = vector_get_str(idxs, i);
       vector_append(idx_syms, cur_idx);
 
@@ -426,7 +426,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       aie_code = safe_strcat(aie_code, aie_lhs);
       aie_code = safe_strcat(aie_code, ".d");
       char *dIDX = safe_alloc(BUFSIZ);
-      sprintf(dIDX, "%d", i);
+      sprintf(dIDX, "%ld", i);
       aie_code = safe_strcat(aie_code, dIDX);
       free(dIDX);
       aie_code = safe_strcat(aie_code, ")\n");
@@ -448,7 +448,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     aie_code = safe_strcat(aie_code, idx_sym);
     aie_code = safe_strcat(aie_code, " = 0;\n");
 
-    for (int i = 0; i < idxs->size; i++) {
+    for (long i = 0; i < idxs->size; i++) {
       char *cur_idx_sym = vector_get_str(idx_syms, i);
 
       aie_code = safe_strcat(aie_code, idx_sym);
@@ -456,7 +456,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
       aie_code = safe_strcat(aie_code, aie_lhs);
       aie_code = safe_strcat(aie_code, ".d");
       char *dIDX = safe_alloc(BUFSIZ);
-      sprintf(dIDX, "%d", i);
+      sprintf(dIDX, "%ld", i);
       aie_code = safe_strcat(aie_code, dIDX);
       free(dIDX);
       aie_code = safe_strcat(aie_code, ";\n");
@@ -546,7 +546,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     call_expr *ce = (call_expr *)e->node;
     vector *ce_syms = safe_alloc(sizeof(vector));
     vector_init(ce_syms, ce->exprs->size, STRVECTOR);
-    for (int i = 0; i < ce->exprs->size; i++) {
+    for (long i = 0; i < ce->exprs->size; i++) {
       expr *cur_expr = vector_get_expr(ce->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_expr);
       vector_append(ce_syms, cur_sym);
@@ -563,7 +563,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     ce_code = safe_strcat(ce_code, ce->var);
     ce_code = safe_strcat(ce_code, "(");
 
-    for (int i = 0; i < ce_syms->size; i++) {
+    for (long i = 0; i < ce_syms->size; i++) {
       char *cur_sym = vector_get_str(ce_syms, i);
       ce_code = safe_strcat(ce_code, cur_sym);
       if (i != ce_syms->size - 1)
@@ -592,7 +592,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Check bounds
     vector *sloop_e_syms = safe_alloc(sizeof(vector));
     vector_init(sloop_e_syms, sloop->exprs->size, STRVECTOR);
-    for (int i = 0; i < sloop->exprs->size; i++) {
+    for (long i = 0; i < sloop->exprs->size; i++) {
       expr *cur_expr = vector_get_expr(sloop->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_expr);
       vector_append(sloop_e_syms, cur_sym);
@@ -632,7 +632,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Init bounds
     vector *sloop_bounds = safe_alloc(sizeof(vector));
     vector_init(sloop_bounds, sloop_e_syms->size, STRVECTOR);
-    for (int i = sloop_e_syms->size - 1; i >= 0; i--) {
+    for (long i = sloop_e_syms->size - 1; i >= 0; i--) {
       char *i_sym = gensym(fn);
       sloop_code = safe_strcat(sloop_code, "int64_t ");
       sloop_code = safe_strcat(sloop_code, i_sym);
@@ -662,7 +662,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     sloop_code = safe_strcat(sloop_code, ";\n");
 
     // Increment and check bounds
-    for (int i = 0; i < sloop_bounds->size; i++) {
+    for (long i = 0; i < sloop_bounds->size; i++) {
       char *i_limit = vector_get_str(sloop_e_syms, sloop_bounds->size - i - 1);
       char *i_sym = vector_get_str(sloop_bounds, i);
       sloop_code = safe_strcat(sloop_code, i_sym);
@@ -709,7 +709,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Check bounds
     vector *aloop_e_syms = safe_alloc(sizeof(vector));
     vector_init(aloop_e_syms, aloop->exprs->size, STRVECTOR);
-    for (int i = 0; i < aloop->exprs->size; i++) {
+    for (long i = 0; i < aloop->exprs->size; i++) {
       // Gen bound expr
       expr *cur_expr = vector_get_expr(aloop->exprs, i);
       char *cur_sym = expr_gencode(prog, fn, cur_expr);
@@ -717,7 +717,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
 
       // Bind dim
       char *bind_dim = safe_alloc(BUFSIZ);
-      sprintf(bind_dim, "%s.d%d", aloop_sym, i);
+      sprintf(bind_dim, "%s.d%ld", aloop_sym, i);
       aloop_code = safe_strcat(aloop_code, bind_dim);
       free(bind_dim);
       aloop_code = safe_strcat(aloop_code, " = ");
@@ -750,7 +750,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     aloop_code = safe_strcat(aloop_code, dim_size_sym);
     aloop_code = safe_strcat(aloop_code, " = 1;\n");
 
-    for (int i = 0; i < aloop->exprs->size; i++) {
+    for (long i = 0; i < aloop->exprs->size; i++) {
       char *cur_dim = vector_get_str(aloop_e_syms, i);
       aloop_code = safe_strcat(aloop_code, dim_size_sym);
       aloop_code = safe_strcat(aloop_code, " *= ");
@@ -783,7 +783,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     // Init bounds
     vector *aloop_bounds = safe_alloc(sizeof(vector));
     vector_init(aloop_bounds, aloop_e_syms->size, STRVECTOR);
-    for (int i = aloop_e_syms->size - 1; i >= 0; i--) {
+    for (long i = aloop_e_syms->size - 1; i >= 0; i--) {
       char *i_sym = gensym(fn);
       aloop_code = safe_strcat(aloop_code, "int64_t ");
       aloop_code = safe_strcat(aloop_code, i_sym);
@@ -812,7 +812,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     aloop_code = safe_strcat(aloop_code, aloop_idx_sym);
     aloop_code = safe_strcat(aloop_code, " = 0;\n");
 
-    for (int i = 0; i < aloop->exprs->size; i++) {
+    for (long i = 0; i < aloop->exprs->size; i++) {
       char *cur_bound =
           vector_get_str(aloop_bounds, aloop_bounds->size - i - 1);
 
@@ -822,7 +822,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
 
       aloop_code = safe_strcat(aloop_code, ".d");
       char *dIDX = safe_alloc(BUFSIZ);
-      sprintf(dIDX, "%d", i);
+      sprintf(dIDX, "%ld", i);
       aloop_code = safe_strcat(aloop_code, dIDX);
       free(dIDX);
       aloop_code = safe_strcat(aloop_code, ";\n");
@@ -841,7 +841,7 @@ char *expr_gencode(c_prog *prog, c_fn *fn, expr *e) {
     aloop_code = safe_strcat(aloop_code, ";\n");
 
     // Increment and check bounds
-    for (int i = 0; i < aloop_bounds->size; i++) {
+    for (long i = 0; i < aloop_bounds->size; i++) {
       char *i_limit = vector_get_str(aloop_e_syms, aloop_bounds->size - i - 1);
       char *i_sym = vector_get_str(aloop_bounds, i);
       aloop_code = safe_strcat(aloop_code, i_sym);

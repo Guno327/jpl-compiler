@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-int parse_expr(vector *tokens, int i, expr *e) {
+long parse_expr(vector *tokens, long i, expr *e) {
   // Setup expr to be empty
   e->start = vector_get_token(tokens, i)->start;
   e->node = NULL;
@@ -30,9 +30,9 @@ int parse_expr(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_base_level(vector *tokens, int i, expr *e) {
+long parse_base_level(vector *tokens, long i, expr *e) {
   e->start = vector_get_token(tokens, i)->start;
-  int type = peek_token(tokens, i);
+  long type = peek_token(tokens, i);
 
   switch (type) {
   case INTVAL:
@@ -44,7 +44,7 @@ int parse_base_level(vector *tokens, int i, expr *e) {
     char *ie_str = vector_get_token(tokens, i)->text;
     ie->val = strtol(ie_str, NULL, 10);
     if (errno == ERANGE) {
-      printf("Compilation Failed: Int '%s' at %d out of range", ie_str, i);
+      printf("Compilation Failed: Int '%s' at %ld out of range", ie_str, i);
       exit(EXIT_FAILURE);
     }
 
@@ -62,7 +62,7 @@ int parse_base_level(vector *tokens, int i, expr *e) {
     fe->val = strtod(fe_str, NULL);
     fe->val_str = fe_str;
     if (errno == ERANGE) {
-      printf("Compilation Failed: Int '%s' at %d out of range", fe_str, i);
+      printf("Compilation Failed: Int '%s' at %ld out of range", fe_str, i);
       exit(EXIT_FAILURE);
     }
 
@@ -330,9 +330,9 @@ int parse_base_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_index_level(vector *tokens, int i, expr *e) {
+long parse_index_level(vector *tokens, long i, expr *e) {
   // If DOT or LSQUARE we have index
-  int type = peek_token(tokens, i);
+  long type = peek_token(tokens, i);
   // dot_expr
   if (type == DOT) {
     dot_expr *de = safe_alloc(sizeof(dot_expr));
@@ -384,11 +384,11 @@ int parse_index_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_mult_level(vector *tokens, int i, expr *e) {
-  int type = peek_token(tokens, i);
+long parse_mult_level(vector *tokens, long i, expr *e) {
+  long type = peek_token(tokens, i);
   // Not mult, move deeper
   if (type != OP || e->node == NULL) {
-    int old_i = i;
+    long old_i = i;
     i = parse_base_level(tokens, i, e);
     if (old_i == i)
       return i;
@@ -429,7 +429,7 @@ int parse_mult_level(vector *tokens, int i, expr *e) {
     }
     // Not mult, we need to go deeper
     else {
-      int old_i = i;
+      long old_i = i;
       i = parse_base_level(tokens, i, e);
       if (old_i == i)
         return i;
@@ -441,11 +441,11 @@ int parse_mult_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_add_level(vector *tokens, int i, expr *e) {
-  int type = peek_token(tokens, i);
+long parse_add_level(vector *tokens, long i, expr *e) {
+  long type = peek_token(tokens, i);
   // Not add, move deeper
   if (type != OP || e->node == NULL) {
-    int old_i = i;
+    long old_i = i;
     i = parse_mult_level(tokens, i, e);
     if (old_i == i)
       return i;
@@ -483,7 +483,7 @@ int parse_add_level(vector *tokens, int i, expr *e) {
     }
     // Not add, we need to go deeper
     else {
-      int old_i = i;
+      long old_i = i;
       i = parse_mult_level(tokens, i, e);
       if (old_i == i)
         return i;
@@ -495,11 +495,11 @@ int parse_add_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_cmp_level(vector *tokens, int i, expr *e) {
-  int type = peek_token(tokens, i);
+long parse_cmp_level(vector *tokens, long i, expr *e) {
+  long type = peek_token(tokens, i);
   // Not cmp, move deeper
   if (type != OP || e->node == NULL) {
-    int old_i = i;
+    long old_i = i;
     i = parse_add_level(tokens, i, e);
     if (old_i == i)
       return i;
@@ -508,7 +508,7 @@ int parse_cmp_level(vector *tokens, int i, expr *e) {
     char c = t->text[0];
     if (c == '<' || c == '>' || c == '=' || c == '!') {
       if (c == '!' && strlen(t->text) == 1) {
-        int old_i = i;
+        long old_i = i;
         i = parse_add_level(tokens, i, e);
         if (old_i == i)
           return i;
@@ -570,7 +570,7 @@ int parse_cmp_level(vector *tokens, int i, expr *e) {
     }
     // Not cmp, we need to go deeper
     else {
-      int old_i = i;
+      long old_i = i;
       i = parse_add_level(tokens, i, e);
       if (old_i == i)
         return i;
@@ -582,11 +582,11 @@ int parse_cmp_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_bool_level(vector *tokens, int i, expr *e) {
-  int type = peek_token(tokens, i);
+long parse_bool_level(vector *tokens, long i, expr *e) {
+  long type = peek_token(tokens, i);
   // Not bool, move deeper
   if (type != OP || e->node == NULL) {
-    int old_i = i;
+    long old_i = i;
     i = parse_cmp_level(tokens, i, e);
     if (old_i == i)
       return i;
@@ -632,7 +632,7 @@ int parse_bool_level(vector *tokens, int i, expr *e) {
     }
     // Not bool, this is not a continuation
     else {
-      int old_i = i;
+      long old_i = i;
       i = parse_cmp_level(tokens, i, e);
       if (old_i == i)
         return i;
@@ -644,7 +644,7 @@ int parse_bool_level(vector *tokens, int i, expr *e) {
   return i;
 }
 
-int parse_expr_vec(vector *tokens, int i, vector *exprs) {
+long parse_expr_vec(vector *tokens, long i, vector *exprs) {
   while (i < tokens->size - 1) {
     expr *e = safe_alloc(sizeof(expr));
     e->start = vector_get_token(tokens, i)->start;

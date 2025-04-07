@@ -5,7 +5,7 @@
 #ifndef PARSE_CMD_H
 #define PARSE_CMD_H
 
-int parse_cmd(vector *tokens, int i, cmd *c);
-int parse_bindings(vector *tokens, int i, fn_cmd *fc);
+long parse_cmd(vector *tokens, long i, cmd *c);
+long parse_bindings(vector *tokens, long i, fn_cmd *fc);
 
 #endif

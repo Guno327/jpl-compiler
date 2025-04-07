@@ -10,9 +10,9 @@
 #include "vector_get.h"
 #include <string.h>
 
-int parse_cmd(vector *tokens, int i, cmd *c) {
+long parse_cmd(vector *tokens, long i, cmd *c) {
   c->start = vector_get_token(tokens, i)->start;
-  int token_t = peek_token(tokens, i);
+  long token_t = peek_token(tokens, i);
 
   // Build sub-node
   // General form: Setup \n\n [single token step \n\n ...]
@@ -231,7 +231,7 @@ int parse_cmd(vector *tokens, int i, cmd *c) {
   return i;
 }
 
-int parse_bindings(vector *tokens, int i, fn_cmd *fc) {
+long parse_bindings(vector *tokens, long i, fn_cmd *fc) {
   fc->binds = safe_alloc(sizeof(vector));
   vector_init(fc->binds, 8, BINDINGVECTOR);
 

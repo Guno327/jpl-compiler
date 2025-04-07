@@ -39,7 +39,7 @@ void type_lval(lval *lv, t *type, ctx *c) {
     array_info *ai = (array_info *)type->info;
     if (ai->rank != alv->vars->size) {
       char *msg = safe_alloc(BUFSIZ);
-      sprintf(msg, "Expected array of rank %d got one of %d", alv->vars->size,
+      sprintf(msg, "Expected array of rank %ld got one of %ld", alv->vars->size,
               ai->rank);
       typecheck_error(msg, lv->start);
     }
@@ -62,7 +62,7 @@ void type_lval(lval *lv, t *type, ctx *c) {
     // Add all rank definitions to scope
     t *int_t = safe_alloc(sizeof(t));
     int_t->type = INT_T;
-    for (int i = 0; i < alv->vars->size; i++) {
+    for (long i = 0; i < alv->vars->size; i++) {
       char *var = vector_get_str(alv->vars, i);
       info *exists = check_ctx(c, var);
       if (exists != NULL) {

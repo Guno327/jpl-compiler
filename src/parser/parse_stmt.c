@@ -7,7 +7,7 @@
 #include "vector_get.h"
 #include <string.h>
 
-int parse_stmt(vector *tokens, int i, stmt *s) {
+long parse_stmt(vector *tokens, long i, stmt *s) {
   s->start = vector_get_token(tokens, i)->start;
 
   switch (peek_token(tokens, i)) {

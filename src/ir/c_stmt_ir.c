@@ -26,10 +26,10 @@ bool stmt_gencode(c_prog *prog, c_fn *fn, stmt *s) {
 
     if (ls->lval->type == ARRAYLVALUE) {
       array_lval *alv = (array_lval *)ls->lval->node;
-      for (int i = 0; i < alv->vars->size; i++) {
+      for (long i = 0; i < alv->vars->size; i++) {
         vector_append(fn->jpl_names, vector_get_str(alv->vars, i));
         char *c_name = safe_alloc(BUFSIZ);
-        sprintf(c_name, "%s.d%d", ls_sym, i);
+        sprintf(c_name, "%s.d%ld", ls_sym, i);
         vector_append(fn->c_names, c_name);
       }
     }

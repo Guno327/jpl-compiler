@@ -41,10 +41,10 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
 
     if (lc->lval->type == ARRAYLVALUE) {
       array_lval *alv = (array_lval *)lc->lval->node;
-      for (int i = 0; i < alv->vars->size; i++) {
+      for (long i = 0; i < alv->vars->size; i++) {
         vector_append(fn->jpl_names, vector_get_str(alv->vars, i));
         char *c_name = safe_alloc(BUFSIZ);
-        sprintf(c_name, "%s.d%d", lc_sym, i);
+        sprintf(c_name, "%s.d%ld", lc_sym, i);
         vector_append(fn->c_names, c_name);
       }
     }
@@ -91,7 +91,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     vector_init(s->types, stc->types->size, STRVECTOR);
     vector_init(s->fields, stc->vars->size, STRVECTOR);
 
-    for (int i = 0; i < stc->vars->size; i++) {
+    for (long i = 0; i < stc->vars->size; i++) {
       char *cur_field = vector_get_str(stc->vars, i);
       type *cur_type = vector_get_type(stc->types, i);
       char *cur_type_str = gent(prog, fn, typeof_type(cur_type, prog->ctx));
@@ -134,10 +134,10 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
       array_lval *alv = (array_lval *)rc->lval->node;
       vector_append(fn->jpl_names, alv->var);
 
-      for (int i = 0; i < alv->vars->size; i++) {
+      for (long i = 0; i < alv->vars->size; i++) {
         char *cur_var = vector_get_str(alv->vars, i);
         char *c_name = safe_alloc(BUFSIZ);
-        sprintf(c_name, "%s.d%d", rc_sym, i);
+        sprintf(c_name, "%s.d%ld", rc_sym, i);
 
         rc_code = safe_strcat(rc_code, "int64_t ");
         rc_code = safe_strcat(rc_code, cur_var);
@@ -200,7 +200,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
 
     // Create args list
     char *args_list = safe_alloc(1);
-    for (int i = 0; i < fc->binds->size; i++) {
+    for (long i = 0; i < fc->binds->size; i++) {
       binding *cur_bind = vector_get_binding(fc->binds, i);
       char *cur_type = gent(prog, fn, type_to_t(cur_bind->type));
 
@@ -215,10 +215,10 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
         cur_var = alv->var;
 
         if (alv->vars->size != 0) {
-          for (int i = 0; i < alv->vars->size; i++) {
+          for (long i = 0; i < alv->vars->size; i++) {
             char *cur_jpl = vector_get_str(alv->vars, i);
             char *cur_c = safe_alloc(BUFSIZ);
-            sprintf(cur_c, "%s.d%d", alv->var, i);
+            sprintf(cur_c, "%s.d%ld", alv->var, i);
 
             vector_append(fn_def->jpl_names, cur_jpl);
             vector_append(fn_def->c_names, cur_c);
@@ -249,7 +249,7 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     fn_def->code = safe_alloc(sizeof(vector));
     long stmts = fc->stmts->size == 0 ? 1 : fc->stmts->size;
     vector_init(fn_def->code, stmts, STRVECTOR);
-    for (int i = 0; i < fc->stmts->size; i++) {
+    for (long i = 0; i < fc->stmts->size; i++) {
       stmt *cur_stmt = vector_get_stmt(fc->stmts, i);
       bool is_ret = stmt_gencode(prog, fn_def, cur_stmt);
       if (!found_ret && is_ret)

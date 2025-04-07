@@ -5,7 +5,7 @@
 #include "vector_get.h"
 #include <string.h>
 
-int parse_lvalue(vector *tokens, int i, lval *v) {
+long parse_lvalue(vector *tokens, long i, lval *v) {
   v->start = vector_get_token(tokens, i)->start;
   expect_token(tokens, i, VARIABLE);
   char *v_var = vector_get_token(tokens, i)->text;

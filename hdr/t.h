@@ -27,7 +27,7 @@ typedef struct {
 typedef struct {
   char *name;
   t *type;
-  int rank;
+  long rank;
 } array_info;
 
 typedef struct {

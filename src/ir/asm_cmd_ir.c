@@ -12,7 +12,7 @@ char *float_registers[] = {"xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
                            "xmm5", "xmm6", "xmm7", "xmm8"};
 
 bool is_int_reg(char *reg) {
-  for (int i = 0; i < 6; i++) {
+  for (long i = 0; i < 6; i++) {
     if (!strcmp(reg, int_registers[i]))
       return true;
   }
@@ -20,7 +20,7 @@ bool is_int_reg(char *reg) {
 }
 
 bool is_float_reg(char *reg) {
-  for (int i = 0; i < 9; i++) {
+  for (long i = 0; i < 9; i++) {
     if (!strcmp(reg, float_registers[i]))
       return true;
   }
@@ -102,10 +102,10 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     fc_fn->call->ret_t = type_to_t(fc->type);
 
     // Build calling convention
-    int int_cnt = 0;
-    int float_cnt = 0;
+    long int_cnt = 0;
+    long float_cnt = 0;
     long stk_offset = fc_fn->stk->size;
-    for (int i = 0; i < fc->binds->size; i++) {
+    for (long i = 0; i < fc->binds->size; i++) {
       binding *cur_bind = vector_get_binding(fc->binds, i);
       vector_append(fc_fn->call->types, cur_bind->type);
       vector_append(fc_fn->call->lvals, cur_bind->lval);
@@ -155,7 +155,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     }
 
     // Args
-    for (int i = 0; i < fc_fn->call->args->size; i++) {
+    for (long i = 0; i < fc_fn->call->args->size; i++) {
       lval *cur_lval = vector_get_lvalue(fc_fn->call->lvals, i);
       char *cur = vector_get_str(fc_fn->call->args, i);
 
@@ -177,7 +177,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
 
     // Stmts
     bool found_ret = false;
-    for (int i = 0; i < fc->stmts->size; i++) {
+    for (long i = 0; i < fc->stmts->size; i++) {
       stmt *cur_stmt = vector_get_stmt(fc->stmts, i);
       stmt_asmgen(prog, fc_fn, cur_stmt);
 
@@ -196,7 +196,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     break;
   default:;
     char *msg = safe_alloc(BUFSIZ);
-    sprintf(msg, "CMD of type %d not implemented yet", c->type);
+    sprintf(msg, "CMD not implemented yet");
     ir_error(msg);
   }
 }

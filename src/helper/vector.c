@@ -6,7 +6,7 @@
 #include <string.h>
 
 void vector_init(vector *v, long capacity, vector_t v_type) {
-  int size = 0;
+  long size = 0;
   switch (v_type) {
   case CMDVECTOR:
     size = sizeof(cmd *);
@@ -68,7 +68,7 @@ void vector_init(vector *v, long capacity, vector_t v_type) {
 
 void vector_append(vector *v, void *item) {
   if (v->size == v->capacity) {
-    int size = 0;
+    long size = 0;
     switch (v->type) {
     case CMDVECTOR:
       size = sizeof(cmd *);
@@ -116,7 +116,7 @@ void vector_append(vector *v, void *item) {
       size = sizeof(asm_fn *);
       break;
     case NUMVECTOR:
-      size = sizeof(long *);
+      size = sizeof(long);
       break;
     case STRVECTOR:
       size = sizeof(char **);
@@ -184,7 +184,7 @@ void vector_append(vector *v, void *item) {
   }
 }
 
-token *vector_get_token(vector *v, int idx) {
+token *vector_get_token(vector *v, long idx) {
   if (v->type != TOKENVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -192,7 +192,7 @@ token *vector_get_token(vector *v, int idx) {
   return ((token **)v->data)[idx];
 }
 
-cmd *vector_get_cmd(vector *v, int idx) {
+cmd *vector_get_cmd(vector *v, long idx) {
   if (v->type != CMDVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -200,7 +200,7 @@ cmd *vector_get_cmd(vector *v, int idx) {
   return ((cmd **)v->data)[idx];
 }
 
-expr *vector_get_expr(vector *v, int idx) {
+expr *vector_get_expr(vector *v, long idx) {
   if (v->type != EXPRVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -208,7 +208,7 @@ expr *vector_get_expr(vector *v, int idx) {
   return ((expr **)v->data)[idx];
 }
 
-lval *vector_get_lvalue(vector *v, int idx) {
+lval *vector_get_lvalue(vector *v, long idx) {
   if (v->type != LVALUEVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -216,7 +216,7 @@ lval *vector_get_lvalue(vector *v, int idx) {
   return ((lval **)v->data)[idx];
 }
 
-type *vector_get_type(vector *v, int idx) {
+type *vector_get_type(vector *v, long idx) {
   if (v->type != TYPEVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -224,7 +224,7 @@ type *vector_get_type(vector *v, int idx) {
   return ((type **)v->data)[idx];
 }
 
-stmt *vector_get_stmt(vector *v, int idx) {
+stmt *vector_get_stmt(vector *v, long idx) {
   if (v->type != STMTVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -232,7 +232,7 @@ stmt *vector_get_stmt(vector *v, int idx) {
   return ((stmt **)v->data)[idx];
 }
 
-binding *vector_get_binding(vector *v, int idx) {
+binding *vector_get_binding(vector *v, long idx) {
   if (v->type != BINDINGVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -240,7 +240,7 @@ binding *vector_get_binding(vector *v, int idx) {
   return ((binding **)v->data)[idx];
 }
 
-struct_info *vector_get_struct_info(vector *v, int idx) {
+struct_info *vector_get_struct_info(vector *v, long idx) {
   if (v->type != STRUCTINFOVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -248,7 +248,7 @@ struct_info *vector_get_struct_info(vector *v, int idx) {
   return ((struct_info **)v->data)[idx];
 }
 
-array_info *vector_get_array_info(vector *v, int idx) {
+array_info *vector_get_array_info(vector *v, long idx) {
   if (v->type != ARRAYINFOVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -256,7 +256,7 @@ array_info *vector_get_array_info(vector *v, int idx) {
   return ((array_info **)v->data)[idx];
 }
 
-fn_info *vector_get_fn_info(vector *v, int idx) {
+fn_info *vector_get_fn_info(vector *v, long idx) {
   if (v->type != FNINFOVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -264,7 +264,7 @@ fn_info *vector_get_fn_info(vector *v, int idx) {
   return ((fn_info **)v->data)[idx];
 }
 
-var_info *vector_get_var_info(vector *v, int idx) {
+var_info *vector_get_var_info(vector *v, long idx) {
   if (v->type != VARINFOVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -272,7 +272,7 @@ var_info *vector_get_var_info(vector *v, int idx) {
   return ((var_info **)v->data)[idx];
 }
 
-t *vector_get_t(vector *v, int idx) {
+t *vector_get_t(vector *v, long idx) {
   if (v->type != TVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -280,7 +280,7 @@ t *vector_get_t(vector *v, int idx) {
   return ((t **)v->data)[idx];
 }
 
-c_fn *vector_get_c_fn(vector *v, int idx) {
+c_fn *vector_get_c_fn(vector *v, long idx) {
   if (v->type != CFNVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -288,7 +288,7 @@ c_fn *vector_get_c_fn(vector *v, int idx) {
   return ((c_fn **)v->data)[idx];
 }
 
-c_struct *vector_get_c_struct(vector *v, int idx) {
+c_struct *vector_get_c_struct(vector *v, long idx) {
   if (v->type != CSTRUCTVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -296,7 +296,7 @@ c_struct *vector_get_c_struct(vector *v, int idx) {
   return ((c_struct **)v->data)[idx];
 }
 
-char *vector_get_str(vector *v, int idx) {
+char *vector_get_str(vector *v, long idx) {
   if (v->type != STRVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -304,7 +304,7 @@ char *vector_get_str(vector *v, int idx) {
   return ((char **)v->data)[idx];
 }
 
-asm_fn *vector_get_asm_fn(vector *v, int idx) {
+asm_fn *vector_get_asm_fn(vector *v, long idx) {
   if (v->type != ASMFNVECTOR)
     return NULL;
   if (idx < 0 || idx > v->size - 1)
@@ -312,7 +312,7 @@ asm_fn *vector_get_asm_fn(vector *v, int idx) {
   return ((asm_fn **)v->data)[idx];
 }
 
-long vector_get_num(vector *v, int idx) {
+long vector_get_num(vector *v, long idx) {
   if (v->type != NUMVECTOR)
     return 0;
   if (idx < 0 || idx > v->size - 1)

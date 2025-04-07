@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
   };
 
   char *filename = NULL;
-  for (int i = 0; i < argc; i++) {
+  for (long i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-l"))
       mode = LEX;
     else if (!strcmp(argv[i], "-p"))
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   char *src = safe_alloc(BUFSIZ);
   char *buf = safe_alloc(BUFSIZ);
 
-  int read = 0;
+  long read = 0;
   char *ptr = NULL;
 
   do {
@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
       if (feof(src_file))
         break;
       else {
-        fprintf(stderr, "Compilation failed: Error reading file at %d\n",
-                (int)strlen(src));
+        fprintf(stderr, "Compilation failed: Error reading file at %ld\n",
+                strlen(src));
         exit(EXIT_FAILURE);
       }
     }
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
   vector *tokens = lex(src);
 
   if (mode == LEX) {
-    for (int i = 0; i < tokens->size; i++) {
+    for (long i = 0; i < tokens->size; i++) {
       token *t = vector_get_token(tokens, i);
       char *t_str = print_token(t);
       printf("%s\n", t_str);
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
   // Print
   if (mode != ALL) {
-    for (int i = 0; i < program->size; i++) {
+    for (long i = 0; i < program->size; i++) {
       printf("%s\n", cmd_to_str(vector_get_cmd(program, i)));
     }
     printf("Compilation succeeded: parsing complete\n");

@@ -26,8 +26,8 @@ typedef enum {
 typedef struct {
   vector_t type;
   void **data;
-  int size;
-  int capacity;
+  long size;
+  long capacity;
 } vector;
 
 void vector_init(vector *v, long capacity, vector_t type);
