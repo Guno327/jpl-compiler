@@ -82,6 +82,7 @@ void stack_push(asm_fn *fn, char *reg) {
   placeholder->type = INT_T;
   placeholder->info = NULL;
   vector_append(fn->stk->shadow, placeholder);
+  fn->stk->size += 8;
 
   char *code = safe_alloc(BUFSIZ);
   if (!strncmp(reg, "xmm", 3))
@@ -92,11 +93,17 @@ void stack_push(asm_fn *fn, char *reg) {
 }
 
 void stack_rechar(asm_fn *fn, t *type, long size) {
+  size_t size_alloc = 0;
   for (int i = 0; i < size; i++) {
-    t *cur = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - i - 1);
-    free(cur);
+    t *popped = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+    size_alloc += sizeof_t(popped);
+    fn->stk->shadow->size -= 1;
+    fn->stk->size -= sizeof_t(popped);
   }
-  fn->stk->shadow->size -= size;
+
+  if (size_alloc != sizeof_t(type)) {
+    ir_error("Invalid rechar");
+  }
 
   fn->stk->size += sizeof_t(type);
   vector_append(fn->stk->shadow, type);
@@ -143,7 +150,7 @@ char *genconst(asm_prog *prog, char *val) {
 void stack_align(asm_fn *fn, long size) {
   long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
-    leftovers = 16 - leftovers;
+    leftovers = 8;
   padding *pad = safe_alloc(sizeof(padding));
   pad->size = leftovers;
 
