@@ -1,9 +1,9 @@
 #include "parse_stmt.h"
-#include "safe.h"
 #include "compiler_error.h"
 #include "parse_expr.h"
 #include "parse_lval.h"
 #include "parser.h"
+#include "safe.h"
 #include "vector_get.h"
 #include <string.h>
 

@@ -1,7 +1,7 @@
 #include "parse_lval.h"
-#include "safe.h"
 #include "ast.h"
 #include "parser.h"
+#include "safe.h"
 #include "vector_get.h"
 #include <string.h>
 

@@ -63,7 +63,7 @@ long parse_cmd(vector *tokens, long i, cmd *c) {
     lc->start = vector_get_token(tokens, i)->start;
     i += 1;
 
-    lc->lval = safe_alloc(sizeof(var_lval));
+    lc->lval = safe_alloc(sizeof(lval));
     i = parse_lvalue(tokens, i, lc->lval);
 
     expect_token(tokens, i, EQUALS);

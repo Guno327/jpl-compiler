@@ -339,16 +339,6 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     char *ce_code = safe_alloc(BUFSIZ);
     if (stack_ret) {
       long offset = fn->stk->size - ret_pos;
-
-      for (long i = fn->stk->shadow->size - 1; i >= 0; i--) {
-        t *cur = vector_get_t(fn->stk->shadow, i);
-        if (cur->type == PAD_T) {
-          padding *p = (padding *)cur->info;
-          offset += p->size;
-          break;
-        }
-      }
-
       sprintf(ce_code, "lea rdi, [rsp + %ld]\n", offset);
     }
 
