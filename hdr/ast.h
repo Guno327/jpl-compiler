@@ -17,7 +17,7 @@ typedef enum {
   STRUCTCMD
 } cmd_t;
 typedef struct {
-  int start;
+  long start;
   cmd_t type;
   void *node;
 } cmd;
@@ -58,7 +58,7 @@ typedef enum {
   OROP
 } b_op;
 typedef struct {
-  int start;
+  long start;
   expr_t type;
   t *t_type;
   void *node;
@@ -73,21 +73,21 @@ typedef enum {
   STRUCTTYPE
 } type_t;
 typedef struct {
-  int start;
+  long start;
   type_t type;
   void *node;
 } type;
 
 typedef enum { LETSTMT, ASSERTSTMT, RETURNSTMT } stmt_t;
 typedef struct {
-  int start;
+  long start;
   stmt_t type;
   void *node;
 } stmt;
 
 typedef enum { VARLVALUE, ARRAYLVALUE } lval_t;
 typedef struct {
-  int start;
+  long start;
   lval_t type;
   void *node;
 } lval;
@@ -100,104 +100,104 @@ typedef struct {
 
 // lval types
 typedef struct {
-  int start;
+  long start;
   char *var;
 } var_lval;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
   vector *vars;
 } array_lval;
 
 // stmt types
 typedef struct {
-  int start;
+  long start;
   lval *lval;
   expr *expr;
 } let_stmt;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
   char *str;
 } assert_stmt;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
 } return_stmt;
 
 // TYPE types
 typedef struct {
-  int start;
+  long start;
 } int_type;
 
 typedef struct {
-  int start;
+  long start;
 } bool_type;
 
 typedef struct {
-  int start;
+  long start;
 } float_type;
 
 typedef struct {
-  int start;
+  long start;
   type *type;
-  int rank;
+  long rank;
 } array_type;
 
 typedef struct {
-  int start;
+  long start;
 } void_type;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
 } struct_type;
 
 // CMD types
 typedef struct {
-  int start;
+  long start;
   char *str;
   lval *lval;
 } read_cmd;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
   char *str;
 } write_cmd;
 
 typedef struct {
-  int start;
+  long start;
   lval *lval;
   expr *expr;
 } let_cmd;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
   char *str;
 } assert_cmd;
 
 typedef struct {
-  int start;
+  long start;
   char *str;
 } print_cmd;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
 } show_cmd;
 
 typedef struct {
-  int start;
+  long start;
   cmd *cmd;
 } time_cmd;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
   vector *binds;
   type *type;
@@ -205,7 +205,7 @@ typedef struct {
 } fn_cmd;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
   vector *vars;
   vector *types;
@@ -213,79 +213,79 @@ typedef struct {
 
 // EXPR types
 typedef struct {
-  int start;
+  long start;
   char *var;
 } var_expr;
 
 typedef struct {
-  int start;
+  long start;
   long val;
 } int_expr;
 
 typedef struct {
-  int start;
+  long start;
   double val;
   char *val_str;
 } float_expr;
 
 typedef struct {
-  int start;
+  long start;
 } true_expr;
 
 typedef struct {
-  int start;
+  long start;
 } false_expr;
 
 typedef struct {
-  int start;
+  long start;
   vector *exprs;
 } array_literal_expr;
 
 typedef struct {
-  int start;
+  long start;
 } void_expr;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
   vector *exprs;
 } struct_literal_expr;
 
 typedef struct {
-  int start;
+  long start;
   expr *expr;
   char *var;
 } dot_expr;
 
 typedef struct {
-  int start;
+  long start;
   u_op op;
   expr *rhs;
 } unop_expr;
 
 typedef struct {
-  int start;
+  long start;
   expr *lhs;
   b_op op;
   expr *rhs;
 } binop_expr;
 
 typedef struct {
-  int start;
+  long start;
   expr *if_expr;
   expr *then_expr;
   expr *else_expr;
 } if_expr;
 
 typedef struct {
-  int start;
+  long start;
   vector *vars;
   vector *exprs;
   expr *expr;
 } array_loop_expr;
 
 typedef struct {
-  int start;
+  long start;
   vector *vars;
   vector *exprs;
   expr *expr;
@@ -293,13 +293,13 @@ typedef struct {
 
 // back to standard exprs
 typedef struct {
-  int start;
+  long start;
   expr *expr;
   vector *exprs;
 } array_index_expr;
 
 typedef struct {
-  int start;
+  long start;
   char *var;
   vector *exprs;
 } call_expr;

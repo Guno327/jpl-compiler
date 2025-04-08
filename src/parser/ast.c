@@ -71,7 +71,7 @@ char *cmd_to_str(cmd *cmd) {
         safe_realloc_str(result, BUFSIZ + 1 + strlen(result) + strlen(fc->var));
     sprintf(result, "(FnCmd %s ((", fc->var);
     if (fc->binds != NULL) {
-      for (int i = 0; i < fc->binds->size; i++) {
+      for (long i = 0; i < fc->binds->size; i++) {
         binding *cur_bind = vector_get_binding(fc->binds, i);
         char *cur_lv = lval_to_str(cur_bind->lval);
         char *cur_t = type_to_str(cur_bind->type);
@@ -106,7 +106,7 @@ char *cmd_to_str(cmd *cmd) {
     sprintf(result, "(StructCmd %s", stc->var);
 
     if (stc->vars != NULL && stc->types != NULL) {
-      for (int i = 0; i < stc->vars->size; i++) {
+      for (long i = 0; i < stc->vars->size; i++) {
         char *cur_v = vector_get_str(stc->vars, i);
         char *cur_t = type_to_str(vector_get_type(stc->types, i));
         result = safe_strcat(result, " ");
@@ -288,7 +288,7 @@ char *expr_to_str(expr *expr) {
                               BUFSIZ + 1 + strlen(result) + strlen(type_str));
     sprintf(result, "(ArrayLoopExpr%s", type_str);
     if (aloop->vars->size != 0) {
-      for (int i = 0; i < aloop->vars->size; i++) {
+      for (long i = 0; i < aloop->vars->size; i++) {
         result = safe_strcat(result, " ");
         result = safe_strcat(result, vector_get_str(aloop->vars, i));
         result = safe_strcat(result, " ");
@@ -310,7 +310,7 @@ char *expr_to_str(expr *expr) {
                               BUFSIZ + 1 + strlen(result) + strlen(type_str));
     sprintf(result, "(SumLoopExpr%s", type_str);
     if (sloop->vars->size != 0) {
-      for (int i = 0; i < sloop->vars->size; i++) {
+      for (long i = 0; i < sloop->vars->size; i++) {
         result = safe_strcat(result, " ");
         result = safe_strcat(result, vector_get_str(sloop->vars, i));
         result = safe_strcat(result, " ");
@@ -452,7 +452,7 @@ char *type_to_str(type *type) {
     char *at_t = type_to_str(at->type);
     result = safe_realloc_str(result,
                               BUFSIZ + 1 + strlen(result) + strlen(at_t) + 12);
-    sprintf(result, "(ArrayType %s %d)", at_t, at->rank);
+    sprintf(result, "(ArrayType %s %ld)", at_t, at->rank);
     free(at);
     break;
   case STRUCTTYPE:;
@@ -472,7 +472,7 @@ char *vector_to_str(vector *v) {
   char *result = NULL;
   long len = 0;
 
-  for (int i = 0; i < v->size; i++) {
+  for (long i = 0; i < v->size; i++) {
     char *cur = NULL;
     switch (v->type) {
     case CMDVECTOR:;
@@ -535,7 +535,7 @@ char *t_to_str(t *t) {
     char *a_type = t_to_str(a_info->type);
     result = safe_realloc_str(result, BUFSIZ + 1 + strlen(result) +
                                           strlen(a_type) + 12);
-    sprintf(result, "(ArrayType %s %d)", a_type, a_info->rank);
+    sprintf(result, "(ArrayType %s %ld)", a_type, a_info->rank);
     free(a_type);
     break;
   case STRUCT_T:;

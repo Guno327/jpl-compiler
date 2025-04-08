@@ -20,7 +20,7 @@ ctx *setup_ctx() {
 }
 
 info *check_ctx(ctx *c, char *name) {
-  int i;
+  long i;
   info *result = safe_alloc(sizeof(info));
 
   // check structs
@@ -93,7 +93,7 @@ info *check_ctx(ctx *c, char *name) {
 
 char *ctx_to_str(ctx *c) {
   char *result = safe_alloc(BUFSIZ);
-  int i = 0;
+  long i = 0;
   if (c->parent != NULL) {
     result = safe_realloc_str(result, BUFSIZ * 2);
     char *parent = ctx_to_str(c->parent);

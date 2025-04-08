@@ -5,7 +5,7 @@
 #define PARSER_H
 
 vector *parse(vector *tokens);
-int peek_token(vector *tokens, int idx);
-void expect_token(vector *tokens, int idx, int tok_type);
+long peek_token(vector *tokens, long idx);
+void expect_token(vector *tokens, long idx, long tok_type);
 
 #endif

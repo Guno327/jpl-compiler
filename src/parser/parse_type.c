@@ -6,7 +6,7 @@
 #include "vector_get.h"
 #include <string.h>
 
-int parse_type(vector *tokens, int i, type *t) {
+long parse_type(vector *tokens, long i, type *t) {
   t->start = vector_get_token(tokens, i)->start;
   switch (peek_token(tokens, i)) {
   case INT:;
@@ -60,8 +60,8 @@ int parse_type(vector *tokens, int i, type *t) {
   return i;
 }
 
-int parse_type_arr(vector *tokens, int i, type *t) {
-  int token_t = peek_token(tokens, i);
+long parse_type_arr(vector *tokens, long i, type *t) {
+  long token_t = peek_token(tokens, i);
   if (token_t != LSQUARE)
     return i;
 

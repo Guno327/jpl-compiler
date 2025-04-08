@@ -3,6 +3,6 @@
 #ifndef PARSE_LVALUE_H
 #define PARSE_LVALUE_H
 
-int parse_lvalue(vector *tokens, int i, lval *v);
+long parse_lvalue(vector *tokens, long i, lval *v);
 
 #endif

@@ -4,14 +4,14 @@
 #ifndef PARSE_EXPR_H
 #define PARSE_EXPR_H
 
-int parse_expr(vector *tokens, int i, expr *e);
-int parse_expr_vec(vector *tokens, int i, vector *v);
-int parse_unary_level(vector *tokens, int i, expr *e);
-int parse_index_level(vector *tokens, int i, expr *e);
-int parse_mult_level(vector *tokens, int i, expr *e);
-int parse_add_level(vector *tokens, int i, expr *e);
-int parse_cmp_level(vector *tokens, int i, expr *e);
-int parse_bool_level(vector *tokens, int i, expr *e);
-int parse_base_level(vector *tokens, int i, expr *e);
+long parse_expr(vector *tokens, long i, expr *e);
+long parse_expr_vec(vector *tokens, long i, vector *v);
+long parse_unary_level(vector *tokens, long i, expr *e);
+long parse_index_level(vector *tokens, long i, expr *e);
+long parse_mult_level(vector *tokens, long i, expr *e);
+long parse_add_level(vector *tokens, long i, expr *e);
+long parse_cmp_level(vector *tokens, long i, expr *e);
+long parse_bool_level(vector *tokens, long i, expr *e);
+long parse_base_level(vector *tokens, long i, expr *e);
 
 #endif

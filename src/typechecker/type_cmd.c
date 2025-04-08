@@ -28,9 +28,9 @@ void type_cmd(cmd *c, ctx *global) {
     struct_info *s_info = safe_alloc(sizeof(struct_info));
     s_info->name = sc->var;
     s_info->vars = sc->vars;
-    for (int i = 0; i < s_info->vars->size; i++) {
+    for (long i = 0; i < s_info->vars->size; i++) {
       char *cur_var = vector_get_str(s_info->vars, i);
-      for (int j = 0; j < s_info->vars->size; j++) {
+      for (long j = 0; j < s_info->vars->size; j++) {
         if (j != i && !strcmp(cur_var, vector_get_str(s_info->vars, j))) {
           char *msg = safe_alloc(BUFSIZ);
           sprintf(msg, "Symbol '%s' already defined", cur_var);
@@ -42,7 +42,7 @@ void type_cmd(cmd *c, ctx *global) {
     // Get struct fields
     vector *s_ts = safe_alloc(sizeof(vector));
     vector_init(s_ts, 8, TVECTOR);
-    for (int i = 0; i < sc->types->size; i++) {
+    for (long i = 0; i < sc->types->size; i++) {
       t *cur = typeof_type(vector_get_type(sc->types, i), global);
       vector_append(s_ts, cur);
     }
@@ -128,7 +128,7 @@ void type_cmd(cmd *c, ctx *global) {
     fc_info->args = fc->binds;
     fc_info->ctx = setup_ctx();
     fc_info->ctx->parent = global;
-    for (int i = 0; i < fc->binds->size; i++) {
+    for (long i = 0; i < fc->binds->size; i++) {
       binding *b = vector_get_binding(fc->binds, i);
       t *bt = typeof_type(b->type, global);
       type_lval(b->lval, bt, fc_info->ctx);
@@ -139,7 +139,7 @@ void type_cmd(cmd *c, ctx *global) {
 
     // Check statments for return, use inner scope
     bool found_return = false;
-    for (int i = 0; i < fc->stmts->size; i++) {
+    for (long i = 0; i < fc->stmts->size; i++) {
       stmt *s = vector_get_stmt(fc->stmts, i);
       t *st = typeof_stmt(s, fc_info->ctx);
       if (s->type == RETURNSTMT) {

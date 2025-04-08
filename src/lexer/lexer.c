@@ -8,7 +8,7 @@
 #include <string.h>
 
 // Lexes a string
-int lex_str(const char *src, int i, token *t) {
+long lex_str(const char *src, long i, token *t) {
   if (src[i] != '"') {
     lex_error(src[i], i);
   }
@@ -20,7 +20,7 @@ int lex_str(const char *src, int i, token *t) {
     } else if (src[i] == '"') {
       i += 1;
       t->type = STRING;
-      int len = i - t->start;
+      long len = i - t->start;
       t->text = safe_alloc(len + 1);
       strncpy(t->text, src + t->start, len);
       return i;
@@ -31,7 +31,7 @@ int lex_str(const char *src, int i, token *t) {
 }
 
 // lexes a keyword or variable
-int lex_wrd(const char *src, int i, token *t) {
+long lex_wrd(const char *src, long i, token *t) {
   if (!isalpha(src[i])) {
     lex_error(src[i], i);
   }
@@ -43,7 +43,7 @@ int lex_wrd(const char *src, int i, token *t) {
     else
       break;
   }
-  int len = i - t->start;
+  long len = i - t->start;
   char *wrd = safe_alloc(len + 1);
   strncpy(wrd, src + t->start, len);
 
@@ -54,7 +54,7 @@ int lex_wrd(const char *src, int i, token *t) {
 }
 
 // Lexes an INTVAL or FLOATVAL
-int lex_num(const char *src, int i, token *t) {
+long lex_num(const char *src, long i, token *t) {
   if (!isdigit(src[i]) && src[i] != '.') {
     lex_error(src[i], i);
   }
@@ -80,14 +80,14 @@ int lex_num(const char *src, int i, token *t) {
   else
     t->type = INTVAL;
 
-  int len = i - t->start;
+  long len = i - t->start;
   t->text = safe_alloc(len + 1);
   strncpy(t->text, src + t->start, len);
   return i;
 }
 
 // Lexes a new line
-int lex_nl(const char *src, int i, token *t) {
+long lex_nl(const char *src, long i, token *t) {
   if (src[i] != '\n') {
     lex_error(src[i], i);
   }
@@ -102,7 +102,7 @@ int lex_nl(const char *src, int i, token *t) {
 }
 
 // lexes whitespace
-int lex_ws(const char *src, int i, token *t) {
+long lex_ws(const char *src, long i, token *t) {
   if (src[i] != ' ') {
     lex_error(src[i], i);
   }
@@ -117,7 +117,7 @@ int lex_ws(const char *src, int i, token *t) {
 }
 
 // lexes an OP
-int lex_op(const char *src, int i, token *t) {
+long lex_op(const char *src, long i, token *t) {
   t->start = i;
   t->type = OP;
 
@@ -221,7 +221,7 @@ int lex_op(const char *src, int i, token *t) {
 }
 
 // lexes single char tokens (pnct | nl | ws | op)
-int lex_pnct(const char *src, int i, token *t) {
+long lex_pnct(const char *src, long i, token *t) {
   switch (src[i]) {
     // Check punctuation
   case ':':
@@ -318,7 +318,7 @@ int lex_pnct(const char *src, int i, token *t) {
 
 vector *lex(const char *src) {
   // Validate input
-  for (int k = 0; k < strlen(src); k++) {
+  for (long k = 0; k < strlen(src); k++) {
     if (!isprint(src[k]) && src[k] != '\n') {
       set_verbose(false);
       lex_error('?', k);
@@ -328,7 +328,7 @@ vector *lex(const char *src) {
   vector *tokens = safe_alloc(sizeof(vector));
   vector_init(tokens, BUFSIZ, TOKENVECTOR);
 
-  int i = 0;
+  long i = 0;
   while (i < strlen(src)) {
     token *t = safe_alloc(sizeof(token));
     t->start = i;

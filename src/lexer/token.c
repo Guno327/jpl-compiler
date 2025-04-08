@@ -7,9 +7,9 @@
 
 tokentype keyword(char *text) {
   tokentype ret = 0;
-  int len = strlen(text) + 1;
+  long len = strlen(text) + 1;
   char *wrd_upper = safe_alloc(len);
-  for (int j = 0; j < strlen(text); j++)
+  for (long j = 0; j < strlen(text); j++)
     wrd_upper[j] = toupper(text[j]);
 
   if (!strcmp(wrd_upper, "ARRAY"))
@@ -190,7 +190,7 @@ char *print_token(token *t) {
     sprintf(token_str, "WRITE '%s'", t->text);
     break;
   case WS:
-    printf("Print Error: THIS SHOULD NEVER HAPPEN\n");
+    printf("Prlong Error: THIS SHOULD NEVER HAPPEN\n");
     exit(EXIT_FAILURE);
   }
   return token_str;

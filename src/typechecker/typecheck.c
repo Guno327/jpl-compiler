@@ -14,7 +14,7 @@ ctx *typecheck(vector *program) {
 
   // Loop through cmds
   global->parent = NULL;
-  for (int i = 0; i < program->size; i++) {
+  for (long i = 0; i < program->size; i++) {
     cmd *cc = vector_get_cmd(program, i);
     type_cmd(cc, global);
   }
@@ -42,7 +42,7 @@ ctx *setup_global_ctx() {
   vector_append(rgba->vars, "b");
   vector_append(rgba->vars, "a");
 
-  for (int i = 0; i < 4; i++) {
+  for (long i = 0; i < 4; i++) {
     t *float_t = safe_alloc(sizeof(t));
     float_t->type = FLOAT_T;
     vector_append(rgba->ts, float_t);

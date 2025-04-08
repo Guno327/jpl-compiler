@@ -17,7 +17,7 @@ typedef struct c_fn {
   char *ret_type;
   vector *code;
   struct c_fn *parent;
-  int name_ctr;
+  long name_ctr;
   vector *jpl_names;
   vector *c_names;
 } c_fn;
@@ -31,7 +31,7 @@ typedef struct {
 typedef struct c_prog {
   vector *fns;
   vector *structs;
-  int jump_ctr;
+  long jump_ctr;
   ctx *ctx;
 } c_prog;
 
@@ -42,7 +42,7 @@ char *c_prog_to_str(c_prog *prog);
 char *expr_gencode(c_prog *prog, c_fn *main, expr *e);
 void cmd_gencode(c_prog *prog, c_fn *main, cmd *c);
 bool stmt_gencode(c_prog *prog, c_fn *main, stmt *s);
-char *genarray(c_prog *prog, c_fn *fn, t *type, int size);
+char *genarray(c_prog *prog, c_fn *fn, t *type, long size);
 char *gent(c_prog *prog, c_fn *fn, t *t);
 char *genshowt(t *t);
 char *jpl_to_c(c_fn *fn, char *jpl_name);

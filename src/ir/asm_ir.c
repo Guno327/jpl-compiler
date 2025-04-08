@@ -62,7 +62,7 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   jpl_main->stk->size += 8;
 
   // Process cmds
-  for (int i = 0; i < cmds->size; i++) {
+  for (long i = 0; i < cmds->size; i++) {
     cmd *c = vector_get_cmd(cmds, i);
     cmd_asmgen(prog, jpl_main, c);
   }
@@ -82,6 +82,7 @@ void stack_push(asm_fn *fn, char *reg) {
   placeholder->type = INT_T;
   placeholder->info = NULL;
   vector_append(fn->stk->shadow, placeholder);
+  fn->stk->size += 8;
 
   char *code = safe_alloc(BUFSIZ);
   if (!strncmp(reg, "xmm", 3))
@@ -92,11 +93,17 @@ void stack_push(asm_fn *fn, char *reg) {
 }
 
 void stack_rechar(asm_fn *fn, t *type, long size) {
-  for (int i = 0; i < size; i++) {
-    t *cur = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - i - 1);
-    free(cur);
+  size_t size_alloc = 0;
+  for (long i = 0; i < size; i++) {
+    t *popped = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+    size_alloc += sizeof_t(popped);
+    fn->stk->shadow->size -= 1;
+    fn->stk->size -= sizeof_t(popped);
   }
-  fn->stk->shadow->size -= size;
+
+  if (size_alloc != sizeof_t(type)) {
+    ir_error("Invalid rechar");
+  }
 
   fn->stk->size += sizeof_t(type);
   vector_append(fn->stk->shadow, type);
@@ -122,7 +129,7 @@ t *stack_pop(asm_fn *fn, char *reg) {
 
 char *genconst(asm_prog *prog, char *val) {
   char *result = NULL;
-  for (int i = 0; i < prog->const_vals->size; i++) {
+  for (long i = 0; i < prog->const_vals->size; i++) {
     char *cur = vector_get_str(prog->const_vals, i);
     if (!strcmp(cur, val)) {
       result = vector_get_str(prog->const_names, i);
@@ -132,7 +139,7 @@ char *genconst(asm_prog *prog, char *val) {
 
   if (result == NULL) {
     result = safe_alloc(BUFSIZ);
-    sprintf(result, "const%d", prog->const_vals->size);
+    sprintf(result, "const%ld", prog->const_vals->size);
     vector_append(prog->const_names, result);
     vector_append(prog->const_vals, val);
   }
@@ -143,7 +150,7 @@ char *genconst(asm_prog *prog, char *val) {
 void stack_align(asm_fn *fn, long size) {
   long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
-    leftovers = 16 - leftovers;
+    leftovers = 16 - ((fn->stk->size + size) % 16);
   padding *pad = safe_alloc(sizeof(padding));
   pad->size = leftovers;
 
@@ -180,13 +187,12 @@ void stack_unalign(asm_fn *fn) {
   }
 }
 
-void assert_asmgen(asm_prog *prog, asm_fn *fn, char *msg) {
-  char *jmp = safe_alloc(BUFSIZ);
-  sprintf(jmp, ".jump%d", prog->jmp_ctr);
-  prog->jmp_ctr += 1;
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg) {
+  char *jmp = jmp_asmgen(prog);
 
   char *assert_code = safe_alloc(1);
-  assert_code = safe_strcat(assert_code, "jne ");
+  assert_code = safe_strcat(assert_code, cond);
+  assert_code = safe_strcat(assert_code, " ");
   assert_code = safe_strcat(assert_code, jmp);
   assert_code = safe_strcat(assert_code, "\n");
   vector_append(fn->code, assert_code);
@@ -216,21 +222,35 @@ void push_lval(asm_fn *fn, lval *lval, long base) {
   switch (lval->type) {
   case VARLVALUE:;
     var_lval *vlv = (var_lval *)lval->node;
-    vector_append(fn->stk->names, vlv->var);
-    vector_append(fn->stk->positions, (void *)base);
+    stack_update_pos(fn, vlv->var, base);
     break;
   case ARRAYLVALUE:;
     array_lval *alv = (array_lval *)lval->node;
-    vector_append(fn->stk->names, alv->var);
-    vector_append(fn->stk->positions, (void *)base);
+    stack_update_pos(fn, alv->var, base);
 
-    for (int i = 0; i < alv->vars->size; i++) {
+    for (long i = 0; i < alv->vars->size; i++) {
       char *cur_name = vector_get_str(alv->vars, i);
-      vector_append(fn->stk->names, cur_name);
-      vector_append(fn->stk->positions, (void *)base);
+      stack_update_pos(fn, cur_name, base);
       base -= 8;
     }
     break;
+  }
+}
+
+void stack_update_pos(asm_fn *fn, char *name, long pos) {
+  bool found = false;
+  for (int i = 0; i < fn->stk->names->size; i++) {
+    char *cur = vector_get_str(fn->stk->names, i);
+    if (!strcmp(cur, name)) {
+      ((long *)fn->stk->positions->data)[i] = pos;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    vector_append(fn->stk->names, name);
+    vector_append(fn->stk->positions, (void *)pos);
   }
 }
 
@@ -275,12 +295,41 @@ void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
 
 long stack_lookup(stack *stk, char *var) {
   long result = -1;
-  for (int i = 0; i < stk->names->size; i++) {
+  for (long i = 0; i < stk->names->size; i++) {
     char *cur = vector_get_str(stk->names, i);
     if (!strcmp(cur, var)) {
       result = vector_get_num(stk->positions, i);
       break;
     }
   }
+
   return result;
+}
+
+char *jmp_asmgen(asm_prog *prog) {
+  char *jmp = safe_alloc(BUFSIZ);
+  sprintf(jmp, ".jump%ld", prog->jmp_ctr);
+  prog->jmp_ctr += 1;
+  return jmp;
+}
+
+void stack_free(asm_fn *fn, size_t bytes) {
+  size_t freed = 0;
+  while (freed < bytes && fn->stk->shadow->size != 0) {
+    t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+    fn->stk->shadow->size -= 1;
+    long t_size = sizeof_t(item);
+    fn->stk->fn->stk->size -= t_size;
+    freed += t_size;
+  }
+
+  if (freed != bytes) {
+    char *msg = safe_alloc(BUFSIZ);
+    sprintf(msg, "Stack tried to free %lu, could only free %lu", bytes, freed);
+    ir_error(msg);
+  }
+
+  char *code = safe_alloc(BUFSIZ);
+  sprintf(code, "add rsp, %ld\n", bytes);
+  vector_append(fn->code, code);
 }

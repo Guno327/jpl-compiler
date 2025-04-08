@@ -34,7 +34,7 @@ c_prog *gen_c_ir(vector *cmds, ctx *ctx) {
   vector_append(program->fns, jpl_main);
 
   // Handle cmds
-  for (int i = 0; i < cmds->size; i++) {
+  for (long i = 0; i < cmds->size; i++) {
     cmd *cur_cmd = vector_get_cmd(cmds, i);
     cmd_gencode(program, jpl_main, cur_cmd);
   }
@@ -47,7 +47,7 @@ char *gensym(c_fn *fn) {
   result = safe_strcat(result, "_");
 
   char *num = safe_alloc(BUFSIZ);
-  sprintf(num, "%d", fn->name_ctr);
+  sprintf(num, "%ld", fn->name_ctr);
   fn->name_ctr += 1;
 
   result = safe_strcat(result, num);
@@ -61,7 +61,7 @@ char *genjmp(c_prog *prog) {
   result = safe_strcat(result, "_jump");
 
   char *num = safe_alloc(BUFSIZ);
-  sprintf(num, "%d", prog->jump_ctr);
+  sprintf(num, "%ld", prog->jump_ctr);
   prog->jump_ctr += 1;
 
   result = safe_strcat(result, num);
@@ -70,11 +70,11 @@ char *genjmp(c_prog *prog) {
   return result;
 }
 
-char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
+char *genarray(c_prog *prog, c_fn *fn, t *type, long rank) {
   char *result = safe_alloc(1);
   result = safe_strcat(result, "_a");
   char *rank_str = safe_alloc(BUFSIZ);
-  sprintf(rank_str, "%d", rank);
+  sprintf(rank_str, "%ld", rank);
   result = safe_strcat(result, rank_str);
   free(rank_str);
   result = safe_strcat(result, "_");
@@ -110,7 +110,7 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
 
   // Check if we need to add struct decleration
   bool found = false;
-  for (int i = 0; i < prog->structs->size; i++) {
+  for (long i = 0; i < prog->structs->size; i++) {
     c_struct *cur = vector_get_c_struct(prog->structs, i);
     if (!strcmp(cur->name, result)) {
       found = true;
@@ -129,9 +129,9 @@ char *genarray(c_prog *prog, c_fn *fn, t *type, int rank) {
     vector_init(s->types, rank + 1, STRVECTOR);
     vector_init(s->fields, rank + 1, STRVECTOR);
 
-    for (int i = 0; i < rank; i++) {
+    for (long i = 0; i < rank; i++) {
       char *cur_d = safe_alloc(BUFSIZ);
-      sprintf(cur_d, "d%d", i);
+      sprintf(cur_d, "d%ld", i);
       vector_append(s->fields, cur_d);
       vector_append(s->types, int_t);
     }
@@ -157,7 +157,7 @@ char *jpl_to_c(c_fn *fn, char *jpl_name) {
   }
 
   while (fn != NULL) {
-    for (int i = 0; i < fn->jpl_names->size; i++) {
+    for (long i = 0; i < fn->jpl_names->size; i++) {
       if (!strcmp(jpl_name, vector_get_str(fn->jpl_names, i))) {
         char *c_name = vector_get_str(fn->c_names, i);
         return c_name;
@@ -223,14 +223,14 @@ char *genshowt(t *t) {
     char *a_type = genshowt(a_info->type);
     result = safe_realloc_str(result, BUFSIZ + 1 + strlen(result) +
                                           strlen(a_type) + 12);
-    sprintf(result, "(ArrayType %s %d)", a_type, a_info->rank);
+    sprintf(result, "(ArrayType %s %ld)", a_type, a_info->rank);
     free(a_type);
     break;
   case STRUCT_T:;
     struct_info *s_info = (struct_info *)t->info;
     result = safe_strcat(result, "(TupleType ");
 
-    for (int i = 0; i < s_info->ts->size; i++) {
+    for (long i = 0; i < s_info->ts->size; i++) {
       char *cur_t = genshowt(vector_get_t(s_info->ts, i));
       result = safe_strcat(result, cur_t);
       if (i != s_info->ts->size - 1)

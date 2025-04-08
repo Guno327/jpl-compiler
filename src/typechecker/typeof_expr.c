@@ -144,7 +144,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     // check exprs again definition
     struct_info *sle_dec = (struct_info *)sle_exist->node;
-    for (int j = 0; j < sle->exprs->size; j++) {
+    for (long j = 0; j < sle->exprs->size; j++) {
       expr *cur_e = vector_get_expr(sle->exprs, j);
       t *cur_t = typeof_expr(cur_e, c);
       t *dec_t = vector_get_t(sle_dec->ts, j);
@@ -164,7 +164,7 @@ t *typeof_expr(expr *e, ctx *c) {
   case ARRAYLITERALEXPR:;
     array_literal_expr *ale = (array_literal_expr *)e->node;
     t *found_t = NULL;
-    for (int i = 0; i < ale->exprs->size; i++) {
+    for (long i = 0; i < ale->exprs->size; i++) {
       expr *cur_e = vector_get_expr(ale->exprs, i);
       t *cur_t = typeof_expr(cur_e, c);
       if (found_t == NULL) {
@@ -233,7 +233,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
     struct_info *lhs_info = (struct_info *)de_lhs_t->info;
     t *found = NULL;
-    for (int i = 0; i < lhs_info->vars->size; i++) {
+    for (long i = 0; i < lhs_info->vars->size; i++) {
       if (!strcmp(vector_get_str(lhs_info->vars, i), de->var)) {
         found = vector_get_t(lhs_info->ts, i);
         break;
@@ -262,13 +262,13 @@ t *typeof_expr(expr *e, ctx *c) {
     if (aie_info->rank != aie->exprs->size) {
       char *msg = safe_alloc(BUFSIZ);
       sprintf(msg,
-              "Expected index of rank %d, but "
-              "was of rank %d at %d\n",
+              "Expected index of rank %ld, but "
+              "was of rank %ld at %ld\n",
               aie_info->rank, aie->exprs->size, aie->start);
       typecheck_error(msg, aie->start);
     }
 
-    for (int i = 0; i < aie->exprs->size; i++) {
+    for (long i = 0; i < aie->exprs->size; i++) {
       expr *cur_e = vector_get_expr(aie->exprs, i);
       t *cur_t = typeof_expr(cur_e, c);
       if (cur_t->type != INT_T) {
@@ -329,13 +329,13 @@ t *typeof_expr(expr *e, ctx *c) {
     // Make sure we have the right number of args
     if (ce_info->args->size != ce->exprs->size) {
       char *msg = safe_alloc(BUFSIZ);
-      sprintf(msg, "Function '%s' expects %d args, found %d", ce->var,
+      sprintf(msg, "Function '%s' expects %ld args, found %ld", ce->var,
               ce_info->args->size, ce->exprs->size);
       typecheck_error(msg, ce->start);
     }
 
     // Loop through args, check types
-    for (int i = 0; i < ce_info->args->size; i++) {
+    for (long i = 0; i < ce_info->args->size; i++) {
       expr *e = vector_get_expr(ce->exprs, i);
       t *et = typeof_expr(e, c);
 
@@ -344,7 +344,7 @@ t *typeof_expr(expr *e, ctx *c) {
 
       if (!t_eq(et, deft)) {
         char *msg = safe_alloc(BUFSIZ);
-        sprintf(msg, "Argument %d should be of type %s, is of type %s", i,
+        sprintf(msg, "Argument %ld should be of type %s, is of type %s", i,
                 t_to_str(deft), t_to_str(et));
         typecheck_error(msg, e->start);
       }
@@ -366,7 +366,7 @@ t *typeof_expr(expr *e, ctx *c) {
     // Loop through vars, adding to inner scope
     ctx *aloop_ctx = setup_ctx();
     aloop_ctx->parent = c;
-    for (int i = 0; i < aloop->vars->size; i++) {
+    for (long i = 0; i < aloop->vars->size; i++) {
       expr *e = vector_get_expr(aloop->exprs, i);
       t *et = typeof_expr(e, c);
       if (et->type != INT_T) {
@@ -409,7 +409,7 @@ t *typeof_expr(expr *e, ctx *c) {
     // Loop through vars, adding to inner scope
     ctx *sloop_ctx = setup_ctx();
     sloop_ctx->parent = c;
-    for (int i = 0; i < sloop->vars->size; i++) {
+    for (long i = 0; i < sloop->vars->size; i++) {
       expr *e = vector_get_expr(sloop->exprs, i);
       t *et = typeof_expr(e, c);
       if (et->type != INT_T) {

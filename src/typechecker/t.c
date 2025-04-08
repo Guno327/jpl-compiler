@@ -52,7 +52,7 @@ long sizeof_t(t *type) {
   case STRUCT_T:;
     struct_info *sinfo = (struct_info *)type->info;
     long s_size = 0;
-    for (int i = 0; i < sinfo->ts->size; i++) {
+    for (long i = 0; i < sinfo->ts->size; i++) {
       t *cur_t = vector_get_t(sinfo->ts, i);
       s_size += sizeof_t(cur_t);
     }

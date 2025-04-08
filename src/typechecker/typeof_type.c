@@ -42,7 +42,7 @@ t *typeof_type(type *type, ctx *c) {
       char *msg = safe_alloc(BUFSIZ);
       sprintf(msg,
               "struct of name '%s' is not "
-              "declared at %d\n",
+              "declared at %ld\n",
               s_t->var, s_t->start);
       typecheck_error(msg, s_t->start);
     }

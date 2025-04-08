@@ -10,13 +10,13 @@ char *safe_strcat(char *lhs, const char *rhs) {
   return strcat(lhs, rhs);
 }
 
-void *safe_alloc(int size) {
+void *safe_alloc(long size) {
   void *ret = malloc(size);
   memset(ret, 0, size);
   return ret;
 }
 
-char *safe_realloc_str(char *ptr, int size) {
+char *safe_realloc_str(char *ptr, long size) {
   char *tmp = NULL;
   while (tmp == NULL)
     tmp = realloc(ptr, size);
