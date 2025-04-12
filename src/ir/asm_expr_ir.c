@@ -455,14 +455,21 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       assert_asmgen(prog, fn, "jl", "index too large");
     }
 
-    vector_append(fn->code, "mov rax, 0\n");
-    for (long i = 0; i < aie->exprs->size; i++) {
+    long i_aie = 0;
+    if (opt > 0) {
+      vector_append(fn->code, "mov rax, [rsp + 16]\n");
+      i_aie = 1;
+    } else {
+      vector_append(fn->code, "mov rax, 0\n");
+    }
+
+    for (; i_aie < aie->exprs->size; i_aie++) {
       char *code = safe_alloc(BUFSIZ);
-      sprintf(code, "imul rax, [rsp + %ld]\n", i * 8 + aie_info->rank * 8);
+      sprintf(code, "imul rax, [rsp + %ld]\n", i_aie * 8 + aie_info->rank * 8);
       vector_append(fn->code, code);
 
       code = safe_alloc(BUFSIZ);
-      sprintf(code, "add rax, [rsp + %ld]\n", i * 8);
+      sprintf(code, "add rax, [rsp + %ld]\n", i_aie * 8);
       vector_append(fn->code, code);
     }
 
@@ -626,13 +633,35 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     // Result index
     long offset = sizeof_t(aloop->expr->t_type);
-    vector_append(fn->code, "mov rax, 0\n");
-    for (long i = 0; i < aloop->exprs->size; i++) {
+    long i_aloop = 0;
+
+    if (opt > 0) {
+      vector_append(fn->code, "mov rax, [rsp + 16]\n");
+      i_aloop = 1;
+    } else {
+      vector_append(fn->code, "mov rax, 0\n");
+    }
+
+    for (; i_aloop < aloop->exprs->size; i_aloop++) {
       aloop_code = safe_alloc(BUFSIZ);
-      long mul_val = offset + i * 8 + aloop_info->rank * 8;
-      long add_val = offset + i * 8;
-      sprintf(aloop_code, "imul rax, [rsp + %ld]\nadd rax, [rsp + %ld]\n",
-              mul_val, add_val);
+
+      expr *cur_expr = vector_get_expr(aloop->exprs, i_aloop);
+      int_expr *cur_ie = NULL;
+      if (cur_expr->type == INTEXPR)
+        cur_ie = (int_expr *)cur_expr->node;
+
+      if (opt > 0 && cur_ie != NULL && cur_ie->val >= INT_MIN &&
+          cur_ie->val <= INT_MAX) {
+        int mul_val = (int)cur_ie->val;
+        long add_val = offset + i_aloop * 8;
+        sprintf(aloop_code, "imul rax, %d\nadd rax, [rsp + %ld]\n", mul_val,
+                add_val);
+      } else {
+        long mul_val = offset + i_aloop * 8 + aloop_info->rank * 8;
+        long add_val = offset + i_aloop * 8;
+        sprintf(aloop_code, "imul rax, [rsp + %ld]\nadd rax, [rsp + %ld]\n",
+                mul_val, add_val);
+      }
       vector_append(fn->code, aloop_code);
     }
 
