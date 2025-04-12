@@ -396,6 +396,11 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     if_expr *ife = (if_expr *)e->node;
 
     expr_asmgen(prog, fn, ife->if_expr);
+    if (opt > 0 && is_bool_cast(ife)) {
+      stack_rechar(fn, e->t_type, 1);
+      break;
+    }
+
     stack_pop(fn, "rax");
     vector_append(fn->code, "cmp rax, 0\n");
 
@@ -673,4 +678,20 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
   default:
     ir_error("EXPR is not implemented yet");
   }
+}
+
+bool is_bool_cast(if_expr *ife) {
+  if (ife->then_expr->type != INTEXPR)
+    return false;
+  int_expr *then_expr = (int_expr *)ife->then_expr->node;
+  if (then_expr->val != 1)
+    return false;
+
+  if (ife->else_expr->type != INTEXPR)
+    return false;
+  int_expr *else_expr = (int_expr *)ife->else_expr->node;
+  if (else_expr->val != 0)
+    return false;
+
+  return true;
 }

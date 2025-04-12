@@ -94,4 +94,5 @@ long stack_lookup(stack *stk, char *var);
 
 bool is_int_reg(char *reg);
 bool is_float_reg(char *reg);
+bool is_bool_cast(if_expr *ife);
 #endif
