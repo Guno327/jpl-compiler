@@ -18,6 +18,8 @@ struct asm_prog;
 struct asm_fn;
 struct stack;
 
+extern int opt;
+
 typedef struct {
   vector *lvals;
   vector *args;

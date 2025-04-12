@@ -2,6 +2,7 @@
 #include "compiler_error.h"
 #include "safe.h"
 #include "vector_get.h"
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -29,32 +30,49 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     int_expr *ie = (int_expr *)e->node;
     char *ie_val = safe_alloc(BUFSIZ);
     sprintf(ie_val, "dq %ld", ie->val);
-    char *ie_const = genconst(prog, ie_val);
 
-    char *ie_code = safe_alloc(1);
-    ie_code = safe_strcat(ie_code, "mov rax, [rel ");
-    ie_code = safe_strcat(ie_code, ie_const);
-    ie_code = safe_strcat(ie_code, "]\n");
-    vector_append(fn->code, ie_code);
+    char *ie_code = NULL;
+    if (opt > 0 && ie->val <= INT_MAX && ie->val >= INT_MIN) {
+      ie_code = safe_alloc(BUFSIZ);
+      sprintf(ie_code, "qword %d", (int)ie->val);
+      stack_push(fn, ie_code);
+      free(ie_code);
+    } else {
+      char *ie_const = genconst(prog, ie_val);
 
-    stack_push(fn, "rax");
-    stack_rechar(fn, e->t_type, 1);
+      ie_code = safe_alloc(1);
+      ie_code = safe_strcat(ie_code, "mov rax, [rel ");
+      ie_code = safe_strcat(ie_code, ie_const);
+      ie_code = safe_strcat(ie_code, "]\n");
+      vector_append(fn->code, ie_code);
+
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
     break;
   case TRUEEXPR:
   case FALSEEXPR:;
     char *be_val = safe_alloc(BUFSIZ);
     long be_num = e->type == TRUEEXPR ? 1 : 0;
-    sprintf(be_val, "dq %ld", be_num);
-    char *be_const = genconst(prog, be_val);
+    if (opt > 0) {
+      char *be_code = safe_alloc(BUFSIZ);
+      sprintf(be_code, "qword %d", (int)be_num);
+      stack_push(fn, be_code);
+      stack_rechar(fn, e->t_type, 1);
+      free(be_code);
+    } else {
+      sprintf(be_val, "dq %ld", be_num);
+      char *be_const = genconst(prog, be_val);
 
-    char *be_code = safe_alloc(1);
-    be_code = safe_strcat(be_code, "mov rax, [rel ");
-    be_code = safe_strcat(be_code, be_const);
-    be_code = safe_strcat(be_code, "]\n");
-    vector_append(fn->code, be_code);
+      char *be_code = safe_alloc(1);
+      be_code = safe_strcat(be_code, "mov rax, [rel ");
+      be_code = safe_strcat(be_code, be_const);
+      be_code = safe_strcat(be_code, "]\n");
+      vector_append(fn->code, be_code);
 
-    stack_push(fn, "rax");
-    stack_rechar(fn, e->t_type, 1);
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
     break;
   case UNOPEXPR:;
     unop_expr *ue = (unop_expr *)e->node;
