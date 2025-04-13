@@ -473,9 +473,19 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     break;
   case ARRAYINDEXEXPR:;
     array_index_expr *aie = (array_index_expr *)e->node;
-    expr_asmgen(prog, fn, aie->expr);
-
     array_info *aie_info = (array_info *)aie->expr->t_type->info;
+    long gap_aie = 8 * aie_info->rank;
+
+    bool local_arr = false;
+    if (opt > 0 && aie->expr->type == VAREXPR) {
+      var_expr *ve = (var_expr *)aie->expr->node;
+      long offset = stack_lookup(fn->stk, ve->var);
+      gap_aie = (fn->stk->size - offset + gap_aie);
+      local_arr = true;
+    } else {
+      expr_asmgen(prog, fn, aie->expr);
+    }
+
     for (long i = aie->exprs->size - 1; i >= 0; i--) {
       expr *cur_expr = vector_get_expr(aie->exprs, i);
       expr_asmgen(prog, fn, cur_expr);
@@ -489,14 +499,17 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       code = safe_alloc(BUFSIZ);
       assert_asmgen(prog, fn, "jge", "negative array index");
 
-      sprintf(code, "cmp rax, [rsp + %ld]\n", (i + aie_info->rank) * 8);
+      sprintf(code, "cmp rax, [rsp + %ld]\n", (gap_aie + i * 8));
       vector_append(fn->code, code);
       assert_asmgen(prog, fn, "jl", "index too large");
     }
 
     long i_aie = 0;
+
     if (opt > 0) {
-      vector_append(fn->code, "mov rax, [rsp + 8]\n");
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "mov rax, [rsp + 0]\n");
+      vector_append(fn->code, code);
       i_aie = 1;
     } else {
       vector_append(fn->code, "mov rax, 0\n");
@@ -504,7 +517,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     for (; i_aie < aie->exprs->size; i_aie++) {
       char *code = safe_alloc(BUFSIZ);
-      sprintf(code, "imul rax, [rsp + %ld]\n", i_aie * 8 + aie_info->rank * 8);
+      sprintf(code, "imul rax, [rsp + %ld]\n", i_aie * 8 + gap_aie);
       vector_append(fn->code, code);
 
       code = safe_alloc(BUFSIZ);
@@ -520,19 +533,33 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     vector_append(fn->code, code);
 
     code = safe_alloc(BUFSIZ);
-    sprintf(code, "add rax, [rsp + %ld]\n",
-            aie->exprs->size * 8 + aie_info->rank * 8);
+    sprintf(code, "add rax, [rsp + %ld]\n", aie->exprs->size * 8 + gap_aie);
     vector_append(fn->code, code);
+    if (opt > 0) {
+      long space = 0;
+      for (long i = 0; i < aie->exprs->size; i++) {
+        expr *cur = vector_get_expr(aie->exprs, i);
+        fn->stk->shadow->size -= 1;
+        fn->stk->size -= sizeof_t(cur->t_type);
+        space += sizeof_t(cur->t_type);
+      }
 
-    for (long i = 0; i < aie->exprs->size; i++) {
-      expr *cur = vector_get_expr(aie->exprs, i);
-      t *type = stack_pop(fn, NULL);
-      if (!t_eq(cur->t_type, type))
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "add rsp, %ld\n", space);
+      vector_append(fn->code, code);
+    } else {
+      for (long i = 0; i < aie->exprs->size; i++) {
+        expr *cur = vector_get_expr(aie->exprs, i);
+        t *type = stack_pop(fn, NULL);
+        if (!t_eq(cur->t_type, type))
+          ir_error("Stack error in INDEXEXPR");
+      }
+    }
+    if (!local_arr) {
+      t *aie_e_t = stack_pop(fn, NULL);
+      if (!t_eq(aie_e_t, aie->expr->t_type))
         ir_error("Stack error in INDEXEXPR");
     }
-    t *aie_e_t = stack_pop(fn, NULL);
-    if (!t_eq(aie_e_t, aie->expr->t_type))
-      ir_error("Stack error in INDEXEXPR");
 
     stack_alloc(fn, aie_info->type);
     stack_copy(fn, aie_info->type, "rax", "rsp");
@@ -783,6 +810,9 @@ bool is_bool_cast(if_expr *ife) {
 bool is_pow_2(long num) { return num > 0 && (num & (num - 1)) == 0; }
 
 bool is_opt_mult(binop_expr *boe) {
+  if (boe->op != MULTOP)
+    return false;
+
   if (boe->lhs->type != INTEXPR && boe->rhs->type != INTEXPR)
     return false;
 
