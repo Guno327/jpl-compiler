@@ -2,6 +2,8 @@
 #include "compiler_error.h"
 #include "safe.h"
 #include "vector_get.h"
+#include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -29,32 +31,49 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     int_expr *ie = (int_expr *)e->node;
     char *ie_val = safe_alloc(BUFSIZ);
     sprintf(ie_val, "dq %ld", ie->val);
-    char *ie_const = genconst(prog, ie_val);
 
-    char *ie_code = safe_alloc(1);
-    ie_code = safe_strcat(ie_code, "mov rax, [rel ");
-    ie_code = safe_strcat(ie_code, ie_const);
-    ie_code = safe_strcat(ie_code, "]\n");
-    vector_append(fn->code, ie_code);
+    char *ie_code = NULL;
+    if (opt > 0 && ie->val <= INT_MAX && ie->val >= INT_MIN) {
+      ie_code = safe_alloc(BUFSIZ);
+      sprintf(ie_code, "qword %d", (int)ie->val);
+      stack_push(fn, ie_code);
+      free(ie_code);
+    } else {
+      char *ie_const = genconst(prog, ie_val);
 
-    stack_push(fn, "rax");
-    stack_rechar(fn, e->t_type, 1);
+      ie_code = safe_alloc(1);
+      ie_code = safe_strcat(ie_code, "mov rax, [rel ");
+      ie_code = safe_strcat(ie_code, ie_const);
+      ie_code = safe_strcat(ie_code, "]\n");
+      vector_append(fn->code, ie_code);
+
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
     break;
   case TRUEEXPR:
   case FALSEEXPR:;
     char *be_val = safe_alloc(BUFSIZ);
     long be_num = e->type == TRUEEXPR ? 1 : 0;
-    sprintf(be_val, "dq %ld", be_num);
-    char *be_const = genconst(prog, be_val);
+    if (opt > 0) {
+      char *be_code = safe_alloc(BUFSIZ);
+      sprintf(be_code, "qword %d", (int)be_num);
+      stack_push(fn, be_code);
+      stack_rechar(fn, e->t_type, 1);
+      free(be_code);
+    } else {
+      sprintf(be_val, "dq %ld", be_num);
+      char *be_const = genconst(prog, be_val);
 
-    char *be_code = safe_alloc(1);
-    be_code = safe_strcat(be_code, "mov rax, [rel ");
-    be_code = safe_strcat(be_code, be_const);
-    be_code = safe_strcat(be_code, "]\n");
-    vector_append(fn->code, be_code);
+      char *be_code = safe_alloc(1);
+      be_code = safe_strcat(be_code, "mov rax, [rel ");
+      be_code = safe_strcat(be_code, be_const);
+      be_code = safe_strcat(be_code, "]\n");
+      vector_append(fn->code, be_code);
 
-    stack_push(fn, "rax");
-    stack_rechar(fn, e->t_type, 1);
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
     break;
   case UNOPEXPR:;
     unop_expr *ue = (unop_expr *)e->node;
@@ -86,6 +105,44 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     break;
   case BINOPEXPR:;
     binop_expr *boe = (binop_expr *)e->node;
+    if (opt > 0 && is_opt_mult(boe)) {
+      if (boe->lhs->type == INTEXPR &&
+          is_pow_2(((int_expr *)boe->lhs->node)->val)) {
+        expr_asmgen(prog, fn, boe->rhs);
+
+        int_expr *lhs_ie = (int_expr *)boe->lhs->node;
+        long shl_val = log2(lhs_ie->val);
+        if (shl_val == 0)
+          break;
+
+        t *rhs_t = stack_pop(fn, "rax");
+        if (!t_eq(rhs_t, boe->rhs->t_type))
+          ir_error("Stack error in BINOPEXPR");
+
+        char *code = safe_alloc(BUFSIZ);
+        sprintf(code, "shl rax, %ld\n", shl_val);
+        vector_append(fn->code, code);
+        stack_push(fn, "rax");
+      } else {
+        expr_asmgen(prog, fn, boe->lhs);
+
+        int_expr *rhs_ie = (int_expr *)boe->rhs->node;
+        long shl_val = log2(rhs_ie->val);
+        if (shl_val == 0)
+          break;
+
+        t *lhs_t = stack_pop(fn, "rax");
+        if (!t_eq(lhs_t, boe->lhs->t_type))
+          ir_error("Stack error in BINOPEXPR");
+
+        char *code = safe_alloc(BUFSIZ);
+        sprintf(code, "shl rax, %ld\n", shl_val);
+        vector_append(fn->code, code);
+        stack_push(fn, "rax");
+      }
+      break;
+    }
+
     if (boe->op == MODOP && boe->lhs->t_type->type == FLOAT_T)
       stack_align(fn, 0);
     expr_asmgen(prog, fn, boe->rhs);
@@ -378,6 +435,11 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     if_expr *ife = (if_expr *)e->node;
 
     expr_asmgen(prog, fn, ife->if_expr);
+    if (opt > 0 && is_bool_cast(ife)) {
+      stack_rechar(fn, e->t_type, 1);
+      break;
+    }
+
     stack_pop(fn, "rax");
     vector_append(fn->code, "cmp rax, 0\n");
 
@@ -411,9 +473,19 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     break;
   case ARRAYINDEXEXPR:;
     array_index_expr *aie = (array_index_expr *)e->node;
-    expr_asmgen(prog, fn, aie->expr);
-
     array_info *aie_info = (array_info *)aie->expr->t_type->info;
+    long gap_aie = 8 * aie_info->rank;
+
+    bool local_arr = false;
+    if (opt > 0 && aie->expr->type == VAREXPR) {
+      var_expr *ve = (var_expr *)aie->expr->node;
+      long offset = stack_lookup(fn->stk, ve->var);
+      gap_aie = (fn->stk->size - offset + gap_aie);
+      local_arr = true;
+    } else {
+      expr_asmgen(prog, fn, aie->expr);
+    }
+
     for (long i = aie->exprs->size - 1; i >= 0; i--) {
       expr *cur_expr = vector_get_expr(aie->exprs, i);
       expr_asmgen(prog, fn, cur_expr);
@@ -427,40 +499,67 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       code = safe_alloc(BUFSIZ);
       assert_asmgen(prog, fn, "jge", "negative array index");
 
-      sprintf(code, "cmp rax, [rsp + %ld]\n", (i + aie_info->rank) * 8);
+      sprintf(code, "cmp rax, [rsp + %ld]\n", (gap_aie + i * 8));
       vector_append(fn->code, code);
       assert_asmgen(prog, fn, "jl", "index too large");
     }
 
-    vector_append(fn->code, "mov rax, 0\n");
-    for (long i = 0; i < aie->exprs->size; i++) {
+    long i_aie = 0;
+
+    if (opt > 0) {
       char *code = safe_alloc(BUFSIZ);
-      sprintf(code, "imul rax, [rsp + %ld]\n", i * 8 + aie_info->rank * 8);
+      sprintf(code, "mov rax, [rsp + 0]\n");
+      vector_append(fn->code, code);
+      i_aie = 1;
+    } else {
+      vector_append(fn->code, "mov rax, 0\n");
+    }
+
+    for (; i_aie < aie->exprs->size; i_aie++) {
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "imul rax, [rsp + %ld]\n", i_aie * 8 + gap_aie);
       vector_append(fn->code, code);
 
       code = safe_alloc(BUFSIZ);
-      sprintf(code, "add rax, [rsp + %ld]\n", i * 8);
+      sprintf(code, "add rax, [rsp + %ld]\n", i_aie * 8);
       vector_append(fn->code, code);
     }
 
     char *code = safe_alloc(BUFSIZ);
-    sprintf(code, "imul rax, %ld\n", sizeof_t(aie_info->type));
+    if (opt > 0 && is_pow_2(sizeof_t(aie_info->type)))
+      sprintf(code, "shl rax, %ld\n", (long)log2(sizeof_t(aie_info->type)));
+    else
+      sprintf(code, "imul rax, %ld\n", sizeof_t(aie_info->type));
     vector_append(fn->code, code);
 
     code = safe_alloc(BUFSIZ);
-    sprintf(code, "add rax, [rsp + %ld]\n",
-            aie->exprs->size * 8 + aie_info->rank * 8);
+    sprintf(code, "add rax, [rsp + %ld]\n", aie->exprs->size * 8 + gap_aie);
     vector_append(fn->code, code);
+    if (opt > 0) {
+      long space = 0;
+      for (long i = 0; i < aie->exprs->size; i++) {
+        expr *cur = vector_get_expr(aie->exprs, i);
+        fn->stk->shadow->size -= 1;
+        fn->stk->size -= sizeof_t(cur->t_type);
+        space += sizeof_t(cur->t_type);
+      }
 
-    for (long i = 0; i < aie->exprs->size; i++) {
-      expr *cur = vector_get_expr(aie->exprs, i);
-      t *type = stack_pop(fn, NULL);
-      if (!t_eq(cur->t_type, type))
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "add rsp, %ld\n", space);
+      vector_append(fn->code, code);
+    } else {
+      for (long i = 0; i < aie->exprs->size; i++) {
+        expr *cur = vector_get_expr(aie->exprs, i);
+        t *type = stack_pop(fn, NULL);
+        if (!t_eq(cur->t_type, type))
+          ir_error("Stack error in INDEXEXPR");
+      }
+    }
+    if (!local_arr) {
+      t *aie_e_t = stack_pop(fn, NULL);
+      if (!t_eq(aie_e_t, aie->expr->t_type))
         ir_error("Stack error in INDEXEXPR");
     }
-    t *aie_e_t = stack_pop(fn, NULL);
-    if (!t_eq(aie_e_t, aie->expr->t_type))
-      ir_error("Stack error in INDEXEXPR");
 
     stack_alloc(fn, aie_info->type);
     stack_copy(fn, aie_info->type, "rax", "rsp");
@@ -603,20 +702,55 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     // Result index
     long offset = sizeof_t(aloop->expr->t_type);
-    vector_append(fn->code, "mov rax, 0\n");
-    for (long i = 0; i < aloop->exprs->size; i++) {
+    long i_aloop = 0;
+
+    if (opt > 0) {
+      char *code = safe_alloc(BUFSIZ);
+      sprintf(code, "mov rax, [rsp + %ld]\n", offset);
+      vector_append(fn->code, code);
+      i_aloop = 1;
+    } else {
+      vector_append(fn->code, "mov rax, 0\n");
+    }
+
+    for (; i_aloop < aloop->exprs->size; i_aloop++) {
       aloop_code = safe_alloc(BUFSIZ);
-      long mul_val = offset + i * 8 + aloop_info->rank * 8;
-      long add_val = offset + i * 8;
-      sprintf(aloop_code, "imul rax, [rsp + %ld]\nadd rax, [rsp + %ld]\n",
-              mul_val, add_val);
+
+      expr *cur_expr = vector_get_expr(aloop->exprs, i_aloop);
+      int_expr *cur_ie = NULL;
+      if (cur_expr->type == INTEXPR)
+        cur_ie = (int_expr *)cur_expr->node;
+
+      if (opt > 0 && cur_ie != NULL &&
+          ((cur_ie->val <= INT_MAX && cur_ie->val >= INT_MIN) ||
+           is_pow_2(cur_ie->val))) {
+        long mul_val = cur_ie->val;
+        long add_val = offset + i_aloop * 8;
+        if (is_pow_2(mul_val)) {
+          sprintf(aloop_code, "shl rax, %d\nadd rax, [rsp + %ld]\n",
+                  (int)log2(mul_val), add_val);
+        } else {
+          sprintf(aloop_code, "imul rax, %d\nadd rax, [rsp + %ld]\n",
+                  (int)mul_val, add_val);
+        }
+      } else {
+        long mul_val = offset + i_aloop * 8 + aloop_info->rank * 8;
+        long add_val = offset + i_aloop * 8;
+        sprintf(aloop_code, "imul rax, [rsp + %ld]\nadd rax, [rsp + %ld]\n",
+                mul_val, add_val);
+      }
       vector_append(fn->code, aloop_code);
     }
 
     aloop_code = safe_alloc(BUFSIZ);
-    sprintf(aloop_code, "imul rax, %ld\nadd rax, [rsp + %ld]\n",
-            sizeof_t(aloop_info->type),
-            offset + aloop->exprs->size * 8 + aloop_info->rank * 8);
+    if (opt > 0 && is_pow_2(sizeof_t(aloop_info->type)))
+      sprintf(aloop_code, "shl rax, %ld\nadd rax, [rsp + %ld]\n",
+              (long)log2(sizeof_t(aloop_info->type)),
+              offset + aloop->exprs->size * 8 + aloop_info->rank * 8);
+    else
+      sprintf(aloop_code, "imul rax, %ld\nadd rax, [rsp + %ld]\n",
+              sizeof_t(aloop_info->type),
+              offset + aloop->exprs->size * 8 + aloop_info->rank * 8);
     vector_append(fn->code, aloop_code);
 
     // Copy data
@@ -655,4 +789,48 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
   default:
     ir_error("EXPR is not implemented yet");
   }
+}
+
+bool is_bool_cast(if_expr *ife) {
+  if (ife->then_expr->type != INTEXPR)
+    return false;
+  int_expr *then_expr = (int_expr *)ife->then_expr->node;
+  if (then_expr->val != 1)
+    return false;
+
+  if (ife->else_expr->type != INTEXPR)
+    return false;
+  int_expr *else_expr = (int_expr *)ife->else_expr->node;
+  if (else_expr->val != 0)
+    return false;
+
+  return true;
+}
+
+bool is_pow_2(long num) { return num > 0 && (num & (num - 1)) == 0; }
+
+bool is_opt_mult(binop_expr *boe) {
+  if (boe->op != MULTOP)
+    return false;
+
+  if (boe->lhs->type != INTEXPR && boe->rhs->type != INTEXPR)
+    return false;
+
+  if (boe->lhs->type == INTEXPR && boe->rhs->type == INTEXPR) {
+    int_expr *lhs_ie = (int_expr *)boe->lhs->node;
+    int_expr *rhs_ie = (int_expr *)boe->rhs->node;
+
+    if (!is_pow_2(lhs_ie->val) && !is_pow_2(rhs_ie->val))
+      return false;
+  } else if (boe->lhs->type == INTEXPR) {
+    int_expr *lhs_ie = (int_expr *)boe->lhs->node;
+    if (!is_pow_2(lhs_ie->val))
+      return false;
+  } else {
+    int_expr *rhs_ie = (int_expr *)boe->rhs->node;
+    if (!is_pow_2(rhs_ie->val))
+      return false;
+  }
+
+  return true;
 }

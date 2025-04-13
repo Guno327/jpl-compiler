@@ -12,6 +12,7 @@
 #include <string.h>
 
 typedef enum { LEX, PARSE, TYPECHECK, C_IR, ASM_IR, ALL } RunMode;
+int opt = 0;
 
 int main(int argc, char **argv) {
   RunMode mode = ASM_IR;
@@ -36,6 +37,8 @@ int main(int argc, char **argv) {
       mode = ASM_IR;
     else if (!strcmp(argv[i], "-v"))
       set_verbose(true);
+    else if (!strcmp(argv[i], "-O1"))
+      opt = 1;
     else
       filename = argv[i];
   }

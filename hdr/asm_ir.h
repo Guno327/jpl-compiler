@@ -18,6 +18,8 @@ struct asm_prog;
 struct asm_fn;
 struct stack;
 
+extern int opt;
+
 typedef struct {
   vector *lvals;
   vector *args;
@@ -68,8 +70,6 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
-void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, expr *e,
-                  long offset);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
 
 void stack_push(asm_fn *fn, char *reg);
@@ -92,4 +92,8 @@ long stack_lookup(stack *stk, char *var);
 
 bool is_int_reg(char *reg);
 bool is_float_reg(char *reg);
+bool is_bool_cast(if_expr *ife);
+bool is_pow_2(long num);
+bool is_opt_mult(binop_expr *bop);
+
 #endif
