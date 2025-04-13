@@ -93,7 +93,9 @@ long stack_lookup(stack *stk, char *var);
 bool is_int_reg(char *reg);
 bool is_float_reg(char *reg);
 bool is_bool_cast(if_expr *ife);
-bool is_pow_2(long num);
+bool is_pow_2(long n);
 bool is_opt_mult(binop_expr *bop);
+
+long log2(long n);
 
 #endif

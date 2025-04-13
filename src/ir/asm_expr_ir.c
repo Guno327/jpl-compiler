@@ -3,7 +3,6 @@
 #include "safe.h"
 #include "vector_get.h"
 #include <limits.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -807,7 +806,7 @@ bool is_bool_cast(if_expr *ife) {
   return true;
 }
 
-bool is_pow_2(long num) { return num > 0 && (num & (num - 1)) == 0; }
+bool is_pow_2(long n) { return n > 0 && (n & (n - 1)) == 0; }
 
 bool is_opt_mult(binop_expr *boe) {
   if (boe->op != MULTOP)
@@ -833,4 +832,12 @@ bool is_opt_mult(binop_expr *boe) {
   }
 
   return true;
+}
+
+long log2(long n) {
+  int log = 0;
+  while ((n /= 2) > 0) {
+    log++;
+  }
+  return log;
 }
