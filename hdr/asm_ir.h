@@ -66,6 +66,12 @@ typedef struct asm_prog {
   stack *stk;
 } asm_prog;
 
+typedef struct graph {
+  vector *nodes;
+  vector *edges_from;
+  vector *edges_to;
+} graph;
+
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
@@ -95,6 +101,13 @@ bool is_float_reg(char *reg);
 bool is_bool_cast(if_expr *ife);
 bool is_pow_2(long n);
 bool is_opt_mult(binop_expr *bop);
+bool is_tc(array_loop_expr *aloop);
+bool is_tc_body(expr *e);
+bool is_tc_primitive(expr *e);
+
+graph *build_tc_graph(array_loop_expr *aloop);
+void build_tc_edges(graph *g, expr *body);
+vector *build_topo_order(graph *g);
 
 long log2(long n);
 

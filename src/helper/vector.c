@@ -319,3 +319,16 @@ long vector_get_num(vector *v, long idx) {
     return 0;
   return ((long *)v->data)[idx];
 }
+
+bool vector_contains_str(vector *v, char *str) {
+  if (v == NULL)
+    return false;
+
+  for (int i = 0; i < v->size; i++) {
+    char *cur = vector_get_str(v, i);
+    if (!strcmp(cur, str))
+      return true;
+  }
+
+  return false;
+}
