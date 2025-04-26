@@ -77,6 +77,8 @@ char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
+void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, vector *exprs,
+                  long offset, long gap, bool shl, bool lookup);
 
 void stack_push(asm_fn *fn, char *reg);
 t *stack_pop(asm_fn *fn, char *reg);
@@ -108,6 +110,7 @@ bool is_tc_primitive(expr *e);
 graph *build_tc_graph(array_loop_expr *aloop);
 void build_tc_edges(graph *g, expr *body);
 vector *build_topo_order(graph *g);
+long get_tc_bound(array_loop_expr *aloop, char *var);
 
 long log2(long n);
 
