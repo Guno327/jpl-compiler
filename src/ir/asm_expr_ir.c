@@ -706,6 +706,9 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       expr_asmgen(prog, fn, tc_sum->expr);
 
       // Compute array index
+      long offset = 8 + tc_sum->exprs->size * 8;
+      long gap = aloop_info->rank * 8 + tc_sum->exprs->size * 8;
+      index_asmgen(prog, fn, aloop_info, aloop->exprs, offset, gap, true, true);
 
       // Add body to computed index
       stack_pop(fn, "xmm0");
