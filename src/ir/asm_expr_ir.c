@@ -630,7 +630,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       sum_loop_expr *tc_sum = (sum_loop_expr *)aloop->expr->node;
 
       // Push bounds
-      for (int i = 0; i < aloop->exprs->size; i++) {
+      for (int i = aloop->exprs->size - 1; i >= 0; i--) {
         expr *cur = vector_get_expr(aloop->exprs, i);
         expr_asmgen(prog, fn, cur);
 
