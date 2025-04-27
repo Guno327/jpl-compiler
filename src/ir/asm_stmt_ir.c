@@ -22,6 +22,7 @@ void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s) {
     case VOID_T:
       stack_pop(fn, "rax");
       break;
+    case STRUCT_T:
     case ARRAY_T:;
       char *code = safe_alloc(BUFSIZ);
       sprintf(code, "mov rax, [rbp - %ld]\n", fn->call->ret_pos);

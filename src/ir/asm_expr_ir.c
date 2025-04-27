@@ -50,6 +50,23 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       stack_rechar(fn, e->t_type, 1);
     }
     break;
+  case VOIDEXPR:
+    if (opt > 0) {
+      stack_push(fn, "qword 1");
+    } else {
+      char *ve_code = NULL;
+      char *ve_const = genconst(prog, "dq 1");
+
+      ve_code = safe_alloc(1);
+      ve_code = safe_strcat(ve_code, "mov rax, [rel ");
+      ve_code = safe_strcat(ve_code, ve_const);
+      ve_code = safe_strcat(ve_code, "]\n");
+      vector_append(fn->code, ve_code);
+
+      stack_push(fn, "rax");
+      stack_rechar(fn, e->t_type, 1);
+    }
+    break;
   case TRUEEXPR:
   case FALSEEXPR:;
     char *be_val = safe_alloc(BUFSIZ);
@@ -139,6 +156,38 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
         vector_append(fn->code, code);
         stack_push(fn, "rax");
       }
+      break;
+    }
+
+    else if (boe->op == ANDOP || boe->op == OROP) {
+      expr_asmgen(prog, fn, boe->lhs);
+      stack_pop(fn, "rax");
+      vector_append(fn->code, "cmp rax, 0\n");
+
+      char *boe_jmp = jmp_asmgen(prog);
+      char *code = safe_alloc(1);
+
+      if (boe->op == ANDOP)
+        code = safe_strcat(code, "je ");
+      else
+        code = safe_strcat(code, "jne ");
+
+      code = safe_strcat(code, boe_jmp);
+      code = safe_strcat(code, "\n");
+      vector_append(fn->code, code);
+
+      expr_asmgen(prog, fn, boe->rhs);
+      stack_pop(fn, "rax");
+
+      code = safe_alloc(BUFSIZ);
+      sprintf(code, "%s:\n", boe_jmp);
+      vector_append(fn->code, code);
+
+      stack_push(fn, "rax");
+      t *bool_t = safe_alloc(sizeof(t));
+      bool_t->type = BOOL_T;
+      bool_t->info = NULL;
+      stack_rechar(fn, bool_t, 1);
       break;
     }
 
@@ -249,9 +298,8 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
         boe_code =
             safe_strcat(boe_code, "cmp rax, r10\nsetne al\nand rax, 1\n");
       break;
-    case ANDOP:
-    case OROP:
-      ir_error("BINOPEXPR not yet implemented");
+    default:
+      ir_error("BINOPEXPR error");
     }
     vector_append(fn->code, boe_code);
 
@@ -265,6 +313,18 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       stack_push(fn, "rax");
       stack_rechar(fn, e->t_type, 1);
     }
+    break;
+  case STRUCTLITERALEXPR:;
+    struct_literal_expr *sle = (struct_literal_expr *)e->node;
+    for (long i = sle->exprs->size - 1; i >= 0; i--) {
+      expr *cur = vector_get_expr(sle->exprs, i);
+      expr_asmgen(prog, fn, cur);
+    }
+
+    t *sle_t = safe_alloc(sizeof(t));
+    sle_t->type = STRUCT_T;
+    sle_t->info = struct_lookup(prog, sle->var);
+    stack_rechar(fn, sle_t, sle->exprs->size);
     break;
   case ARRAYLITERALEXPR:;
     array_literal_expr *ale = (array_literal_expr *)e->node;
@@ -341,18 +401,27 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
     if (!strcmp(fn->name, ce->var)) {
       ce_fn = fn;
     } else {
-      for (long i = 0; i < prog->fns->size; i++) {
-        asm_fn *cur = vector_get_asm_fn(prog->fns, i);
+      for (long i = 0; i < prog->externs->size; i++) {
+        asm_fn *cur = vector_get_asm_fn(prog->externs, i);
         if (!strcmp(ce->var, cur->name)) {
           ce_fn = cur;
           break;
         }
       }
-
       if (ce_fn == NULL) {
-        char *msg = safe_alloc(BUFSIZ);
-        sprintf(msg, "Could not find function '%s'", ce->var);
-        ir_error(msg);
+        for (long i = 0; i < prog->fns->size; i++) {
+          asm_fn *cur = vector_get_asm_fn(prog->fns, i);
+          if (!strcmp(ce->var, cur->name)) {
+            ce_fn = cur;
+            break;
+          }
+        }
+
+        if (ce_fn == NULL) {
+          char *msg = safe_alloc(BUFSIZ);
+          sprintf(msg, "Could not find function '%s'", ce->var);
+          ir_error(msg);
+        }
       }
     }
     call_conv *call = ce_fn->call;
@@ -534,6 +603,35 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
 
     stack_alloc(fn, aie_info->type);
     stack_copy(fn, aie_info->type, "rax", "rsp");
+    break;
+  case DOTEXPR:;
+    dot_expr *de = (dot_expr *)e->node;
+    expr_asmgen(prog, fn, de->expr);
+
+    long de_start = stack_lookup(fn->stk, de->var);
+    long de_size = sizeof_t(e->t_type);
+    long de_end = sizeof_t(de->expr->t_type) - de_size;
+
+    char *de_start_cpy = safe_alloc(BUFSIZ);
+    char *de_end_cpy = safe_alloc(BUFSIZ);
+    sprintf(de_start_cpy, "rsp + %ld", de_start);
+    sprintf(de_end_cpy, "rsp + %ld", de_end);
+    stack_copy(fn, e->t_type, de_start_cpy, de_end_cpy);
+
+    char *de_code = safe_alloc(BUFSIZ);
+    sprintf(de_code, "add rsp, %ld\n", de_end);
+    vector_append(fn->code, de_code);
+
+    t *de_pop = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
+    if (de_pop->type != STRUCT_T) {
+      char *msg = safe_alloc(BUFSIZ);
+      sprintf(msg, "Expected STRUCT_T in DOTEXPR, got %s", t_to_str(de_pop));
+      ir_error(msg);
+    }
+
+    fn->stk->shadow->size -= 1;
+    vector_append(fn->stk->shadow, e->t_type);
+    fn->stk->size -= de_end;
     break;
   case SUMLOOPEXPR:;
     sum_loop_expr *sloop = (sum_loop_expr *)e->node;
@@ -846,8 +944,6 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       stack_rechar(fn, array_t, aloop_info->rank + 1);
       break;
     }
-  default:
-    ir_error("EXPR is not implemented yet");
   }
 }
 

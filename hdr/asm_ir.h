@@ -19,6 +19,8 @@ struct asm_fn;
 struct stack;
 
 extern int opt;
+extern char *int_registers[];
+extern char *float_registers[];
 
 typedef struct {
   vector *lvals;
@@ -64,6 +66,8 @@ typedef struct asm_prog {
   long jmp_ctr;
   ctx *ctx;
   stack *stk;
+  vector *structs;
+  vector *externs;
 } asm_prog;
 
 typedef struct graph {
@@ -79,6 +83,7 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
 void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, vector *exprs,
                   long offset, long gap, bool shl, bool lookup);
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
 
 void stack_push(asm_fn *fn, char *reg);
 t *stack_pop(asm_fn *fn, char *reg);
@@ -88,7 +93,7 @@ void stack_rechar(asm_fn *fn, t *type, long size);
 void stack_free(asm_fn *fn, size_t bytes);
 
 char *genconst(asm_prog *prog, char *val);
-void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
+struct_info *struct_lookup(asm_prog *prog, char *name);
 char *asm_prog_to_str(asm_prog *prog);
 
 void stack_update_pos(asm_fn *fn, char *name, long pos);
@@ -111,6 +116,9 @@ graph *build_tc_graph(array_loop_expr *aloop);
 void build_tc_edges(graph *g, expr *body);
 vector *build_topo_order(graph *g);
 long get_tc_bound(array_loop_expr *aloop, char *var);
+
+void get_time(asm_prog *prog, asm_fn *fn);
+void setup_externs(asm_prog *prog);
 
 long log2(long n);
 

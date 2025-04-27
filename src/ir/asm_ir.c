@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
+char *int_registers[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *float_registers[] = {"xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+                           "xmm5", "xmm6", "xmm7", "xmm8"};
+
 asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   // Setup prog
   asm_prog *prog = safe_alloc(sizeof(asm_prog));
@@ -14,14 +18,39 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   prog->data = safe_alloc(sizeof(vector));
   prog->const_names = safe_alloc(sizeof(vector));
   prog->const_vals = safe_alloc(sizeof(vector));
+  prog->structs = safe_alloc(sizeof(vector));
   prog->jmp_ctr = 1;
 
   vector_init(prog->fns, 8, ASMFNVECTOR);
   vector_init(prog->data, 8, STRVECTOR);
   vector_init(prog->const_names, 8, STRVECTOR);
   vector_init(prog->const_vals, 8, STRVECTOR);
+  vector_init(prog->structs, 8, STRUCTINFOVECTOR);
 
   prog->stk = safe_alloc(sizeof(stack));
+  setup_externs(prog);
+
+  // Setup RGBA
+  struct_info *rgba_info = safe_alloc(sizeof(struct_info));
+  rgba_info->name = "rgba";
+  rgba_info->ts = safe_alloc(sizeof(vector));
+  rgba_info->vars = safe_alloc(sizeof(vector));
+  vector_init(rgba_info->ts, 4, TVECTOR);
+  vector_init(rgba_info->vars, 4, STRVECTOR);
+
+  t *float_t = safe_alloc(sizeof(t));
+  float_t->type = FLOAT_T;
+  float_t->info = NULL;
+
+  for (int i = 0; i < 4; i++)
+    vector_append(rgba_info->ts, float_t);
+
+  vector_append(rgba_info->vars, "r");
+  vector_append(rgba_info->vars, "g");
+  vector_append(rgba_info->vars, "b");
+  vector_append(rgba_info->vars, "a");
+
+  vector_append(prog->structs, rgba_info);
 
   // Setup jpl_main
   asm_fn *jpl_main = safe_alloc(sizeof(asm_fn));
@@ -332,4 +361,129 @@ void stack_free(asm_fn *fn, size_t bytes) {
   char *code = safe_alloc(BUFSIZ);
   sprintf(code, "add rsp, %ld\n", bytes);
   vector_append(fn->code, code);
+}
+
+struct_info *struct_lookup(asm_prog *prog, char *name) {
+  for (int i = 0; i < prog->structs->size; i++) {
+    struct_info *cur = vector_get_struct_info(prog->structs, i);
+    if (!strcmp(name, cur->name))
+      return cur;
+  }
+
+  char *msg = safe_alloc(BUFSIZ);
+  sprintf(msg, "Could not find struct '%s'", name);
+  ir_error(msg);
+  return NULL;
+}
+
+void setup_externs(asm_prog *prog) {
+  vector *externs = safe_alloc(sizeof(vector));
+  vector_init(externs, 22, ASMFNVECTOR);
+  prog->externs = externs;
+
+  t *float_t = safe_alloc(sizeof(t));
+  float_t->type = FLOAT_T;
+  float_t->info = NULL;
+
+  t *int_t = safe_alloc(sizeof(t));
+  int_t->type = INT_T;
+  int_t->info = NULL;
+
+  // sqrt, exp, sin, cos, tan, asin, acos, atan, log
+  call_conv *ftf = safe_alloc(sizeof(call_conv));
+  ftf->ret = "xmm0";
+  ftf->ret_t = float_t;
+  ftf->args = safe_alloc(sizeof(vector));
+  vector_init(ftf->args, 1, STRVECTOR);
+  vector_append(ftf->args, float_registers[0]);
+
+  asm_fn *sqrt = safe_alloc(sizeof(asm_fn));
+  sqrt->call = ftf;
+  sqrt->name = "sqrt";
+  vector_append(externs, sqrt);
+
+  asm_fn *exp = safe_alloc(sizeof(asm_fn));
+  exp->call = ftf;
+  exp->name = "exp";
+  vector_append(externs, exp);
+
+  asm_fn *sin = safe_alloc(sizeof(asm_fn));
+  sin->call = ftf;
+  sin->name = "sin";
+  vector_append(externs, sin);
+
+  asm_fn *cos = safe_alloc(sizeof(asm_fn));
+  cos->call = ftf;
+  cos->name = "cos";
+  vector_append(externs, cos);
+
+  asm_fn *tan = safe_alloc(sizeof(asm_fn));
+  tan->call = ftf;
+  tan->name = "tan";
+  vector_append(externs, tan);
+
+  asm_fn *asin = safe_alloc(sizeof(asm_fn));
+  asin->call = ftf;
+  asin->name = "asin";
+  vector_append(externs, asin);
+
+  asm_fn *acos = safe_alloc(sizeof(asm_fn));
+  acos->call = ftf;
+  acos->name = "acos";
+  vector_append(externs, acos);
+
+  asm_fn *atan = safe_alloc(sizeof(asm_fn));
+  atan->call = ftf;
+  atan->name = "atan";
+  vector_append(externs, atan);
+
+  asm_fn *log = safe_alloc(sizeof(asm_fn));
+  log->call = ftf;
+  log->name = "log";
+  vector_append(externs, log);
+
+  // pow atan2
+  call_conv *fftf = safe_alloc(sizeof(call_conv));
+  fftf->ret = "xmm0";
+  fftf->ret_t = float_t;
+  fftf->args = safe_alloc(sizeof(vector));
+  vector_init(fftf->args, 2, STRVECTOR);
+  vector_append(fftf->args, float_registers[0]);
+  vector_append(fftf->args, float_registers[1]);
+
+  asm_fn *pow = safe_alloc(sizeof(asm_fn));
+  pow->call = fftf;
+  pow->name = "pow";
+  vector_append(externs, pow);
+
+  asm_fn *atan2 = safe_alloc(sizeof(asm_fn));
+  atan2->call = fftf;
+  atan2->name = "atan2";
+  vector_append(externs, atan2);
+
+  // to_float
+  call_conv *itf = safe_alloc(sizeof(call_conv));
+  itf->ret = "xmm0";
+  itf->ret_t = float_t;
+  itf->args = safe_alloc(sizeof(vector));
+  vector_init(itf->args, 1, STRVECTOR);
+  vector_append(itf->args, int_registers[0]);
+
+  asm_fn *to_float = safe_alloc(sizeof(asm_fn));
+  to_float->call = itf;
+  to_float->name = "to_float";
+  vector_append(externs, to_float);
+
+  // to_int
+  call_conv *fti = safe_alloc(sizeof(call_conv));
+  fti->ret = "rax";
+  fti->ret_t = int_t;
+  fti->args = safe_alloc(sizeof(vector));
+  vector_init(fti->args, 1, STRVECTOR);
+  vector_append(fti->args, float_registers[0]);
+
+  asm_fn *to_int = safe_alloc(sizeof(asm_fn));
+  to_int->call = fti;
+  to_int->name = "to_int";
+  vector_append(externs, to_int);
 }
