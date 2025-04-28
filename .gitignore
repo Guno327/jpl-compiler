@@ -7,4 +7,3 @@ compiler
 vgcore.*
 grader
 rt
-test/*
