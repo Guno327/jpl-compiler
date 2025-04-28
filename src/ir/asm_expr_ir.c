@@ -809,8 +809,13 @@ void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e) {
       index_asmgen(prog, fn, aloop_info, aloop->exprs, offset, gap, true, true);
 
       // Add body to computed index
-      stack_pop(fn, "xmm0");
-      vector_append(fn->code, "addsd xmm0, [rax]\nmovsd [rax], xmm0\n");
+      if (tc_sum->expr->t_type->type == FLOAT_T) {
+        stack_pop(fn, "xmm0");
+        vector_append(fn->code, "addsd xmm0, [rax]\nmovsd [rax], xmm0\n");
+      } else {
+        stack_pop(fn, "r10");
+        vector_append(fn->code, "add [rax], r10\n");
+      }
 
       // Increment (topo ordering)
       for (long i = topo->size - 1; i >= 0; i--) {
@@ -1003,7 +1008,8 @@ bool is_tc(array_loop_expr *aloop) {
   if (aloop->expr->type != SUMLOOPEXPR)
     return false;
 
-  if (aloop->expr->t_type->type != FLOAT_T)
+  if (aloop->expr->t_type->type != FLOAT_T &&
+      aloop->expr->t_type->type != INT_T)
     return false;
 
   sum_loop_expr *sloop = (sum_loop_expr *)aloop->expr->node;
@@ -1071,14 +1077,6 @@ graph *build_tc_graph(array_loop_expr *aloop) {
   for (int i = 0; i < sloop->vars->size; i++) {
     char *cur = vector_get_str(sloop->vars, i);
     vector_append(g->nodes, cur);
-
-    if (i != sloop->vars->size - 1) {
-      for (int j = i + 1; j < sloop->vars->size; j++) {
-        char *cur_j = vector_get_str(sloop->vars, j);
-        vector_append(g->edges_from, cur);
-        vector_append(g->edges_to, cur_j);
-      }
-    }
   }
 
   build_tc_edges(g, sloop->expr);
