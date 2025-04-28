@@ -7,5 +7,4 @@ compiler
 vgcore.*
 grader
 rt
-*.clean
-test.jpl
+test/*

@@ -1,6 +1,0 @@
-let W = 300
-let v1 = array[j : W] 1
-let v2 = array[j : W] 2
-let lvc = array[i: W, j: W, k: W] 1
-
-let out = array[i: W] sum[k: W, j: W] lvc[i, j, k] * v1[j] * v2[k]
