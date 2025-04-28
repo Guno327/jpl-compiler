@@ -8,3 +8,4 @@ vgcore.*
 grader
 rt
 *.clean
+test.jpl
