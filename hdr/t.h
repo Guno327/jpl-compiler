@@ -44,5 +44,4 @@ typedef struct {
 } var_info;
 
 bool t_eq(t *lhs, t *rhs);
-long sizeof_t(t *type);
 #endif

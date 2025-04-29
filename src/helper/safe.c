@@ -22,3 +22,17 @@ char *safe_realloc_str(char *ptr, long size) {
     tmp = realloc(ptr, size);
   return ptr = tmp;
 }
+
+char *safe_replace(char *str, char find, char replace) {
+  char *result = safe_alloc(strlen(str) + 1);
+  int offset = 0;
+  for (size_t i = 0; i < strlen(str); i++) {
+    if (str[i] == find && replace == '\0')
+      offset += 1;
+    else if (str[i] == find)
+      result[i - offset] = replace;
+    else
+      result[i - offset] = str[i];
+  }
+  return result;
+}

@@ -27,7 +27,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
   switch (c->type) {
   case SHOWCMD:;
     show_cmd *sc = (show_cmd *)c->node;
-    stack_align(fn, 16 + sizeof_t(sc->expr->t_type));
+    stack_align(prog, fn, 16 + sizeof_t(prog, sc->expr->t_type));
     expr_asmgen(prog, fn, sc->expr);
 
     char *sc_type = genshowt(sc->expr->t_type);
@@ -45,7 +45,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     sc_code = safe_strcat(sc_code, "call _show\n");
     vector_append(fn->code, sc_code);
 
-    t *sc_pop = stack_pop(fn, NULL);
+    t *sc_pop = stack_pop(prog, fn, NULL);
     if (!t_eq(sc_pop, sc->expr->t_type)) {
       char *msg = safe_alloc(BUFSIZ);
       sprintf(msg, "Expected stack '%s' got '%s'", t_to_str(sc->expr->t_type),
@@ -90,14 +90,14 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
 
     // If stack ret
     long int_cnt = 0;
-    if (fc->type->type == ARRAYTYPE) {
-      stack_push(fc_fn, "rdi");
+    if (fc->type->type == ARRAYTYPE || fc->type->type == STRUCTTYPE) {
+      stack_push(prog, fc_fn, "rdi");
       int_cnt += 1;
       t int_t = {INT_T, NULL};
-      stack_rechar(fc_fn, &int_t, 1);
+      stack_rechar(prog, fc_fn, &int_t, 1);
       fc_fn->call->ret_pos = 8;
     }
-    fc_fn->call->ret_t = type_to_t(fc->type);
+    fc_fn->call->ret_t = type_to_t(prog, fc->type);
 
     // Build calling convention
     long float_cnt = 0;
@@ -124,7 +124,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       case ARRAYTYPE:
       case STRUCTTYPE:;
         // Fall through if int_cnt/float_cnt exceeds regs
-        long arg_size = sizeof_t(type_to_t(cur_bind->type));
+        long arg_size = sizeof_t(prog, type_to_t(prog, cur_bind->type));
         char *arg_offset = safe_alloc(BUFSIZ);
         sprintf(arg_offset, "%ld", stk_offset);
         stk_offset -= arg_size;
@@ -155,18 +155,18 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
       char *cur = vector_get_str(fc_fn->call->args, i);
 
       if (is_int_reg(cur)) {
-        stack_push(fc_fn, cur);
+        stack_push(prog, fc_fn, cur);
         t int_t = {INT_T, NULL};
-        stack_rechar(fc_fn, &int_t, 1);
-        push_lval(fc_fn, cur_lval, fc_fn->stk->size);
+        stack_rechar(prog, fc_fn, &int_t, 1);
+        push_lval(prog, fc_fn, cur_lval, fc_fn->stk->size);
       } else if (is_float_reg(cur)) {
-        stack_push(fc_fn, cur);
+        stack_push(prog, fc_fn, cur);
         t float_t = {FLOAT_T, NULL};
-        stack_rechar(fc_fn, &float_t, 1);
-        push_lval(fc_fn, cur_lval, fc_fn->stk->size);
+        stack_rechar(prog, fc_fn, &float_t, 1);
+        push_lval(prog, fc_fn, cur_lval, fc_fn->stk->size);
       } else {
         long offset = -1 * (fc_fn->stk->size - strtol(cur, NULL, 10) + 16);
-        push_lval(fc_fn, cur_lval, offset);
+        push_lval(prog, fc_fn, cur_lval, offset);
       }
     }
 
@@ -183,6 +183,15 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     // Implicit return
     if (!found_ret && fc_fn->stk->size > 0) {
       char *code = safe_alloc(BUFSIZ);
+      char *void_const = genconst(prog, "dq 1");
+
+      sprintf(code, "mov rax, [rel %s]\n", void_const);
+      vector_append(fc_fn->code, code);
+
+      stack_push(prog, fc_fn, "rax");
+      stack_pop(prog, fc_fn, "rax");
+
+      code = safe_alloc(BUFSIZ);
       sprintf(code, "add rsp, %ld\npop rbp\nret\n", fc_fn->stk->size);
       vector_append(fc_fn->code, code);
     }
@@ -192,9 +201,10 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
   case ASSERTCMD:;
     assert_cmd *asc = (assert_cmd *)c->node;
     expr_asmgen(prog, fn, asc->expr);
-    stack_pop(fn, "rax");
+    stack_pop(prog, fn, "rax");
     vector_append(fn->code, "cmp rax, 0\n");
-    assert_asmgen(prog, fn, "jne", asc->str);
+    char *asc_str = safe_replace(asc->str, '\"', '\0');
+    assert_asmgen(prog, fn, "jne", asc_str);
     break;
   case READCMD:;
     read_cmd *rc = (read_cmd *)c->node;
@@ -208,20 +218,20 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     t *rgba_2d = safe_alloc(sizeof(t));
     rgba_2d->type = ARRAY_T;
     rgba_2d->info = rgba_2d_info;
-    stack_alloc(fn, rgba_2d);
+    stack_alloc(prog, fn, rgba_2d);
 
     free(rgba_2d_info->type);
     free(rgba_2d_info);
     free(rgba_2d);
 
     vector_append(fn->code, "lea rdi, [rsp]\n");
-    stack_align(fn, 0);
+    stack_align(prog, fn, 0);
 
-    char *rc_str = safe_alloc(strlen(rc->str));
-    memcpy(rc_str, rc->str + 1, strlen(rc->str) - 2);
+    char *rc_str = safe_replace(rc->str, '"', '`');
 
     char *rc_val = safe_alloc(1);
-    sprintf(rc_val, "db `%s`, 0", rc_str);
+    sprintf(rc_val, "db %s, 0", rc_str);
+    free(rc_str);
 
     char *rc_const = genconst(prog, rc_val);
     char *rc_code = safe_alloc(BUFSIZ);
@@ -230,30 +240,41 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
 
     vector_append(fn->code, "call _read_image\n");
     stack_unalign(fn);
-    push_lval(fn, rc->lval, fn->stk->size);
+    push_lval(prog, fn, rc->lval, fn->stk->size);
     break;
   case WRITECMD:;
     write_cmd *wc = (write_cmd *)c->node;
-    stack_align(fn, 24); // size of rgba[,]
+    stack_align(prog, fn, 24); // size of rgba[,]
     expr_asmgen(prog, fn, wc->expr);
 
-    char *wc_const = genconst(prog, wc->str);
+    char *wc_str = safe_replace(wc->str, '"', '`');
+    char *wc_val = safe_alloc(BUFSIZ);
+    sprintf(wc_val, "db %s, 0", wc_str);
+    free(wc_str);
+
+    char *wc_const = genconst(prog, wc_val);
     char *wc_code = safe_alloc(BUFSIZ);
     sprintf(wc_code, "lea rdi, [rel %s]\n", wc_const);
     vector_append(fn->code, wc_code);
 
     vector_append(fn->code, "call _write_image\n");
-    stack_free(fn, sizeof_t(wc->expr->t_type));
+    stack_free(prog, fn, sizeof_t(prog, wc->expr->t_type));
     stack_unalign(fn);
     break;
   case PRINTCMD:;
     print_cmd *pc = (print_cmd *)c->node;
-    char *pc_const = genconst(prog, pc->str);
+
+    char *pc_str = safe_replace(pc->str, '"', '`');
+    char *pc_val = safe_alloc(BUFSIZ);
+    sprintf(pc_val, "db %s, 0", pc_str);
+    free(pc_str);
+
+    char *pc_const = genconst(prog, pc_val);
     char *pc_code = safe_alloc(BUFSIZ);
     sprintf(pc_code, "lea rdi, [rel %s]\n", pc_const);
     vector_append(fn->code, pc_code);
 
-    stack_align(fn, 0);
+    stack_align(prog, fn, 0);
     vector_append(fn->code, "call _print\n");
     stack_unalign(fn);
     break;
@@ -265,14 +286,14 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
 
     cmd_asmgen(prog, fn, tc->cmd);
     get_time(prog, fn);
-    stack_pop(fn, "xmm0");
+    stack_pop(prog, fn, "xmm0");
 
     char *tc_code = safe_alloc(BUFSIZ);
     sprintf(tc_code, "movsd xmm1, [rsp + %ld]\nsubsd xmm0, xmm1\n",
             fn->stk->size - stack_start);
     vector_append(fn->code, tc_code);
 
-    stack_align(fn, 0);
+    stack_align(prog, fn, 0);
     vector_append(fn->code, "call _print_time\n");
     stack_unalign(fn);
     break;
@@ -286,7 +307,9 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
     vector_init(stc_info->ts, stc->types->size, TVECTOR);
     for (int i = 0; i < stc->types->size; i++) {
       type *cur = vector_get_type(stc->types, i);
-      t *cur_t = type_to_t(cur);
+      t *cur_t = type_to_t(prog, cur);
+      if (cur_t->type == STRUCT_T)
+        cur_t->info = struct_lookup(prog, ((struct_info *)cur_t->info)->name);
       vector_append(stc_info->ts, cur_t);
     }
 
@@ -301,7 +324,7 @@ void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c) {
 
 void get_time(asm_prog *prog, asm_fn *fn) {
   // Prepare stack
-  stack_align(fn, 0);
+  stack_align(prog, fn, 0);
 
   // do call
   vector_append(fn->code, "call _get_time\n");
@@ -310,9 +333,9 @@ void get_time(asm_prog *prog, asm_fn *fn) {
   stack_unalign(fn);
 
   // push ret
-  stack_push(fn, "xmm0");
+  stack_push(prog, fn, "xmm0");
   t *float_t = safe_alloc(sizeof(t));
   float_t->type = FLOAT_T;
   float_t->info = NULL;
-  stack_rechar(fn, float_t, 1);
+  stack_rechar(prog, fn, float_t, 1);
 }

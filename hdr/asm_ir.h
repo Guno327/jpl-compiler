@@ -85,22 +85,22 @@ void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, vector *exprs,
                   long offset, long gap, bool shl, bool lookup);
 void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
 
-void stack_push(asm_fn *fn, char *reg);
-t *stack_pop(asm_fn *fn, char *reg);
-void stack_align(asm_fn *fn, long amount);
+void stack_push(asm_prog *prog, asm_fn *fn, char *reg);
+t *stack_pop(asm_prog *prog, asm_fn *fn, char *reg);
+void stack_align(asm_prog *prog, asm_fn *fn, long amount);
 void stack_unalign(asm_fn *fn);
-void stack_rechar(asm_fn *fn, t *type, long size);
-void stack_free(asm_fn *fn, size_t bytes);
+void stack_rechar(asm_prog *prog, asm_fn *fn, t *type, long size);
+void stack_free(asm_prog *prog, asm_fn *fn, size_t bytes);
 
 char *genconst(asm_prog *prog, char *val);
 struct_info *struct_lookup(asm_prog *prog, char *name);
 char *asm_prog_to_str(asm_prog *prog);
 
-void stack_update_pos(asm_fn *fn, char *name, long pos);
-void push_lval(asm_fn *fn, lval *lval, long base);
+void stack_update_pos(asm_prog *prog, asm_fn *fn, char *name, long pos);
+void push_lval(asm_prog *prog, asm_fn *fn, lval *lval, long base);
 void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
-void stack_alloc(asm_fn *fn, t *type);
-void stack_copy(asm_fn *fn, t *type, char *start, char *end);
+void stack_alloc(asm_prog *prog, asm_fn *fn, t *type);
+void stack_copy(asm_prog *prog, asm_fn *fn, t *type, char *start, char *end);
 long stack_lookup(stack *stk, char *var);
 
 bool is_int_reg(char *reg);
@@ -121,5 +121,7 @@ void get_time(asm_prog *prog, asm_fn *fn);
 void setup_externs(asm_prog *prog);
 
 long log2(long n);
+long sizeof_t(asm_prog *prog, t *type);
+t *type_to_t(asm_prog *prog, type *type);
 
 #endif

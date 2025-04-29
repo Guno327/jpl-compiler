@@ -195,14 +195,14 @@ void cmd_gencode(c_prog *prog, c_fn *fn, cmd *c) {
     vector_init(fn_def->jpl_names, 8, STRVECTOR);
 
     // Figure out return type
-    char *fc_ret = gent(prog, fn, type_to_t(fc->type));
+    char *fc_ret = gent(prog, fn, type_to_t(NULL, fc->type));
     fn_def->ret_type = fc_ret;
 
     // Create args list
     char *args_list = safe_alloc(1);
     for (long i = 0; i < fc->binds->size; i++) {
       binding *cur_bind = vector_get_binding(fc->binds, i);
-      char *cur_type = gent(prog, fn, type_to_t(cur_bind->type));
+      char *cur_type = gent(prog, fn, type_to_t(NULL, cur_bind->type));
 
       char *cur_var = NULL;
       switch (cur_bind->lval->type) {

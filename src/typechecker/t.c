@@ -38,31 +38,3 @@ bool t_eq(t *lhs, t *rhs) {
   }
   return false;
 }
-
-long sizeof_t(t *type) {
-  switch (type->type) {
-  case INT_T:
-    return 8;
-  case FLOAT_T:
-    return 8;
-  case BOOL_T:
-    return 8;
-  case VOID_T:
-    return 8;
-  case STRUCT_T:;
-    struct_info *sinfo = (struct_info *)type->info;
-    long s_size = 0;
-    for (long i = 0; i < sinfo->ts->size; i++) {
-      t *cur_t = vector_get_t(sinfo->ts, i);
-      s_size += sizeof_t(cur_t);
-    }
-    return s_size;
-  case ARRAY_T:;
-    array_info *ainfo = (array_info *)type->info;
-    return 8 + ainfo->rank * 8;
-  case FN_T:
-    return 0;
-  case PAD_T:;
-  }
-  return 0;
-}

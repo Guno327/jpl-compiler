@@ -240,7 +240,6 @@ char *genshowt(t *t) {
     result = safe_strcat(result, ")");
     break;
   case FN_T:
-    // TODO HW7
     sprintf(result, "(FnType)");
     break;
   default:
