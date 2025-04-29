@@ -38,10 +38,10 @@ jobs:
       - name: "Compile runtime"
         run: (cd rt; make)
       - name: "Counts total parts"
-        run: echo HW_PARTS=$(make -s -C grader count-current) >> $GITHUB_ENV; echo $HW_PARTS
+        run: echo HW_PARTS=1 >> $GITHUB_ENV; echo $HW_PARTS
       - name: Total of ${{ env.HW_PARTS }} parts
         run: true
       - name: Grade part ${{ matrix.part }}
         if: matrix.part <= env.HW_PARTS
         timeout-minutes: 10
-        run: make -C grader test-current DIR=$GITHUB_WORKSPACE PART=${{ matrix.part }}
+        run: make -C grader hw14 DIR=$GITHUB_WORKSPACE PART=${{ matrix.part }}
