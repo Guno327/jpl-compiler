@@ -1,6 +1,6 @@
 TEST= ./examples/red.jpl
 FLAGS = -p
-CFLAGS := -lm -Wall -O3 -g
+CFLAGS := -lm -Wall -O1 -g
 INCLUDES := -Ihdr
 $(CC)= clang
 SRC := $(shell find ./ -wholename "./src/*.c")

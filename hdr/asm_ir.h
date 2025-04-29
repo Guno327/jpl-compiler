@@ -19,6 +19,8 @@ struct asm_fn;
 struct stack;
 
 extern int opt;
+extern char *int_registers[];
+extern char *float_registers[];
 
 typedef struct {
   vector *lvals;
@@ -64,30 +66,41 @@ typedef struct asm_prog {
   long jmp_ctr;
   ctx *ctx;
   stack *stk;
+  vector *structs;
+  vector *externs;
 } asm_prog;
+
+typedef struct graph {
+  vector *nodes;
+  vector *edges_from;
+  vector *edges_to;
+} graph;
 
 asm_prog *gen_asm_ir(vector *cmds, ctx *global);
 char *jmp_asmgen(asm_prog *prog);
 void cmd_asmgen(asm_prog *prog, asm_fn *fn, cmd *c);
 void expr_asmgen(asm_prog *prog, asm_fn *fn, expr *e);
 void stmt_asmgen(asm_prog *prog, asm_fn *fn, stmt *s);
+void index_asmgen(asm_prog *prog, asm_fn *fn, array_info *info, vector *exprs,
+                  long offset, long gap, bool shl, bool lookup);
+void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
 
-void stack_push(asm_fn *fn, char *reg);
-t *stack_pop(asm_fn *fn, char *reg);
-void stack_align(asm_fn *fn, long amount);
+void stack_push(asm_prog *prog, asm_fn *fn, char *reg);
+t *stack_pop(asm_prog *prog, asm_fn *fn, char *reg);
+void stack_align(asm_prog *prog, asm_fn *fn, long amount);
 void stack_unalign(asm_fn *fn);
-void stack_rechar(asm_fn *fn, t *type, long size);
-void stack_free(asm_fn *fn, size_t bytes);
+void stack_rechar(asm_prog *prog, asm_fn *fn, t *type, long size);
+void stack_free(asm_prog *prog, asm_fn *fn, size_t bytes);
 
 char *genconst(asm_prog *prog, char *val);
-void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg);
+struct_info *struct_lookup(asm_prog *prog, char *name);
 char *asm_prog_to_str(asm_prog *prog);
 
-void stack_update_pos(asm_fn *fn, char *name, long pos);
-void push_lval(asm_fn *fn, lval *lval, long base);
+void stack_update_pos(asm_prog *prog, asm_fn *fn, char *name, long pos);
+void push_lval(asm_prog *prog, asm_fn *fn, lval *lval, long base);
 void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt);
-void stack_alloc(asm_fn *fn, t *type);
-void stack_copy(asm_fn *fn, t *type, char *start, char *end);
+void stack_alloc(asm_prog *prog, asm_fn *fn, t *type);
+void stack_copy(asm_prog *prog, asm_fn *fn, t *type, char *start, char *end);
 long stack_lookup(stack *stk, char *var);
 
 bool is_int_reg(char *reg);
@@ -95,7 +108,20 @@ bool is_float_reg(char *reg);
 bool is_bool_cast(if_expr *ife);
 bool is_pow_2(long n);
 bool is_opt_mult(binop_expr *bop);
+bool is_tc(array_loop_expr *aloop);
+bool is_tc_body(expr *e);
+bool is_tc_primitive(expr *e);
+
+graph *build_tc_graph(array_loop_expr *aloop);
+void build_tc_edges(graph *g, expr *body);
+vector *build_topo_order(graph *g);
+long get_tc_bound(array_loop_expr *aloop, char *var);
+
+void get_time(asm_prog *prog, asm_fn *fn);
+void setup_externs(asm_prog *prog);
 
 long log2(long n);
+long sizeof_t(asm_prog *prog, t *type);
+t *type_to_t(asm_prog *prog, type *type);
 
 #endif

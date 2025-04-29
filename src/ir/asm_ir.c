@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
+char *int_registers[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *float_registers[] = {"xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+                           "xmm5", "xmm6", "xmm7", "xmm8"};
+
 asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   // Setup prog
   asm_prog *prog = safe_alloc(sizeof(asm_prog));
@@ -14,14 +18,39 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   prog->data = safe_alloc(sizeof(vector));
   prog->const_names = safe_alloc(sizeof(vector));
   prog->const_vals = safe_alloc(sizeof(vector));
+  prog->structs = safe_alloc(sizeof(vector));
   prog->jmp_ctr = 1;
 
   vector_init(prog->fns, 8, ASMFNVECTOR);
   vector_init(prog->data, 8, STRVECTOR);
   vector_init(prog->const_names, 8, STRVECTOR);
   vector_init(prog->const_vals, 8, STRVECTOR);
+  vector_init(prog->structs, 8, STRUCTINFOVECTOR);
 
   prog->stk = safe_alloc(sizeof(stack));
+  setup_externs(prog);
+
+  // Setup RGBA
+  struct_info *rgba_info = safe_alloc(sizeof(struct_info));
+  rgba_info->name = "rgba";
+  rgba_info->ts = safe_alloc(sizeof(vector));
+  rgba_info->vars = safe_alloc(sizeof(vector));
+  vector_init(rgba_info->ts, 4, TVECTOR);
+  vector_init(rgba_info->vars, 4, STRVECTOR);
+
+  t *float_t = safe_alloc(sizeof(t));
+  float_t->type = FLOAT_T;
+  float_t->info = NULL;
+
+  for (int i = 0; i < 4; i++)
+    vector_append(rgba_info->ts, float_t);
+
+  vector_append(rgba_info->vars, "r");
+  vector_append(rgba_info->vars, "g");
+  vector_append(rgba_info->vars, "b");
+  vector_append(rgba_info->vars, "a");
+
+  vector_append(prog->structs, rgba_info);
 
   // Setup jpl_main
   asm_fn *jpl_main = safe_alloc(sizeof(asm_fn));
@@ -47,7 +76,7 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   lval *args = safe_alloc(sizeof(lval));
   args->node = alv;
   args->type = ARRAYLVALUE;
-  push_lval(jpl_main, args, -16);
+  push_lval(prog, jpl_main, args, -16);
 
   jpl_main->code = safe_alloc(sizeof(vector));
   vector_init(jpl_main->code, 8, STRVECTOR);
@@ -77,7 +106,7 @@ asm_prog *gen_asm_ir(vector *cmds, ctx *ctx) {
   return prog;
 }
 
-void stack_push(asm_fn *fn, char *reg) {
+void stack_push(asm_prog *prog, asm_fn *fn, char *reg) {
   t *placeholder = safe_alloc(sizeof(t));
   placeholder->type = INT_T;
   placeholder->info = NULL;
@@ -92,27 +121,27 @@ void stack_push(asm_fn *fn, char *reg) {
   vector_append(fn->code, code);
 }
 
-void stack_rechar(asm_fn *fn, t *type, long size) {
+void stack_rechar(asm_prog *prog, asm_fn *fn, t *type, long size) {
   size_t size_alloc = 0;
   for (long i = 0; i < size; i++) {
     t *popped = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
-    size_alloc += sizeof_t(popped);
+    size_alloc += sizeof_t(prog, popped);
     fn->stk->shadow->size -= 1;
-    fn->stk->size -= sizeof_t(popped);
+    fn->stk->size -= sizeof_t(prog, popped);
   }
 
-  if (size_alloc != sizeof_t(type)) {
+  if (size_alloc != sizeof_t(prog, type)) {
     ir_error("Invalid rechar");
   }
 
-  fn->stk->size += sizeof_t(type);
+  fn->stk->size += sizeof_t(prog, type);
   vector_append(fn->stk->shadow, type);
 }
 
-t *stack_pop(asm_fn *fn, char *reg) {
+t *stack_pop(asm_prog *prog, asm_fn *fn, char *reg) {
   t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
   fn->stk->shadow->size -= 1;
-  long t_size = sizeof_t(item);
+  long t_size = sizeof_t(prog, item);
   fn->stk->fn->stk->size -= t_size;
 
   char *code = safe_alloc(BUFSIZ);
@@ -147,7 +176,7 @@ char *genconst(asm_prog *prog, char *val) {
   return result;
 }
 
-void stack_align(asm_fn *fn, long size) {
+void stack_align(asm_prog *prog, asm_fn *fn, long size) {
   long leftovers = (fn->stk->size + size) % 16;
   if (leftovers != 0)
     leftovers = 16 - ((fn->stk->size + size) % 16);
@@ -198,7 +227,7 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg) {
   vector_append(fn->code, assert_code);
   assert_code = safe_alloc(1);
 
-  stack_align(fn, 0);
+  stack_align(prog, fn, 0);
 
   char *assert_var = safe_alloc(BUFSIZ + strlen(msg));
   sprintf(assert_var, "db `%s`, 0", msg);
@@ -218,26 +247,26 @@ void assert_asmgen(asm_prog *prog, asm_fn *fn, char *cond, char *msg) {
   vector_append(fn->code, assert_code);
 }
 
-void push_lval(asm_fn *fn, lval *lval, long base) {
+void push_lval(asm_prog *prog, asm_fn *fn, lval *lval, long base) {
   switch (lval->type) {
   case VARLVALUE:;
     var_lval *vlv = (var_lval *)lval->node;
-    stack_update_pos(fn, vlv->var, base);
+    stack_update_pos(prog, fn, vlv->var, base);
     break;
   case ARRAYLVALUE:;
     array_lval *alv = (array_lval *)lval->node;
-    stack_update_pos(fn, alv->var, base);
+    stack_update_pos(prog, fn, alv->var, base);
 
     for (long i = 0; i < alv->vars->size; i++) {
       char *cur_name = vector_get_str(alv->vars, i);
-      stack_update_pos(fn, cur_name, base);
+      stack_update_pos(prog, fn, cur_name, base);
       base -= 8;
     }
     break;
   }
 }
 
-void stack_update_pos(asm_fn *fn, char *name, long pos) {
+void stack_update_pos(asm_prog *prog, asm_fn *fn, char *name, long pos) {
   bool found = false;
   for (int i = 0; i < fn->stk->names->size; i++) {
     char *cur = vector_get_str(fn->stk->names, i);
@@ -269,11 +298,11 @@ void let_asmgen(asm_prog *prog, asm_fn *fn, void *let, bool is_stmt) {
   }
 
   expr_asmgen(prog, fn, e);
-  push_lval(fn, lv, fn->stk->size);
+  push_lval(prog, fn, lv, fn->stk->size);
 }
 
-void stack_alloc(asm_fn *fn, t *type) {
-  long type_size = sizeof_t(type);
+void stack_alloc(asm_prog *prog, asm_fn *fn, t *type) {
+  long type_size = sizeof_t(prog, type);
 
   vector_append(fn->stk->shadow, type);
   fn->stk->size += type_size;
@@ -283,8 +312,8 @@ void stack_alloc(asm_fn *fn, t *type) {
   vector_append(fn->code, code);
 }
 
-void stack_copy(asm_fn *fn, t *type, char *start, char *end) {
-  long size = sizeof_t(type);
+void stack_copy(asm_prog *prog, asm_fn *fn, t *type, char *start, char *end) {
+  long size = sizeof_t(prog, type);
   for (long offset = size - 8; offset >= 0; offset -= 8) {
     char *code = safe_alloc(BUFSIZ);
     sprintf(code, "mov r10, [%s + %ld]\nmov [%s + %ld], r10\n", start, offset,
@@ -313,12 +342,12 @@ char *jmp_asmgen(asm_prog *prog) {
   return jmp;
 }
 
-void stack_free(asm_fn *fn, size_t bytes) {
+void stack_free(asm_prog *prog, asm_fn *fn, size_t bytes) {
   size_t freed = 0;
   while (freed < bytes && fn->stk->shadow->size != 0) {
     t *item = vector_get_t(fn->stk->shadow, fn->stk->shadow->size - 1);
     fn->stk->shadow->size -= 1;
-    long t_size = sizeof_t(item);
+    long t_size = sizeof_t(prog, item);
     fn->stk->fn->stk->size -= t_size;
     freed += t_size;
   }
@@ -332,4 +361,207 @@ void stack_free(asm_fn *fn, size_t bytes) {
   char *code = safe_alloc(BUFSIZ);
   sprintf(code, "add rsp, %ld\n", bytes);
   vector_append(fn->code, code);
+}
+
+struct_info *struct_lookup(asm_prog *prog, char *name) {
+  for (int i = 0; i < prog->structs->size; i++) {
+    struct_info *cur = vector_get_struct_info(prog->structs, i);
+    if (!strcmp(name, cur->name))
+      return cur;
+  }
+
+  char *msg = safe_alloc(BUFSIZ);
+  sprintf(msg, "Could not find struct '%s'", name);
+  ir_error(msg);
+  return NULL;
+}
+
+void setup_externs(asm_prog *prog) {
+  vector *externs = safe_alloc(sizeof(vector));
+  vector_init(externs, 22, ASMFNVECTOR);
+  prog->externs = externs;
+
+  t *float_t = safe_alloc(sizeof(t));
+  float_t->type = FLOAT_T;
+  float_t->info = NULL;
+
+  t *int_t = safe_alloc(sizeof(t));
+  int_t->type = INT_T;
+  int_t->info = NULL;
+
+  // sqrt, exp, sin, cos, tan, asin, acos, atan, log
+  call_conv *ftf = safe_alloc(sizeof(call_conv));
+  ftf->ret = "xmm0";
+  ftf->ret_t = float_t;
+  ftf->args = safe_alloc(sizeof(vector));
+  vector_init(ftf->args, 1, STRVECTOR);
+  vector_append(ftf->args, float_registers[0]);
+
+  asm_fn *sqrt = safe_alloc(sizeof(asm_fn));
+  sqrt->call = ftf;
+  sqrt->name = "sqrt";
+  vector_append(externs, sqrt);
+
+  asm_fn *exp = safe_alloc(sizeof(asm_fn));
+  exp->call = ftf;
+  exp->name = "exp";
+  vector_append(externs, exp);
+
+  asm_fn *sin = safe_alloc(sizeof(asm_fn));
+  sin->call = ftf;
+  sin->name = "sin";
+  vector_append(externs, sin);
+
+  asm_fn *cos = safe_alloc(sizeof(asm_fn));
+  cos->call = ftf;
+  cos->name = "cos";
+  vector_append(externs, cos);
+
+  asm_fn *tan = safe_alloc(sizeof(asm_fn));
+  tan->call = ftf;
+  tan->name = "tan";
+  vector_append(externs, tan);
+
+  asm_fn *asin = safe_alloc(sizeof(asm_fn));
+  asin->call = ftf;
+  asin->name = "asin";
+  vector_append(externs, asin);
+
+  asm_fn *acos = safe_alloc(sizeof(asm_fn));
+  acos->call = ftf;
+  acos->name = "acos";
+  vector_append(externs, acos);
+
+  asm_fn *atan = safe_alloc(sizeof(asm_fn));
+  atan->call = ftf;
+  atan->name = "atan";
+  vector_append(externs, atan);
+
+  asm_fn *log = safe_alloc(sizeof(asm_fn));
+  log->call = ftf;
+  log->name = "log";
+  vector_append(externs, log);
+
+  // pow atan2
+  call_conv *fftf = safe_alloc(sizeof(call_conv));
+  fftf->ret = "xmm0";
+  fftf->ret_t = float_t;
+  fftf->args = safe_alloc(sizeof(vector));
+  vector_init(fftf->args, 2, STRVECTOR);
+  vector_append(fftf->args, float_registers[0]);
+  vector_append(fftf->args, float_registers[1]);
+
+  asm_fn *pow = safe_alloc(sizeof(asm_fn));
+  pow->call = fftf;
+  pow->name = "pow";
+  vector_append(externs, pow);
+
+  asm_fn *atan2 = safe_alloc(sizeof(asm_fn));
+  atan2->call = fftf;
+  atan2->name = "atan2";
+  vector_append(externs, atan2);
+
+  // to_float
+  call_conv *itf = safe_alloc(sizeof(call_conv));
+  itf->ret = "xmm0";
+  itf->ret_t = float_t;
+  itf->args = safe_alloc(sizeof(vector));
+  vector_init(itf->args, 1, STRVECTOR);
+  vector_append(itf->args, int_registers[0]);
+
+  asm_fn *to_float = safe_alloc(sizeof(asm_fn));
+  to_float->call = itf;
+  to_float->name = "to_float";
+  vector_append(externs, to_float);
+
+  // to_int
+  call_conv *fti = safe_alloc(sizeof(call_conv));
+  fti->ret = "rax";
+  fti->ret_t = int_t;
+  fti->args = safe_alloc(sizeof(vector));
+  vector_init(fti->args, 1, STRVECTOR);
+  vector_append(fti->args, float_registers[0]);
+
+  asm_fn *to_int = safe_alloc(sizeof(asm_fn));
+  to_int->call = fti;
+  to_int->name = "to_int";
+  vector_append(externs, to_int);
+}
+
+long sizeof_t(asm_prog *prog, t *type) {
+  switch (type->type) {
+  case INT_T:
+    return 8;
+  case FLOAT_T:
+    return 8;
+  case BOOL_T:
+    return 8;
+  case VOID_T:
+    return 8;
+  case STRUCT_T:;
+    struct_info *sinfo = (struct_info *)type->info;
+    long s_size = 0;
+    for (long i = 0; i < sinfo->ts->size; i++) {
+      t *cur_t = vector_get_t(sinfo->ts, i);
+      if (cur_t->type == STRUCT_T)
+        cur_t->info = struct_lookup(prog, ((struct_info *)cur_t->info)->name);
+      s_size += sizeof_t(prog, cur_t);
+    }
+    return s_size;
+  case ARRAY_T:;
+    array_info *ainfo = (array_info *)type->info;
+    return 8 + ainfo->rank * 8;
+  case FN_T:
+    return 0;
+  case PAD_T:;
+  }
+  return 0;
+}
+
+t *type_to_t(asm_prog *prog, type *type) {
+  t *result = safe_alloc(sizeof(t));
+  switch (type->type) {
+  case INTTYPE:
+    result->type = INT_T;
+    result->info = NULL;
+    break;
+  case FLOATTYPE:
+    result->type = FLOAT_T;
+    result->info = NULL;
+    break;
+  case BOOLTYPE:
+    result->type = BOOL_T;
+    result->info = NULL;
+    break;
+  case VOIDTYPE:
+    result->type = VOID_T;
+    result->info = NULL;
+    break;
+  case STRUCTTYPE:
+    result->type = STRUCT_T;
+
+    struct_type *st = (struct_type *)type->node;
+    if (prog != NULL)
+      result->info = struct_lookup(prog, st->var);
+    else {
+      result->info = safe_alloc(sizeof(struct_info));
+      struct_info *si = (struct_info *)result->info;
+      si->name = st->var;
+      si->ts = safe_alloc(sizeof(vector));
+      si->vars = safe_alloc(sizeof(vector));
+      vector_init(si->ts, 1, TVECTOR);
+      vector_init(si->vars, 1, STRVECTOR);
+    }
+    break;
+  case ARRAYTYPE:
+    result->type = ARRAY_T;
+
+    array_type *at = (array_type *)type->node;
+    result->info = safe_alloc(sizeof(array_info));
+    array_info *ai = (array_info *)result->info;
+    ai->rank = at->rank;
+    ai->type = type_to_t(prog, at->type);
+    break;
+  }
+  return result;
 }

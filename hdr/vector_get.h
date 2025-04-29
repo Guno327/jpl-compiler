@@ -24,4 +24,6 @@ c_fn *vector_get_c_fn(vector *v, long idx);
 c_struct *vector_get_c_struct(vector *v, long idx);
 asm_fn *vector_get_asm_fn(vector *v, long idx);
 long vector_get_num(vector *v, long idx);
+
+bool vector_contains_str(vector *v, char *str);
 #endif

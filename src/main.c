@@ -39,6 +39,8 @@ int main(int argc, char **argv) {
       set_verbose(true);
     else if (!strcmp(argv[i], "-O1"))
       opt = 1;
+    else if (!strcmp(argv[i], "-O3"))
+      opt = 3;
     else
       filename = argv[i];
   }
